@@ -72,4 +72,14 @@ describe("EventStream", () => {
     vi.advanceTimersByTime(2000);
     expect(FakeWebSocket.instances.length).toBe(1);
   });
+
+  it("does not reconnect when close() happens during pending reconnect", () => {
+    const stream = new EventStream("ws://x");
+    stream.connect();
+    const ws = FakeWebSocket.instances[0]!;
+    ws.onclose?.();
+    stream.close();
+    vi.advanceTimersByTime(2000);
+    expect(FakeWebSocket.instances.length).toBe(1);
+  });
 });

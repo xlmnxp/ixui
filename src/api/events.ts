@@ -8,11 +8,18 @@ export class EventStream {
   private ws: WebSocket | null = null;
   private listeners = new Set<(e: StreamEvent) => void>();
   private closed = false;
+  private reconnectTimer: number | null = null;
 
   constructor(private url: string) {}
 
   connect(): void {
-    this.closed = false;
+    if (this.closed) {
+      if (this.reconnectTimer !== null) {
+        window.clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
+      }
+      return;
+    }
     const ws = new WebSocket(this.url);
     this.ws = ws;
     ws.onmessage = (msg) => {
@@ -26,7 +33,10 @@ export class EventStream {
     ws.onclose = () => {
       if (this.closed) return;
       this.ws = null;
-      window.setTimeout(() => this.connect(), 1000);
+      this.reconnectTimer = window.setTimeout(() => {
+        this.reconnectTimer = null;
+        this.connect();
+      }, 1000);
     };
     ws.onerror = () => ws.close();
   }
@@ -38,6 +48,10 @@ export class EventStream {
 
   close(): void {
     this.closed = true;
+    if (this.reconnectTimer !== null) {
+      window.clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     this.ws?.close();
     this.ws = null;
   }
