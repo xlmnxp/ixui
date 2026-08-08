@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { infraApi, instancesApi, operationsApi } from "../api";
 import { Input } from "../components/input";
@@ -15,6 +15,7 @@ export function InstanceCreatePage() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [type, setType] = useState<"container" | "virtual-machine">("container");
+  const typeRef = useRef(type);
   const [images, setImages] = useState<Image[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [imageFingerprint, setImageFingerprint] = useState("");
@@ -24,12 +25,17 @@ export function InstanceCreatePage() {
   const [nameError, setNameError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const selectFirstImage = (list: Image[], t: "container" | "virtual-machine") => {
+    const first = list.find((i) => i.type === t);
+    if (first) setImageFingerprint(first.fingerprint);
+    else setImageFingerprint("");
+  };
+
   useEffect(() => {
     void Promise.all([infraApi.listImages(), infraApi.listProfiles()]).then(([imgs, profs]) => {
       setImages(imgs);
       setProfiles(profs);
-      const first = imgs.find((i) => i.type === type);
-      if (first) setImageFingerprint(first.fingerprint);
+      selectFirstImage(imgs, typeRef.current);
     }).catch(() => {});
   }, []);
 
@@ -73,7 +79,7 @@ export function InstanceCreatePage() {
       <h1 className="text-lg font-semibold text-text-primary">Create instance</h1>
       <div className="space-y-4 rounded-lg border border-border bg-surface-900 p-5">
         <Input label="Name" name="create-name" data-testid="create-name" value={name} onChange={(e) => setName(e.target.value)} error={nameError ?? undefined} />
-        <Select label="Type" name="create-type" data-testid="create-type" value={type} onChange={(e) => { setType(e.target.value as "container" | "virtual-machine"); setImageFingerprint(""); }}>
+        <Select label="Type" name="create-type" data-testid="create-type" value={type} onChange={(e) => { const t = e.target.value as "container" | "virtual-machine"; setType(t); typeRef.current = t; selectFirstImage(images, t); }}>
           <option value="container">Container</option>
           <option value="virtual-machine">Virtual machine</option>
         </Select>

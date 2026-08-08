@@ -28,6 +28,7 @@ describe("InstanceCreatePage", () => {
       <MemoryRouter initialEntries={["/instances/new"]}>
         <Routes>
           <Route path="/instances/new" element={<InstanceCreatePage />} />
+          <Route path="*" element={null} />
         </Routes>
       </MemoryRouter>
     );
@@ -44,6 +45,7 @@ describe("InstanceCreatePage", () => {
       <MemoryRouter initialEntries={["/instances/new"]}>
         <Routes>
           <Route path="/instances/new" element={<InstanceCreatePage />} />
+          <Route path="*" element={null} />
         </Routes>
       </MemoryRouter>
     );
