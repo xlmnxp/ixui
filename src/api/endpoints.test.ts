@@ -18,7 +18,7 @@ describe("API endpoints", () => {
     vi.stubGlobal("fetch", fetchMock);
     await instancesApi.setState("web1", "stop", true);
     const [, init] = fetchMock.mock.calls[0]!;
-    expect(init?.method).toBe("POST");
+    expect(init?.method).toBe("PUT");
     expect(JSON.parse(init?.body as string)).toEqual({ action: "stop", force: true });
   });
 

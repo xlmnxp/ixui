@@ -40,7 +40,7 @@ export class InstancesApi {
     action: "start" | "stop" | "restart" | "freeze" | "unfreeze",
     force = false
   ): Promise<AsyncResponse | null> {
-    return this.client.post(`/instances/${name}/state`, { action, force });
+    return this.client.put(`/instances/${name}/state`, { action, force });
   }
 
   state(name: string): Promise<InstanceStateInfo> {
