@@ -55,7 +55,7 @@ export class ApiClient {
 
   async list<T>(path: string): Promise<T[]> {
     const items = await this.request<(string | T)[]>("GET", `${path}?recursion=1`);
-    return items.filter((item): item is T => typeof item !== "string");
+    return (items ?? []).filter((item): item is T => typeof item !== "string");
   }
 
   post<T>(path: string, body?: unknown): Promise<T> {
