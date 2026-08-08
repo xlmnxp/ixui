@@ -42,6 +42,8 @@ export function Button({
         className,
       ].join(" ")}
       disabled={disabled || loading}
+      type="button"
+      data-testid="button"
       {...rest}
     >
       {loading && <Spinner size="xs" />}
