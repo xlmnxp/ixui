@@ -16,7 +16,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
         <span key={i} className="flex items-center gap-1.5">
           {i > 0 && <span className="text-text-tertiary">/</span>}
           {c.to ? (
-            <Link to={c.to} className="text-accent-400 hover:underline">{c.label}</Link>
+            <Link data-testid={`crumb-${c.label}`} to={c.to} className="text-accent-400 hover:underline">{c.label}</Link>
           ) : (
             <span className="text-text-secondary">{c.label}</span>
           )}
