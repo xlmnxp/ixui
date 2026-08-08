@@ -80,10 +80,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { incusProxy } from "./plugins/incus-proxy";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), incusProxy()],
+  plugins: [react(), tailwindcss()],
   base: "/ui/",
   test: {
     environment: "jsdom",
@@ -92,6 +91,8 @@ export default defineConfig({
   },
 });
 ```
+
+Note: the `incusProxy()` plugin is added to this config in Task 3 (which creates `plugins/incus-proxy.ts`).
 
 `tsconfig.json`:
 ```json
@@ -109,7 +110,7 @@ export default defineConfig({
     "skipLibCheck": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["vitest/globals", "@testing-library/jest-dom"]
+    "types": ["vitest/globals", "@testing-library/jest-dom", "node"]
   },
   "include": ["src", "vite.config.ts", "plugins", "vitest.setup.ts"]
 }
@@ -310,6 +311,7 @@ git commit -m "feat: add incus design tokens (tailwind v4 theme)"
 
 **Files:**
 - Create: `plugins/incus-proxy.ts`
+- Modify: `vite.config.ts` — add the `incusProxy()` import and plugin entry
 - Test: none (needs live incusd) — verification is manual against local incusd
 
 **Interfaces:**
@@ -395,7 +397,16 @@ export function incusProxy(options: IncusProxyOptions = {}): Plugin {
 }
 ```
 
-- [ ] **Step 2: Verify against local incusd**
+- [ ] **Step 2: Wire the plugin into the Vite config**
+
+In `vite.config.ts`, add the import and plugin entry:
+```ts
+import { incusProxy } from "./plugins/incus-proxy";
+// inside defineConfig:
+plugins: [react(), tailwindcss(), incusProxy()],
+```
+
+- [ ] **Step 3: Verify against local incusd**
 
 Run:
 ```bash
@@ -405,10 +416,10 @@ curl -sk https://localhost:5173/1.0
 ```
 Expected: JSON server info from incusd (curl prints the Incus API info object with `api_extensions`, `auth: "trusted"`). If `curl` fails with "proxy error", check `~/.config/incus/client.crt` exists (run `incus list` once to generate it).
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add plugins/incus-proxy.ts
+git add plugins/incus-proxy.ts vite.config.ts
 git commit -m "feat: add incus dev proxy plugin (rest + websocket + oidc)"
 ```
 
