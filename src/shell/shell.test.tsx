@@ -5,7 +5,8 @@ import { operationsStore } from "../state/operations";
 import { authStore } from "../auth/status";
 
 vi.mock("../api", () => ({
-  api: { setForbiddenHandler: vi.fn() },
+  api: { setForbiddenHandler: vi.fn(), get: vi.fn().mockResolvedValue({ cpu: { total: 8 }, memory: { total: 17179869184, used: 0 } }) },
+  serverApi: { info: vi.fn().mockResolvedValue({ environment: { server: "host1", server_version: "6.0.0", project: "default" }, api_extensions: [], api_status: "stable", auth: "trusted" }) },
   infraApi: {
     listImages: vi.fn().mockResolvedValue([]),
     listProfiles: vi.fn().mockResolvedValue([]),
