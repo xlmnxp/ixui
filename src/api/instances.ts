@@ -52,6 +52,7 @@ export class InstancesApi {
       command,
       interactive,
       environment: { TERM: "xterm" },
+      "wait-for-websocket": true,
     });
   }
 

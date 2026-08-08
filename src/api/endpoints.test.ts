@@ -22,12 +22,12 @@ describe("API endpoints", () => {
     expect(JSON.parse(init?.body as string)).toEqual({ action: "stop", force: true });
   });
 
-  it("exec posts command and TERM env", async () => {
+  it("exec posts command, TERM env and wait-for-websocket", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
     vi.stubGlobal("fetch", fetchMock);
     await instancesApi.exec("web1", ["/bin/sh"], true);
     const [, init] = fetchMock.mock.calls[0]!;
-    expect(JSON.parse(init?.body as string)).toEqual({ command: ["/bin/sh"], interactive: true, environment: { TERM: "xterm" } });
+    expect(JSON.parse(init?.body as string)).toEqual({ command: ["/bin/sh"], interactive: true, environment: { TERM: "xterm" }, "wait-for-websocket": true });
   });
 
   it("snapshot restore posts restore flag", async () => {
