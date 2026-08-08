@@ -6,6 +6,7 @@ import { useStore } from "./state/store";
 import { Toaster } from "./components/toast";
 import { DashboardPage } from "./pages/dashboard";
 import { InstancesPage } from "./pages/instances";
+import { InstanceCreatePage } from "./pages/instance-create";
 import { InstanceDetailPage } from "./pages/instance-detail";
 import { ImagesPage } from "./pages/images";
 import { ProfilesPage } from "./pages/profiles";
@@ -27,6 +28,7 @@ export function App() {
         <Route element={<Shell />}>
           <Route index element={<DashboardPage />} />
           <Route path="instances" element={<InstancesPage />} />
+          <Route path="instances/new" element={<InstanceCreatePage />} />
           <Route path="instances/:name" element={<InstanceDetailPage />} />
           <Route path="instances/:name/:tab" element={<InstanceDetailPage />} />
           <Route path="images" element={<ImagesPage />} />
