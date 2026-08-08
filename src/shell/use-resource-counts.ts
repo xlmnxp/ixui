@@ -16,7 +16,7 @@ export function useResourceCounts(): ResourceCounts {
   const [counts, setCounts] = useState({ images: 0, profiles: 0, networks: 0, storage: 0 });
 
   useEffect(() => {
-    void loadInstances(project);
+    void loadInstances(project).catch(() => {});
   }, [project]);
 
   useEffect(() => {
