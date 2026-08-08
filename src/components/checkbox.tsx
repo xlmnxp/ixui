@@ -7,7 +7,7 @@ export interface CheckboxProps extends InputHTMLAttributes<HTMLInputElement> {
 export function Checkbox({ label, className = "", ...rest }: CheckboxProps) {
   return (
     <label className={`inline-flex items-center gap-2 text-sm text-text-primary ${className}`}>
-      <input type="checkbox" className="h-4 w-4 accent-accent-600" {...rest} />
+      <input type="checkbox" className="h-4 w-4 accent-accent-600" data-testid="checkbox" {...rest} />
       {label}
     </label>
   );

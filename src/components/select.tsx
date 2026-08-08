@@ -12,6 +12,7 @@ export function Select({ label, className = "", id, name, children, ...rest }: S
       <select
         id={selectId}
         className={`h-8 rounded border border-border bg-surface-500 px-2.5 text-sm text-text-primary focus:border-accent-500 focus:outline-none ${className}`}
+        data-testid="select"
         {...rest}
       >
         {children}

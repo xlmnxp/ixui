@@ -18,6 +18,7 @@ export function Input({ label, error, className = "", id, name, ...rest }: Input
           error ? "border-danger" : "border-border",
           className,
         ].join(" ")}
+        data-testid="input"
         {...rest}
       />
       {error && <span className="text-xs text-red-300">{error}</span>}
