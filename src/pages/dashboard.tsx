@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, serverApi, infraApi } from "../api";
+import { api, serverApi, infraApi, instancesApi } from "../api";
 import { useStore } from "../state/store";
 import { currentProjectStore } from "../state/projects";
 import { operationsStore } from "../state/operations";
@@ -27,6 +27,7 @@ export function DashboardPage() {
   const [server, setServer] = useState<{ hostname: string; version: string } | null>(null);
   const [resources, setResources] = useState<HostResources | null>(null);
   const [counts, setCounts] = useState({ images: 0, profiles: 0, networks: 0, storage: 0 });
+  const [instanceUsage, setInstanceUsage] = useState<{ sum: number } | null>(null);
 
   useEffect(() => {
     void serverApi.info().then((info) => setServer({ hostname: info.environment.server, version: info.environment.server_version })).catch(() => {});
@@ -48,9 +49,31 @@ export function DashboardPage() {
   }, []);
 
   const scoped = Object.values(instances).filter((i) => i.project === project);
+  const running = scoped.filter((i) => i.status === "Started");
+  const runningKey = running.map((i) => i.name).join(",");
+
+  useEffect(() => {
+    if (runningKey === "") {
+      setInstanceUsage({ sum: 0 });
+      return;
+    }
+    let cancelled = false;
+    void Promise.all(
+      runningKey.split(",").map((name) =>
+        instancesApi.state(name).then((s) => s.memory.usage).catch(() => null)
+      )
+    ).then((usages) => {
+      if (cancelled) return;
+      setInstanceUsage(usages.some((u) => u !== null) ? { sum: usages.reduce<number>((total, u) => total + (u ?? 0), 0) } : null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [runningKey]);
+
   const stateCounts = instanceStateCounts(scoped);
-  const cpuPercent = resources ? Math.min(100, Math.round((resources.cpu.total ? 30 : 0))) : undefined;
-  const memPercent = resources ? Math.round((resources.memory.used / resources.memory.total) * 100) : undefined;
+  const memSum = instanceUsage !== null ? instanceUsage.sum : resources?.memory.used ?? 0;
+  const memPercent = resources ? Math.min(100, Math.max(0, Math.round((memSum / resources.memory.total) * 100))) : undefined;
 
   return (
     <div className="space-y-4 p-6" data-testid="dashboard-page">
@@ -66,14 +89,18 @@ export function DashboardPage() {
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-lg border border-border bg-surface-900 p-4">
           <h2 className="mb-2 text-sm font-semibold text-text-primary">CPU</h2>
-          {cpuPercent === undefined ? <span className="text-xs text-text-tertiary">Unavailable</span> : <Progress value={cpuPercent} />}
+          {resources ? (
+            <p className="text-xs text-text-secondary">{resources.cpu.total} cores · {running.length} running</p>
+          ) : (
+            <span className="text-xs text-text-tertiary">Unavailable</span>
+          )}
         </div>
         <div className="rounded-lg border border-border bg-surface-900 p-4">
           <h2 className="mb-2 text-sm font-semibold text-text-primary">Memory</h2>
-          {resources ? (
+          {resources && resources.memory.total > 0 ? (
             <>
-              <Progress value={memPercent} tone={memPercent && memPercent > 85 ? "danger" : "accent"} />
-              <p className="mt-1 text-xs text-text-secondary">{formatBytes(resources.memory.used)} / {formatBytes(resources.memory.total)}</p>
+              <Progress value={memPercent} tone={memPercent !== undefined && memPercent > 85 ? "danger" : "accent"} />
+              <p className="mt-1 text-xs text-text-secondary">{formatBytes(memSum)} / {formatBytes(resources.memory.total)}</p>
             </>
           ) : (
             <span className="text-xs text-text-tertiary">Unavailable</span>
