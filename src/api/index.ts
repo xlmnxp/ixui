@@ -1,4 +1,5 @@
 import { ApiClient } from "./client";
+import { EventStream } from "./events";
 import { InstancesApi } from "./instances";
 import { InfraApi } from "./infra";
 import { ServerApi } from "./server";
@@ -14,3 +15,5 @@ export function eventsUrl(): string {
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${proto}//${window.location.host}/1.0/events?type=operation,lifecycle,logging`;
 }
+
+export const eventStream = new EventStream(eventsUrl());
