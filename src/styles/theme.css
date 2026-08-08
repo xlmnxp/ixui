@@ -1,1 +1,44 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+
+  /* Incus accent — blue family anchored on the Incus brand color */
+  --color-accent-300: #7fb8ff;
+  --color-accent-400: #5799f0;
+  --color-accent-500: #3d8cff;
+  --color-accent-600: #2f6fd0;
+  --color-accent-700: #275ba8;
+
+  /* Dark slate surfaces (Proxmox-dark base) */
+  --color-surface-950: #15181b;
+  --color-surface-900: #1a1d21;
+  --color-surface-800: #22262b;
+  --color-surface-700: #2b3036;
+  --color-surface-600: #343b42;
+  --color-surface-500: #3f474f;
+  --color-sidebar: #1a1d21;
+
+  /* Text + borders */
+  --color-text-primary: #e8eaed;
+  --color-text-secondary: #aeb4bc;
+  --color-text-tertiary: #7d848d;
+  --color-border: #383f47;
+
+  /* Semantic */
+  --color-success: #3fb950;
+  --color-warning: #d29922;
+  --color-danger: #f85149;
+}
+
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+body {
+  background-color: var(--color-surface-950);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
