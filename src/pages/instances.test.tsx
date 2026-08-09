@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { InstancesPage } from "./instances";
 
 function instance(name: string, status: string, type = "container") {
@@ -65,5 +65,20 @@ describe("InstancesPage", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     await user.click(screen.getByTestId("confirm-confirm"));
     await waitFor(() => expect(instancesApi.delete).toHaveBeenCalledWith("web1"));
+  });
+
+  it("navigates to overview from the row action", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/instances"]}>
+        <Routes>
+          <Route path="/instances" element={<InstancesPage />} />
+          <Route path="/instances/:name" element={<div data-testid="detail-stub" />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByText("web1");
+    await user.click(screen.getByTestId("row-overview-web1"));
+    expect(await screen.findByTestId("detail-stub")).toBeInTheDocument();
   });
 });
