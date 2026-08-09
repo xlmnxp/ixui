@@ -20,6 +20,7 @@ vi.mock("../api", () => ({
     delete: vi.fn().mockResolvedValue(undefined),
   },
   infraApi: { listImages: vi.fn().mockResolvedValue([]), listProfiles: vi.fn().mockResolvedValue([]), listNetworks: vi.fn().mockResolvedValue([]), listPools: vi.fn().mockResolvedValue([]) },
+  serverApi: { metadata: vi.fn().mockResolvedValue({ configs: [] }) },
   api: { get: vi.fn() },
 }));
 

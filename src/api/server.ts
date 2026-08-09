@@ -7,4 +7,8 @@ export class ServerApi {
   info(): Promise<ServerInfo> {
     return this.client.get<ServerInfo>("");
   }
+
+  metadata(): Promise<{ configs: { key: string; description: string }[] }> {
+    return this.client.get<{ configs: { key: string; description: string }[] }>("/metadata");
+  }
 }
