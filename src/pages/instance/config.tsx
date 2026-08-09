@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Check, RotateCcw } from "lucide-react";
 import { instancesApi } from "../../api";
 import type { Instance } from "../../api/types";
 import { KeyValueEditor } from "../../components/key-value-editor";
@@ -58,8 +59,8 @@ export function ConfigTab({ instanceName }: ConfigTabProps) {
       </div>
       {Object.values(errors)[0] && <p className="text-xs text-red-300">{Object.values(errors)[0]}</p>}
       <div className="flex gap-2">
-        <Button onClick={save} loading={saving} data-testid="config-save">Save</Button>
-        <Button variant="secondary" onClick={refresh} data-testid="config-reset">Reset</Button>
+        <Button onClick={save} loading={saving} data-testid="config-save"><Check size={14} /> Save</Button>
+        <Button variant="secondary" onClick={refresh} data-testid="config-reset"><RotateCcw size={14} /> Reset</Button>
       </div>
     </div>
   );

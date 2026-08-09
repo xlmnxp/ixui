@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Check, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { instancesApi } from "../../api";
 import type { Instance } from "../../api/types";
 import { Table } from "../../components/table";
@@ -76,8 +77,8 @@ export function SnapshotsTab({ instanceName }: SnapshotsTabProps) {
       key: "actions", header: "", align: "right",
       render: (s) => (
         <div className="flex justify-end gap-1">
-          <Button size="sm" variant="ghost" data-testid={`snap-restore-${s.name}`} onClick={() => setRestoreName(s.name)}>Restore</Button>
-          <Button size="sm" variant="ghost" data-testid={`snap-delete-${s.name}`} onClick={() => remove(s.name)}>Delete</Button>
+          <Button size="sm" variant="ghost" data-testid={`snap-restore-${s.name}`} onClick={() => setRestoreName(s.name)}><RotateCcw size={14} /> Restore</Button>
+          <Button size="sm" variant="ghost" data-testid={`snap-delete-${s.name}`} onClick={() => remove(s.name)}><Trash2 size={14} /> Delete</Button>
         </div>
       ),
     },
@@ -86,7 +87,7 @@ export function SnapshotsTab({ instanceName }: SnapshotsTabProps) {
   return (
     <div className="space-y-4" data-testid="snapshots-tab">
       <div className="flex justify-end">
-        <Button size="sm" data-testid="snap-create-open" onClick={() => setCreateOpen(true)}>Create snapshot</Button>
+        <Button size="sm" data-testid="snap-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create snapshot</Button>
       </div>
       {snapshots.length === 0 ? (
         <EmptyState title="No snapshots" description="Snapshots let you roll back to a previous state." />
@@ -96,8 +97,8 @@ export function SnapshotsTab({ instanceName }: SnapshotsTabProps) {
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create snapshot" footer={
         <>
-          <Button variant="secondary" onClick={() => setCreateOpen(false)}>Cancel</Button>
-          <Button onClick={create} loading={busy} data-testid="snap-create-submit">Create</Button>
+          <Button variant="secondary" onClick={() => setCreateOpen(false)}><X size={14} /> Cancel</Button>
+          <Button onClick={create} loading={busy} data-testid="snap-create-submit"><Check size={14} /> Create</Button>
         </>
       }>
         <div className="space-y-3">

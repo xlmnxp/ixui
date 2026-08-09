@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Plus, Star, Trash2, X } from "lucide-react";
 import { infraApi } from "../api";
 import type { Project } from "../api/types";
 import { projectsStore, currentProjectStore, setCurrentProject } from "../state/projects";
@@ -69,27 +70,27 @@ export function ProjectsPage() {
       render: (p) => (
         <div className="flex justify-end gap-1">
           {p.name !== currentProject && (
-            <Button size="sm" variant="ghost" data-testid={`project-set-default-${p.name}`} onClick={() => { setCurrentProject(p.name); toast("info", `Switched to project ${p.name}`); }}>Set default</Button>
+            <Button size="sm" variant="ghost" data-testid={`project-set-default-${p.name}`} onClick={() => { setCurrentProject(p.name); toast("info", `Switched to project ${p.name}`); }}><Star size={14} /> Set default</Button>
           )}
-          <Button size="sm" variant="ghost" data-testid={`project-delete-${p.name}`} onClick={() => setDeleteTarget(p)}>Delete</Button>
+          <Button size="sm" variant="ghost" data-testid={`project-delete-${p.name}`} onClick={() => setDeleteTarget(p)}><Trash2 size={14} /> Delete</Button>
         </div>
       ),
     },
   ];
 
   return (
-    <div className="space-y-4 p-6" data-testid="projects-page">
+    <div className="space-y-4" data-testid="projects-page">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text-primary">Projects</h1>
-        <Button size="sm" data-testid="project-create-open" onClick={() => setCreateOpen(true)}>Create project</Button>
+        <Button size="sm" data-testid="project-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create project</Button>
       </div>
 
       <Table columns={columns} rows={projects} rowKey={(p) => p.name} emptyMessage="No projects" />
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create project" footer={
         <>
-          <Button variant="secondary" onClick={() => setCreateOpen(false)}>Cancel</Button>
-          <Button onClick={create} loading={busy} data-testid="project-create-submit">Create</Button>
+          <Button variant="secondary" onClick={() => setCreateOpen(false)}><X size={14} /> Cancel</Button>
+          <Button onClick={create} loading={busy} data-testid="project-create-submit"><Plus size={14} /> Create</Button>
         </>
       }>
         <Input label="Name" name="project-name" data-testid="project-name" value={name} onChange={(e) => setName(e.target.value)} />

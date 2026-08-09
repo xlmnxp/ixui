@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Download, Trash2, X } from "lucide-react";
 import { infraApi } from "../api";
 import type { Image } from "../api/types";
 import { Table } from "../components/table";
@@ -63,17 +64,17 @@ export function ImagesPage() {
       key: "actions", header: "", align: "right",
       render: (i) => (
         <div className="flex justify-end">
-          <Button size="sm" variant="ghost" data-testid={`image-delete-${i.fingerprint}`} onClick={() => setDeleteTarget(i)}>Delete</Button>
+          <Button size="sm" variant="ghost" data-testid={`image-delete-${i.fingerprint}`} onClick={() => setDeleteTarget(i)}><Trash2 size={14} /> Delete</Button>
         </div>
       ),
     },
   ];
 
   return (
-    <div className="space-y-4 p-6" data-testid="images-page">
+    <div className="space-y-4" data-testid="images-page">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text-primary">Images</h1>
-        <Button size="sm" data-testid="pull-open" onClick={() => setPullOpen(true)}>Pull image</Button>
+        <Button size="sm" data-testid="pull-open" onClick={() => setPullOpen(true)}><Download size={14} /> Pull image</Button>
       </div>
 
       {images.length === 0 ? (
@@ -84,8 +85,8 @@ export function ImagesPage() {
 
       <Dialog open={pullOpen} onClose={() => setPullOpen(false)} title="Pull image" footer={
         <>
-          <Button variant="secondary" onClick={() => setPullOpen(false)}>Cancel</Button>
-          <Button onClick={pull} loading={busy} data-testid="pull-submit">Pull</Button>
+          <Button variant="secondary" onClick={() => setPullOpen(false)}><X size={14} /> Cancel</Button>
+          <Button onClick={pull} loading={busy} data-testid="pull-submit"><Download size={14} /> Pull</Button>
         </>
       }>
         <div className="space-y-3">
