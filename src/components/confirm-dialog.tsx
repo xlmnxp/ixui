@@ -1,3 +1,4 @@
+import { Check, X } from "lucide-react";
 import { Dialog } from "./dialog";
 import { Button } from "./button";
 import type { ButtonVariant } from "./button";
@@ -30,8 +31,8 @@ export function ConfirmDialog({
       title={title}
       footer={
         <>
-          <Button variant="secondary" onClick={onCancel} data-testid="confirm-cancel">Cancel</Button>
-          <Button variant={tone} onClick={onConfirm} loading={loading} data-testid="confirm-confirm">{confirmLabel}</Button>
+          <Button variant="secondary" onClick={onCancel} data-testid="confirm-cancel"><X size={14} /> Cancel</Button>
+          <Button variant={tone} onClick={onConfirm} loading={loading} data-testid="confirm-confirm"><Check size={14} /> {confirmLabel}</Button>
         </>
       }
     >

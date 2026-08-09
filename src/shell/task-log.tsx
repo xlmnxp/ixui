@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Trash2, X } from "lucide-react";
 import { operationsStore, dismissOperation } from "../state/operations";
 import { useStore } from "../state/store";
 import { Badge } from "../components/badge";
@@ -27,7 +28,7 @@ export function TaskLog() {
         <span className="text-xs font-medium text-text-secondary">Operations ({running} running)</span>
         <div className="flex gap-2">
           <button data-testid="tasklog-toggle" onClick={() => setCollapsed(true)} className="text-xs text-text-tertiary hover:text-text-primary" aria-label="Collapse task log">▾</button>
-          <button data-testid="tasklog-clear" onClick={() => operationsStore.setState((prev) => prev.filter((o) => o.status === "Running"))} className="text-xs text-text-tertiary hover:text-text-primary">Clear finished</button>
+          <button data-testid="tasklog-clear" onClick={() => operationsStore.setState((prev) => prev.filter((o) => o.status === "Running"))} className="flex items-center gap-1 text-xs text-text-tertiary hover:text-text-primary"><Trash2 size={12} /> Clear finished</button>
         </div>
       </div>
       {operations.length === 0 ? (
@@ -41,7 +42,7 @@ export function TaskLog() {
               {op.status === "Running" && <div className="w-32"><Progress value={undefined} /></div>}
               {op.status !== "Running" && op.err && <span className="max-w-48 truncate text-xs text-red-300">{op.err}</span>}
               {op.status !== "Running" && (
-                <button data-testid={`tasklog-dismiss-${op.id}`} onClick={() => dismissOperation(op.id)} className="text-text-tertiary hover:text-text-primary" aria-label="Dismiss">✕</button>
+                <button data-testid={`tasklog-dismiss-${op.id}`} onClick={() => dismissOperation(op.id)} className="text-text-tertiary hover:text-text-primary" aria-label="Dismiss"><X size={12} /></button>
               )}
             </li>
           ))}
