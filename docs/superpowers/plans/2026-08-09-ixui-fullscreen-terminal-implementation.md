@@ -522,7 +522,7 @@ git commit -m "feat: instance table icons and overview row action"
 
 - [ ] **Step 4: README**
 
-`README.md` — under the component-system/dev section, add a line: terminal opens in a browser popup at `/ui/terminal/<instance>` (shell + VGA toggle), and the sidebar tree's `+` buttons create instances (member-targeted).
+`README.md` — under the component-system/dev section, add: terminal opens in a browser popup at `/ui/terminal/<instance>` (shell + VGA toggle); the sidebar tree's `+` buttons create instances (member-targeted); config-key descriptions come from `GET /1.0/metadata` — enable on the server with `incus config set metadata.enabled true` (the UI shows "—" when unavailable).
 
 - [ ] **Step 5: Full gates + build**
 
@@ -537,7 +537,8 @@ Run: `INCUS_TARGET=https://192.168.0.101:8443 npm run dev`, then in a browser:
 3. Click Terminal — a popup opens at `/ui/terminal/<name>` with a live shell; toggle VGA on a VM; close the popup — main UI unaffected
 4. Sidebar — hover a member node → `+` appears; click it → wizard opens with the member targeted (summary shows "Target member"); create a test container
 5. Instance tables — `Eye` row action navigates to the detail Overview
-6. Confirm every visible button now has an icon
+6. Instance tables — `Eye` row action navigates to the detail Overview
+7. Config tab — table editor: double-click a value to edit inline; select a row and use Edit; hover shows the pencil; Add/Remove work; Description column shows text (or "—" when the server has metadata disabled)
 
 Expected: all flows work against the real cluster. Report what you observed honestly.
 
@@ -546,4 +547,137 @@ Expected: all flows work against the real cluster. Report what you observed hone
 ```bash
 git add src/shell/task-log.tsx src/components/confirm-dialog.tsx src/pages/gallery.tsx README.md
 git commit -m "feat: remaining button icons and docs, final verification"
+```
+
+---
+
+### Task 7: Table-Style Config Editor (shared KeyValueEditor)
+
+**Files:**
+- Modify: `src/components/key-value-editor.tsx`, `src/components/key-value-editor.test.tsx`, `src/pages/instance/config.tsx`, `src/pages/profiles.tsx`, `src/api/server.ts`, `src/api/endpoints.test.ts`
+- Modify: `README.md` (metadata.enabled note)
+
+**Interfaces:**
+- Consumes: existing `KeyValueEditor` consumers (ConfigTab, Profiles dialog), `ApiClient`
+- Produces:
+  - `ServerApi.metadata(): Promise<{ configs: { key: string; description: string }[] }>` in `src/api/server.ts` — `client.get("/metadata")` (GLOBAL, not project-scoped; 404 when the server lacks `metadata.enabled`)
+  - `KeyValueEditor` gains `descriptions?: Record<string, string>` — third column "Description" (`text-xs text-text-tertiary`, value `descriptions?.[key] ?? "—"`)
+  - Inline row-edit mode with three entry points: double-click value cell; select row + `kv-edit` button (enabled with selection); hover pencil `kv-edit-<key>`. Edit mode shows `kv-key-edit-<key>` / `kv-value-edit-<key>` inputs; Enter/blur commits, Esc cancels. Add (`kv-add`, `Plus`) appends a row; Remove (`kv-remove`, `Trash2`, enabled with selection) removes the selected row. Key-collision rename stays a no-op.
+  - `ConfigTab` and the Profiles edit dialog fetch `serverApi.metadata()` on mount (best-effort, catch → empty map) and pass `descriptions`.
+
+- [ ] **Step 1: Write the failing tests**
+
+`src/components/key-value-editor.test.tsx` — add:
+```tsx
+it("edits a value inline on double-click", async () => {
+  const user = userEvent.setup();
+  render(<KeyValueEditor values={{ key1: "a" }} onChange={() => {}} />);
+  await user.dblClick(screen.getByTestId("kv-value-key1"));
+  const input = screen.getByTestId("kv-value-edit-key1");
+  await user.clear(input);
+  await user.type(input, "b");
+  await user.keyboard("{Enter}");
+  expect(screen.getByTestId("kv-value-key1")).toHaveTextContent("b");
+});
+
+it("edits key and value via select + Edit", async () => {
+  const user = userEvent.setup();
+  const onChange = vi.fn();
+  render(<KeyValueEditor values={{ key1: "a" }} onChange={onChange} />);
+  await user.click(screen.getByTestId("kv-row-key1"));
+  expect(screen.getByTestId("kv-edit")).toBeEnabled();
+  await user.click(screen.getByTestId("kv-edit"));
+  const keyInput = screen.getByTestId("kv-key-edit-key1");
+  const valueInput = screen.getByTestId("kv-value-edit-key1");
+  await user.clear(keyInput);
+  await user.type(keyInput, "key2");
+  await user.clear(valueInput);
+  await user.type(valueInput, "b");
+  await user.keyboard("{Enter}");
+  expect(onChange).toHaveBeenLastCalledWith({ key2: "b" });
+});
+
+it("removes the selected row via the Remove button", async () => {
+  const user = userEvent.setup();
+  const onChange = vi.fn();
+  render(<KeyValueEditor values={{ key1: "a", key2: "b" }} onChange={onChange} />);
+  await user.click(screen.getByTestId("kv-row-key1"));
+  await user.click(screen.getByTestId("kv-remove"));
+  expect(onChange).toHaveBeenCalledWith({ key2: "b" });
+});
+
+it("renders descriptions from the prop with fallback", () => {
+  render(<KeyValueEditor values={{ key1: "a", key2: "b" }} descriptions={{ key1: "Memory limit" }} onChange={() => {}} />);
+  expect(screen.getByText("Memory limit")).toBeInTheDocument();
+  expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+});
+```
+NOTE: the existing tests assert old testids (`kv-key-<key>` / `kv-value-<key>` as INPUTS). In the new design those testids move to the TABLE CELLS (display mode) — update the existing "edits values"/"removes entries" tests accordingly (rename assertions to the new cells/inputs). The "adds entries" test's `kv-add` stays.
+
+`src/api/endpoints.test.ts` — add:
+```tsx
+it("server metadata is not project-scoped", async () => {
+  const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { configs: [{ key: "limits.memory", description: "Memory limit" }] }));
+  vi.stubGlobal("fetch", fetchMock);
+  await serverApi.metadata();
+  expect(fetchMock).toHaveBeenCalledWith("/1.0/metadata", expect.anything());
+});
+```
+
+- [ ] **Step 2: Run to verify they fail**
+
+Run: `npx vitest run src/components/key-value-editor.test.tsx src/api/endpoints.test.ts`
+Expected: FAIL — no `metadata` method, no inline-edit testids.
+
+- [ ] **Step 3: Implement the editor**
+
+`src/components/key-value-editor.tsx` — rewrite the component:
+- Props: `{ values: Record<string, string>; onChange: (values: Record<string, string>) => void; dataTestId?: string; descriptions?: Record<string, string> }`
+- State: `const [selected, setSelected] = useState<string | null>(null);` and `const [editing, setEditing] = useState<string | null>(null);` (the row key currently in edit mode)
+- Rows render as `<tr data-testid={`kv-row-${key}`} data-selected={selected === key} className={selected === key ? "bg-accent-600/10" : ""} onClick={() => { setSelected(key); }}>`:
+  - Key cell: display `<td data-testid={`kv-key-${key}`} onDoubleClick={() => setEditing(key)} className="px-2 py-1 font-mono text-xs">`; when `editing === key`, an `<input data-testid={`kv-key-edit-${key}`}>` instead (onKeyDown Enter → commit, Escape → cancel; onBlur → commit)
+  - Value cell: `<td data-testid={`kv-value-${key}`} onDoubleClick={() => setEditing(key)}>`; edit-mode `<input data-testid={`kv-value-edit-${key}`}>`
+  - Description cell: `<td className="px-2 py-1 text-xs text-text-tertiary">{descriptions?.[key] ?? "—"}</td>`
+  - Hover pencil: `<span className="opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); setEditing(key); }}><button data-testid={`kv-edit-${key}`} aria-label={`Edit ${key}`}><Pencil size={13} /></button></span>` — the `<tr>` gains `group`
+- Toolbar above the table: `Add` (`kv-add`, `Plus`, `Plus` icon) appends `custom_<n>`; `Edit` (`kv-edit`, `Pencil`, `disabled={!selected}`) → `setEditing(selected)`; `Remove` (`kv-remove`, `Trash2`, `disabled={!selected}`) → removes selected
+- Commit/cancel helpers: `commitEdit(oldKey, newKey, newValue)` — applies key collision no-op rule (if newKey exists and differs from oldKey, keep oldKey), calls onChange; `cancelEdit()` → `setEditing(null)`
+- Edit-mode inputs keep local draft state (`draftKey`/`draftValue`) initialized from the row on entering edit mode; Enter commits, Escape cancels and clears the row from edit mode.
+
+- [ ] **Step 4: Metadata endpoint**
+
+`src/api/server.ts`:
+```ts
+metadata(): Promise<{ configs: { key: string; description: string }[] }> {
+  return this.client.get("/metadata");
+}
+```
+
+- [ ] **Step 5: Wire consumers**
+
+`src/pages/instance/config.tsx` — add state `const [descriptions, setDescriptions] = useState<Record<string, string>>({});` and in the existing load effect (or a second effect):
+```tsx
+useEffect(() => {
+  void serverApi.metadata()
+    .then((m) => {
+      const map: Record<string, string> = {};
+      for (const c of m.configs ?? []) if (c.key) map[c.key] = c.description;
+      setDescriptions(map);
+    })
+    .catch(() => {});
+}, []);
+```
+Pass `descriptions={descriptions}` to KeyValueEditor. Import `serverApi` from "../../api".
+
+`src/pages/profiles.tsx` — same pattern in the edit-dialog flow: fetch metadata once on mount, pass `descriptions` to the KeyValueEditor in the edit dialog.
+
+- [ ] **Step 6: Verify**
+
+Run: `npx vitest run && npm run typecheck && npm run lint`
+Expected: all pass.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add src/components/key-value-editor.tsx src/components/key-value-editor.test.tsx src/pages/instance/config.tsx src/pages/profiles.tsx src/api/server.ts src/api/endpoints.test.ts README.md
+git commit -m "feat: table-style config editor with descriptions and inline edit"
 ```

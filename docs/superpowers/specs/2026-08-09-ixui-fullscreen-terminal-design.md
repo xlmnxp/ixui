@@ -73,7 +73,19 @@ All action buttons app-wide get a lucide icon (size 14, before the label):
 - `Button` primitive needs no change (icons render as children with the existing `gap-2`).
 - Plain navigational text links (tree labels) get no icons.
 
-## 5. Testing
+## 6. Table-Style Config Editor
+
+The shared `KeyValueEditor` (instance Config tab + Profiles edit dialog) becomes a table with columns **Key | Value | Description**:
+
+- **Description column:** fed from `GET /1.0/metadata` (`configs[]` → `key`/`description`) fetched by the consumers into a `descriptions?: Record<string, string>` prop; unknown keys and unavailable metadata (the endpoint requires the server setting `incus config set metadata.enabled true`) render "—". The metadata fetch is global (not project-scoped).
+- **Three edit paths into the same inline row-edit mode** (Enter/blur commits, Esc cancels):
+  1. Double-click a **value** cell → inline input (keys read-only on double-click)
+  2. Select a row + **Edit** button (`kv-edit`, `Pencil`, enabled with a selection) → key + value both editable
+  3. Hover the row → **Pencil icon** (`kv-edit-<key>`) → key + value both editable
+- **Add / Remove** buttons above the table (`kv-add` `Plus`, `kv-remove` `Trash2`); Remove enabled only with a selection.
+- Key-collision no-op rule preserved; edit-mode inputs use `kv-key-edit-<key>` / `kv-value-edit-<key>` testids (avoids the mid-edit testid-change trap).
+
+## 7. Testing (updated)
 
 - **Tree action:** unit test — node with `action` renders the action only on hover (assert presence + stopPropagation on click); tree-model test — project/member nodes carry `tree-create-*` actions.
 - **Wizard target:** test — `targetMember` prop flows into the create call URL (`?target=`); summary shows the target line.
@@ -82,4 +94,5 @@ All action buttons app-wide get a lucide icon (size 14, before the label):
 - **Action strip:** instance-detail test — strip renders name/status/actions/Terminal; Terminal button calls `window.open` with the right URL (stub `window.open`).
 - **Layout pass:** no new tests (visual); existing tests must stay green (they assert testids/text, not paddings).
 - **Icons pass:** existing tests stay green (class/testid assertions unaffected); no icon-specific tests.
-- Manual Playwright verification at the end: popup opens a real terminal against the live cluster; tree hover + creates with target; full-screen tables.
+- **Config editor:** unit tests for the editor (double-click opens inline value input; select+Edit enables and edits key+value; hover pencil edits; Enter commits / Esc cancels; Add/Remove; description column renders from the prop and "—" fallback); ConfigTab test mocks `/1.0/metadata` and asserts descriptions render.
+- Manual Playwright verification at the end: popup opens a real terminal against the live cluster; tree hover + creates with target; full-screen tables; config editor interactions.
