@@ -38,7 +38,7 @@ describe("InstanceDetailPage", () => {
     expect(screen.getByTestId("kv-table")).toBeInTheDocument();
     expect(screen.getByText("512MiB")).toBeInTheDocument();
     expect(screen.getByText("Property")).toBeInTheDocument();
-    expect(screen.getByText("192.168.0.6, 2001:db8::1")).toBeInTheDocument();
+    expect(await screen.findByText("192.168.0.6, 2001:db8::1")).toBeInTheDocument();
   });
 
   it("switches tabs", async () => {
