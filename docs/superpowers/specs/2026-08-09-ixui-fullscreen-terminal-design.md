@@ -66,7 +66,9 @@ All action buttons app-wide get a lucide icon (size 14, before the label):
 | Volumes | `Database` |
 | Set default | `Star` |
 | Task-log dismiss | `X` |
+| Table row Overview action | `Eye` |
 
+- **Overview action in instance tables:** every instance row in the instances tables (project overview Instances tab + member view) gains an Overview action — lucide `Eye` icon, `data-testid="row-overview-<name>"`, navigates to `/instances/<name>` (detail opens on the Overview tab). The action click stops propagation (row click already navigates there too; the action makes it explicit). The instance detail's Overview tab stays (display, not disable).
 - Icon-only buttons keep `aria-label` (already present where needed).
 - `Button` primitive needs no change (icons render as children with the existing `gap-2`).
 - Plain navigational text links (tree labels) get no icons.
