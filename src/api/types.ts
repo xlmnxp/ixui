@@ -10,9 +10,11 @@ export interface ServerInfo {
 }
 
 export type InstanceStatus =
-  | "Stopped"
+  | "Running"
   | "Started"
+  | "Stopped"
   | "Frozen"
+  | "Paused"
   | "Error"
   | "Starting"
   | "Stopping"

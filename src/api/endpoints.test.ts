@@ -64,7 +64,7 @@ describe("API endpoints", () => {
     vi.stubGlobal("fetch", fetchMock);
     await serverApi.info();
     await operationsApi.wait("op1");
-    expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/");
+    expect(fetchMock.mock.calls[0]![0]).toBe("/1.0");
     expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/operations/op1/wait");
   });
 

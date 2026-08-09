@@ -40,9 +40,10 @@ describe("DashboardPage", () => {
   it("shows real usage gauges from running instance state", async () => {
     instancesStore.setState({
       "default/web1": { name: "web1", status: "Started", type: "container", description: "", created_at: "t", last_used_at: "t", config: {}, devices: {}, profiles: [], project: "default", ephemeral: false },
+      "default/web2": { name: "web2", status: "Running", type: "virtual-machine", description: "", created_at: "t", last_used_at: "t", config: {}, devices: {}, profiles: [], project: "default", ephemeral: false },
     });
     render(<DashboardPage />);
-    expect(await screen.findByText("2 GiB / 16 GiB")).toBeInTheDocument();
-    expect(screen.getByText("8 cores · 1 running")).toBeInTheDocument();
+    expect(await screen.findByText("4 GiB / 16 GiB")).toBeInTheDocument();
+    expect(screen.getByText("8 cores · 2 running")).toBeInTheDocument();
   });
 });

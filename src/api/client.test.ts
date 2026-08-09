@@ -24,6 +24,54 @@ describe("ApiClient", () => {
     expect(fetch).toHaveBeenCalledWith("/1.0/instances?recursion=1", expect.anything());
   });
 
+  it("unwraps the Incus sync envelope in GET responses", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse(200, {
+          type: "sync",
+          status: "Success",
+          status_code: 200,
+          metadata: { cpu: { total: 8 }, memory: { total: 17179869184, used: 0 } },
+        })
+      )
+    );
+    const client = new ApiClient("/1.0");
+    const data = await client.get<{ cpu: { total: number }; memory: { total: number; used: number } }>("/resources");
+    expect(data).toEqual({ cpu: { total: 8 }, memory: { total: 17179869184, used: 0 } });
+  });
+
+  it("unwraps the Incus sync envelope in list responses", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse(200, {
+          type: "sync",
+          status: "Success",
+          status_code: 200,
+          metadata: ["/1.0/instances/web1", { name: "web1" }],
+        })
+      )
+    );
+    const client = new ApiClient("/1.0");
+    const data = await client.list<{ name: string }>("/instances");
+    expect(data).toEqual([{ name: "web1" }]);
+  });
+
+  it("does not unwrap async responses", async () => {
+    const asyncBody = {
+      type: "async",
+      status: "Running",
+      status_code: 100,
+      operation: "/1.0/operations/op1",
+      metadata: null,
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(200, asyncBody)));
+    const client = new ApiClient("/1.0");
+    const data = await client.get<{ type: string; operation: string }>("/x");
+    expect(data).toEqual(asyncBody);
+  });
+
   it("POSTs JSON body", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(200, { type: "sync" })));
     const client = new ApiClient("/1.0");

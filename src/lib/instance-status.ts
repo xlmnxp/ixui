@@ -1,9 +1,11 @@
 import type { BadgeTone } from "../components/badge";
 
 const STATUS_TONES: Record<string, BadgeTone> = {
+  Running: "success",
   Started: "success",
   Stopped: "neutral",
   Frozen: "info",
+  Paused: "info",
   Starting: "info",
   Stopping: "warning",
   Freezing: "info",

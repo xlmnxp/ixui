@@ -49,7 +49,7 @@ export function DashboardPage() {
   }, []);
 
   const scoped = Object.values(instances).filter((i) => i.project === project);
-  const running = scoped.filter((i) => i.status === "Started");
+  const running = scoped.filter((i) => i.status === "Started" || i.status === "Running");
   const runningKey = running.map((i) => i.name).join(",");
 
   useEffect(() => {

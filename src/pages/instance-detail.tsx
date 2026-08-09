@@ -73,9 +73,9 @@ export function InstanceDetailPage() {
         <h1 className="text-lg font-semibold text-text-primary">{instance.name}</h1>
         <Badge tone={instanceStatusTone(instance.status)}>{instance.status}</Badge>
         <div className="ml-auto flex gap-2">
-          <Button size="sm" variant="secondary" data-testid="detail-action-start" disabled={instance.status === "Started"} onClick={() => setState("start")}>Start</Button>
-          <Button size="sm" variant="secondary" data-testid="detail-action-stop" disabled={instance.status !== "Started" && instance.status !== "Frozen"} onClick={() => setState("stop")}>Stop</Button>
-          <Button size="sm" variant="secondary" data-testid="detail-action-restart" disabled={instance.status !== "Started"} onClick={() => setState("restart")}>Restart</Button>
+          <Button size="sm" variant="secondary" data-testid="detail-action-start" disabled={instance.status === "Started" || instance.status === "Running"} onClick={() => setState("start")}>Start</Button>
+          <Button size="sm" variant="secondary" data-testid="detail-action-stop" disabled={instance.status === "Stopped" || instance.status === "Error" || instance.status === "Stopping" || instance.status === "Freezing"} onClick={() => setState("stop")}>Stop</Button>
+          <Button size="sm" variant="secondary" data-testid="detail-action-restart" disabled={instance.status !== "Started" && instance.status !== "Running"} onClick={() => setState("restart")}>Restart</Button>
           <Button size="sm" variant="danger" data-testid="detail-action-delete" onClick={() => setDeleteOpen(true)}>Delete</Button>
         </div>
       </div>

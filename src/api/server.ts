@@ -5,6 +5,6 @@ export class ServerApi {
   constructor(private client: ApiClient) {}
 
   info(): Promise<ServerInfo> {
-    return this.client.get<ServerInfo>("/");
+    return this.client.get<ServerInfo>("");
   }
 }

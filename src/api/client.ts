@@ -63,6 +63,9 @@ export class ApiClient {
       throw new ApiError(res.status, err?.error_code, err?.error ?? res.statusText);
     }
     markAuthenticated();
+    if (json && typeof json === "object" && (json as { type?: unknown }).type === "sync") {
+      json = (json as { metadata: unknown }).metadata;
+    }
     return json as T;
   }
 
