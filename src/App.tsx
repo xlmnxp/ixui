@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { Shell } from "./shell/layout";
 import { AuthScreen } from "./auth/auth-screen";
 import { authStore } from "./auth/status";
@@ -6,10 +6,16 @@ import { useStore } from "./state/store";
 import { Toaster } from "./components/toast";
 import { DashboardPage } from "./pages/dashboard";
 import { InstanceDetailPage } from "./pages/instance-detail";
+import { InstanceTerminal } from "./pages/instance-terminal";
 import { Gallery } from "./pages/gallery";
 import { ProjectsPage } from "./pages/projects";
 import { ProjectOverview } from "./pages/project-overview";
 import { MemberView } from "./pages/member-view";
+
+function TerminalPage() {
+  const { name = "" } = useParams();
+  return <InstanceTerminal instanceName={name} />;
+}
 
 export function App() {
   const auth = useStore(authStore);
@@ -21,6 +27,7 @@ export function App() {
   return (
     <BrowserRouter basename="/ui/">
       <Routes>
+        <Route path="terminal/:name" element={<TerminalPage />} />
         <Route element={<Shell />}>
           <Route index element={<ProjectOverview />} />
           <Route path="dashboard" element={<DashboardPage />} />
