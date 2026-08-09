@@ -23,6 +23,12 @@ and `INCUS_TARGET` env vars.
 `lucide-react` is the only icon dependency (component system rule: no other UI
 libraries).
 
+The instance Terminal opens in a browser popup at `/ui/terminal/<instance>` with
+a shell (and VGA toggle for VMs). The sidebar tree's `+` buttons create
+instances, targeted at the hovered cluster member. Config-key descriptions come
+from `GET /1.0/metadata` — enable them on the server with
+`incus config set metadata.enabled true` (the UI shows "—" when unavailable).
+
 ## Testing
 
 ```bash

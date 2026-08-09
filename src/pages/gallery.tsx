@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Bell, Maximize2, Plus, ShieldAlert } from "lucide-react";
 import { Button } from "../components/button";
 import { Badge } from "../components/badge";
 import { StatusDot } from "../components/status-dot";
@@ -85,8 +86,8 @@ export function Gallery() {
       </Section>
 
       <Section title="Overlay">
-        <Button onClick={() => setDialogOpen(true)}>Open dialog</Button>
-        <Button onClick={() => setConfirmOpen(true)}>Open confirm</Button>
+        <Button onClick={() => setDialogOpen(true)}><Maximize2 size={14} /> Open dialog</Button>
+        <Button onClick={() => setConfirmOpen(true)}><ShieldAlert size={14} /> Open confirm</Button>
         <Tooltip label="Tooltip text"><Button>Hover me</Button></Tooltip>
       </Section>
 
@@ -144,7 +145,7 @@ export function Gallery() {
       </Section>
 
       <Section title="EmptyState">
-        <EmptyState title="No instances" description="Create your first instance." action={<Button size="sm">Create instance</Button>} />
+        <EmptyState title="No instances" description="Create your first instance." action={<Button size="sm"><Plus size={14} /> Create instance</Button>} />
       </Section>
 
       <Section title="SplitPane">
@@ -154,7 +155,7 @@ export function Gallery() {
       </Section>
 
       <Section title="Toast">
-        <Button onClick={() => toast("success", "Toast works")}>Fire toast</Button>
+        <Button onClick={() => toast("success", "Toast works")}><Bell size={14} /> Fire toast</Button>
       </Section>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} title="Dialog">Dialog body.</Dialog>
