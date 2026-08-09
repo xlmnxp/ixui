@@ -31,7 +31,7 @@ describe("KeyValueEditor", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<KeyValueEditor values={{ key1: "a", key2: "b" }} onChange={onChange} />);
-    await user.click(screen.getByTestId("kv-row-key1"));
+    await user.click(screen.getByTestId("kv-check-key1"));
     await user.click(screen.getByTestId("kv-remove"));
     expect(onChange).toHaveBeenCalledWith({ key2: "b" });
   });
@@ -71,7 +71,7 @@ describe("KeyValueEditor", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<KeyValueEditor values={{ key1: "a" }} onChange={onChange} />);
-    await user.click(screen.getByTestId("kv-row-key1"));
+    await user.click(screen.getByTestId("kv-check-key1"));
     expect(screen.getByTestId("kv-edit")).toBeEnabled();
     await user.click(screen.getByTestId("kv-edit"));
     const keyInput = screen.getByTestId("kv-key-edit-key1");
@@ -88,14 +88,14 @@ describe("KeyValueEditor", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<Editable onChange={onChange} />);
-    await user.click(screen.getByTestId("kv-row-key1"));
+    await user.click(screen.getByTestId("kv-check-key1"));
     await user.click(screen.getByTestId("kv-edit"));
     const keyInput = screen.getByTestId("kv-key-edit-key1");
     await user.clear(keyInput);
     await user.type(keyInput, "key2");
     await user.keyboard("{Enter}");
     expect(onChange).toHaveBeenLastCalledWith({ key2: "a" });
-    expect(screen.getByTestId("kv-row-key2")).toHaveAttribute("data-selected", "true");
+    expect(screen.getByTestId("kv-check-key2")).toBeChecked();
     expect(screen.getByTestId("kv-remove")).toBeEnabled();
     await user.click(screen.getByTestId("kv-remove"));
     expect(onChange).toHaveBeenLastCalledWith({});
@@ -105,9 +105,41 @@ describe("KeyValueEditor", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<KeyValueEditor values={{ key1: "a", key2: "b" }} onChange={onChange} />);
-    await user.click(screen.getByTestId("kv-row-key1"));
+    await user.click(screen.getByTestId("kv-check-key1"));
     await user.click(screen.getByTestId("kv-remove"));
     expect(onChange).toHaveBeenCalledWith({ key2: "b" });
+  });
+
+  it("selects rows via checkboxes (multi-select) and removes all selected", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<KeyValueEditor values={{ key1: "a", key2: "b" }} onChange={onChange} />);
+    await user.click(screen.getByTestId("kv-check-key1"));
+    await user.click(screen.getByTestId("kv-check-key2"));
+    await user.click(screen.getByTestId("kv-remove"));
+    expect(onChange).toHaveBeenCalledWith({});
+  });
+
+  it("edits the first selected row", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<KeyValueEditor values={{ key1: "a", key2: "b" }} onChange={onChange} />);
+    await user.click(screen.getByTestId("kv-check-key1"));
+    await user.click(screen.getByTestId("kv-check-key2"));
+    await user.click(screen.getByTestId("kv-edit"));
+    expect(screen.getByTestId("kv-key-edit-key1")).toBeInTheDocument();
+    await user.clear(screen.getByTestId("kv-key-edit-key1"));
+    await user.type(screen.getByTestId("kv-key-edit-key1"), "key3");
+    await user.keyboard("{Enter}");
+    expect(onChange).toHaveBeenLastCalledWith({ key3: "a", key2: "b" });
+  });
+
+  it("select-all checks every row", async () => {
+    const user = userEvent.setup();
+    render(<KeyValueEditor values={{ key1: "a", key2: "b" }} onChange={() => {}} />);
+    await user.click(screen.getByTestId("kv-select-all"));
+    expect(screen.getByTestId("kv-check-key1")).toBeChecked();
+    expect(screen.getByTestId("kv-check-key2")).toBeChecked();
   });
 
   it("renders descriptions from the prop with fallback", () => {

@@ -10,7 +10,7 @@ export interface KeyValueEditorProps {
 }
 
 export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", descriptions }: KeyValueEditorProps) {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [draftKey, setDraftKey] = useState("");
   const [draftValue, setDraftValue] = useState("");
@@ -23,7 +23,17 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
 
   const entries = Object.entries(displayValues);
   const entryCount = entries.length;
-  const selectedExists = selected !== null && selected in displayValues;
+  const allSelected = entryCount > 0 && selectedKeys.length === entryCount;
+
+  const toggle = (key: string) => {
+    setSelectedKeys((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
+  };
+
+  const toggleAll = () => {
+    setSelectedKeys(allSelected ? [] : entries.map(([key]) => key));
+  };
 
   const startEditing = (key: string) => {
     editingRef.current = key;
@@ -42,7 +52,7 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
     }
     next[finalKey] = newValue;
     setEditing(null);
-    setSelected(finalKey);
+    setSelectedKeys((prev) => (prev.includes(oldKey) ? prev.map((k) => (k === oldKey ? finalKey : k)) : prev));
     if (finalKey === oldKey && next[oldKey] === values[oldKey]) return;
     const nextDisplay = { ...displayValues };
     if (finalKey !== oldKey) {
@@ -59,13 +69,15 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
   };
 
   const removeSelected = () => {
-    if (!selected) return;
+    if (selectedKeys.length === 0) return;
     const next = { ...values };
-    delete next[selected];
     const nextDisplay = { ...displayValues };
-    delete nextDisplay[selected];
+    for (const key of selectedKeys) {
+      delete next[key];
+      delete nextDisplay[key];
+    }
     setDisplayValues(nextDisplay);
-    setSelected(null);
+    setSelectedKeys([]);
     onChange(next);
   };
 
@@ -123,12 +135,15 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
     <div className="space-y-2" data-testid={dataTestId}>
       <div className="flex items-center gap-2">
         <Button variant="secondary" size="sm" data-testid="kv-add" onClick={addEntry}><Plus size={13} /> Add</Button>
-        <Button variant="secondary" size="sm" data-testid="kv-edit" onClick={() => { if (selected) startEditing(selected); }} disabled={!selectedExists}><Pencil size={13} /> Edit</Button>
-        <Button variant="secondary" size="sm" data-testid="kv-remove" onClick={removeSelected} disabled={!selectedExists}><Trash2 size={13} /> Remove</Button>
+        <Button variant="secondary" size="sm" data-testid="kv-edit" onClick={() => { if (selectedKeys[0]) startEditing(selectedKeys[0]); }} disabled={selectedKeys.length === 0}><Pencil size={13} /> Edit</Button>
+        <Button variant="secondary" size="sm" data-testid="kv-remove" onClick={removeSelected} disabled={selectedKeys.length === 0}><Trash2 size={13} /> Remove</Button>
       </div>
       <table className="w-full border-collapse">
-        <thead>
-          <tr className="text-left text-xs font-medium text-text-secondary">
+        <thead className="border-b border-border bg-surface-700 text-left text-xs text-text-secondary">
+          <tr>
+            <th className="w-8 px-2 py-1">
+              <input type="checkbox" data-testid="kv-select-all" checked={allSelected} onChange={toggleAll} className="accent-accent-600" aria-label="Select all" />
+            </th>
             <th className="px-2 py-1">Key</th>
             <th className="px-2 py-1">Value</th>
             <th className="px-2 py-1">Description</th>
@@ -139,10 +154,12 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
             <tr
               key={key}
               data-testid={`kv-row-${key}`}
-              data-selected={selected === key}
-              className={`group ${selected === key ? "bg-accent-600/10" : ""}`}
-              onClick={() => setSelected(key)}
+              data-selected={selectedKeys.includes(key)}
+              className={`group ${selectedKeys.includes(key) ? "bg-accent-600/10" : ""}`}
             >
+              <td className="w-8 px-2 py-1">
+                <input type="checkbox" data-testid={`kv-check-${key}`} checked={selectedKeys.includes(key)} onChange={() => toggle(key)} className="accent-accent-600" aria-label={`Select ${key}`} />
+              </td>
               <td data-testid={`kv-key-${key}`} onDoubleClick={() => startEditing(key)} className="px-2 py-1 font-mono text-xs text-text-primary">
                 {editing === key ? keyInput(key) : (
                   <span className="inline-flex items-center gap-1.5">
