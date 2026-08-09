@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Database, Plus, Trash2, X } from "lucide-react";
 import { infraApi } from "../api";
 import type { StoragePool, StorageVolume } from "../api/types";
 import { Table } from "../components/table";
@@ -104,7 +105,7 @@ export function StoragePage() {
         {
           key: "actions", header: "", align: "right",
           render: (v: StorageVolume) => (
-            <Button size="sm" variant="ghost" data-testid={`volume-delete-${v.name}`} onClick={() => setDeleteVolumeTarget({ pool: poolName, name: v.name })}>Delete</Button>
+            <Button size="sm" variant="ghost" data-testid={`volume-delete-${v.name}`} onClick={() => setDeleteVolumeTarget({ pool: poolName, name: v.name })}><Trash2 size={14} /> Delete</Button>
           ),
         },
       ]}
@@ -122,18 +123,18 @@ export function StoragePage() {
       key: "actions", header: "", align: "right",
       render: (p) => (
         <div className="flex justify-end gap-1">
-          <Button size="sm" variant="ghost" data-testid={`pool-volumes-${p.name}`} onClick={() => void toggleVolumes(p.name)}>Volumes</Button>
-          <Button size="sm" variant="ghost" data-testid={`pool-delete-${p.name}`} onClick={() => setDeletePoolTarget(p)}>Delete</Button>
+          <Button size="sm" variant="ghost" data-testid={`pool-volumes-${p.name}`} onClick={() => void toggleVolumes(p.name)}><Database size={14} /> Volumes</Button>
+          <Button size="sm" variant="ghost" data-testid={`pool-delete-${p.name}`} onClick={() => setDeletePoolTarget(p)}><Trash2 size={14} /> Delete</Button>
         </div>
       ),
     },
   ];
 
   return (
-    <div className="space-y-4 p-6" data-testid="storage-page">
+    <div className="space-y-4" data-testid="storage-page">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text-primary">Storage pools</h1>
-        <Button size="sm" data-testid="pool-create-open" onClick={() => setCreateOpen(true)}>Create pool</Button>
+        <Button size="sm" data-testid="pool-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create pool</Button>
       </div>
 
       {pools.length === 0 ? (
@@ -151,8 +152,8 @@ export function StoragePage() {
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create storage pool" footer={
         <>
-          <Button variant="secondary" onClick={() => setCreateOpen(false)}>Cancel</Button>
-          <Button onClick={create} loading={busy} data-testid="pool-create-submit">Create</Button>
+          <Button variant="secondary" onClick={() => setCreateOpen(false)}><X size={14} /> Cancel</Button>
+          <Button onClick={create} loading={busy} data-testid="pool-create-submit"><Plus size={14} /> Create</Button>
         </>
       }>
         <div className="space-y-3">

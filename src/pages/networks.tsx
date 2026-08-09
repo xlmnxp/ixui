@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { infraApi } from "../api";
 import type { Network } from "../api/types";
 import { Table } from "../components/table";
@@ -79,18 +80,18 @@ export function NetworksPage() {
       key: "actions", header: "", align: "right",
       render: (n) => (
         <div className="flex justify-end gap-1">
-          <Button size="sm" variant="ghost" data-testid={`network-edit-${n.name}`} onClick={() => { setEditing(n); setDescription(n.description); }}>Edit</Button>
-          <Button size="sm" variant="ghost" data-testid={`network-delete-${n.name}`} onClick={() => setDeleteTarget(n)}>Delete</Button>
+          <Button size="sm" variant="ghost" data-testid={`network-edit-${n.name}`} onClick={() => { setEditing(n); setDescription(n.description); }}><Pencil size={14} /> Edit</Button>
+          <Button size="sm" variant="ghost" data-testid={`network-delete-${n.name}`} onClick={() => setDeleteTarget(n)}><Trash2 size={14} /> Delete</Button>
         </div>
       ),
     },
   ];
 
   return (
-    <div className="space-y-4 p-6" data-testid="networks-page">
+    <div className="space-y-4" data-testid="networks-page">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text-primary">Networks</h1>
-        <Button size="sm" data-testid="network-create-open" onClick={() => setCreateOpen(true)}>Create network</Button>
+        <Button size="sm" data-testid="network-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create network</Button>
       </div>
 
       {networks.length === 0 ? (
@@ -101,8 +102,8 @@ export function NetworksPage() {
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create network" footer={
         <>
-          <Button variant="secondary" onClick={() => setCreateOpen(false)}>Cancel</Button>
-          <Button onClick={create} loading={busy} data-testid="network-create-submit">Create</Button>
+          <Button variant="secondary" onClick={() => setCreateOpen(false)}><X size={14} /> Cancel</Button>
+          <Button onClick={create} loading={busy} data-testid="network-create-submit"><Plus size={14} /> Create</Button>
         </>
       }>
         <div className="space-y-3">
@@ -119,8 +120,8 @@ export function NetworksPage() {
 
       <Dialog open={editing !== null} onClose={() => setEditing(null)} title={`Edit network ${editing?.name ?? ""}`} footer={
         <>
-          <Button variant="secondary" onClick={() => setEditing(null)}>Cancel</Button>
-          <Button onClick={save} loading={busy} data-testid="network-save">Save</Button>
+          <Button variant="secondary" onClick={() => setEditing(null)}><X size={14} /> Cancel</Button>
+          <Button onClick={save} loading={busy} data-testid="network-save"><Check size={14} /> Save</Button>
         </>
       }>
         <Input label="Description" name="network-edit-desc" data-testid="network-edit-desc" value={description} onChange={(e) => setDescription(e.target.value)} />

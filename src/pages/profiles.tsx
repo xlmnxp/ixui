@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { infraApi } from "../api";
 import type { Profile } from "../api/types";
 import { Table } from "../components/table";
@@ -87,18 +88,18 @@ export function ProfilesPage() {
       key: "actions", header: "", align: "right",
       render: (p) => (
         <div className="flex justify-end gap-1">
-          <Button size="sm" variant="ghost" data-testid={`profile-edit-${p.name}`} onClick={() => openEdit(p.name)}>Edit</Button>
-          <Button size="sm" variant="ghost" data-testid={`profile-delete-${p.name}`} onClick={() => setDeleteTarget(p)}>Delete</Button>
+          <Button size="sm" variant="ghost" data-testid={`profile-edit-${p.name}`} onClick={() => openEdit(p.name)}><Pencil size={14} /> Edit</Button>
+          <Button size="sm" variant="ghost" data-testid={`profile-delete-${p.name}`} onClick={() => setDeleteTarget(p)}><Trash2 size={14} /> Delete</Button>
         </div>
       ),
     },
   ];
 
   return (
-    <div className="space-y-4 p-6" data-testid="profiles-page">
+    <div className="space-y-4" data-testid="profiles-page">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text-primary">Profiles</h1>
-        <Button size="sm" data-testid="profile-create-open" onClick={() => setCreateOpen(true)}>Create profile</Button>
+        <Button size="sm" data-testid="profile-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create profile</Button>
       </div>
 
       {profiles.length === 0 ? (
@@ -109,8 +110,8 @@ export function ProfilesPage() {
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create profile" footer={
         <>
-          <Button variant="secondary" onClick={() => setCreateOpen(false)}>Cancel</Button>
-          <Button onClick={create} loading={busy} data-testid="profile-create-submit">Create</Button>
+          <Button variant="secondary" onClick={() => setCreateOpen(false)}><X size={14} /> Cancel</Button>
+          <Button onClick={create} loading={busy} data-testid="profile-create-submit"><Plus size={14} /> Create</Button>
         </>
       }>
         <Input label="Name" name="profile-name" data-testid="profile-name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -118,8 +119,8 @@ export function ProfilesPage() {
 
       <Dialog open={editing !== null} onClose={() => setEditing(null)} title={`Edit profile ${editing?.name ?? ""}`} footer={
         <>
-          <Button variant="secondary" onClick={() => setEditing(null)}>Cancel</Button>
-          <Button onClick={save} loading={busy} data-testid="profile-save">Save</Button>
+          <Button variant="secondary" onClick={() => setEditing(null)}><X size={14} /> Cancel</Button>
+          <Button onClick={save} loading={busy} data-testid="profile-save"><Check size={14} /> Save</Button>
         </>
       }>
         <div className="space-y-3">
