@@ -7,6 +7,9 @@ vi.mock("../../api", () => ({
     get: vi.fn().mockResolvedValue({ name: "web1", status: "Stopped", type: "container", description: "old", created_at: "t", last_used_at: "t", config: { "limits.memory": "512MiB" }, devices: {}, profiles: [], project: "default", ephemeral: false }),
     update: vi.fn().mockResolvedValue(null),
   },
+  serverApi: {
+    metadata: vi.fn().mockResolvedValue({ configs: [] }),
+  },
 }));
 
 describe("ConfigTab", () => {
@@ -14,7 +17,7 @@ describe("ConfigTab", () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../../api");
     render(<ConfigTab instanceName="web1" />);
-    expect(await screen.findByTestId("kv-key-limits.memory")).toHaveValue("limits.memory");
+    expect(await screen.findByTestId("kv-key-limits.memory")).toHaveTextContent("limits.memory");
     await user.click(screen.getByTestId("config-save"));
     await waitFor(() => expect(instancesApi.update).toHaveBeenCalledWith("web1", expect.objectContaining({ config: { "limits.memory": "512MiB" } })));
   });
@@ -23,7 +26,8 @@ describe("ConfigTab", () => {
     const user = userEvent.setup();
     render(<ConfigTab instanceName="web1" />);
     await screen.findByTestId("kv-key-limits.memory");
-    await user.type(screen.getByTestId("kv-key-limits.memory"), " X");
+    await user.dblClick(screen.getByTestId("kv-key-limits.memory"));
+    await user.type(screen.getByTestId("kv-key-edit-limits.memory"), " X");
     await user.click(screen.getByTestId("config-save"));
     expect(screen.getByText(/Key must start with a letter/)).toBeInTheDocument();
   });

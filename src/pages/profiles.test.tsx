@@ -14,6 +14,9 @@ vi.mock("../api", () => ({
     updateProfile: vi.fn().mockResolvedValue(null),
     deleteProfile: vi.fn().mockResolvedValue(undefined),
   },
+  serverApi: {
+    metadata: vi.fn().mockResolvedValue({ configs: [] }),
+  },
 }));
 
 describe("ProfilesPage", () => {
@@ -40,7 +43,7 @@ describe("ProfilesPage", () => {
     render(<ProfilesPage />);
     await screen.findByText("default");
     await user.click(screen.getByTestId("profile-edit-default"));
-    expect(await screen.findByTestId("kv-key-limits.cpu")).toHaveValue("limits.cpu");
+    expect(await screen.findByTestId("kv-key-limits.cpu")).toHaveTextContent("limits.cpu");
     await user.click(screen.getByTestId("profile-save"));
     await waitFor(() => expect(infraApi.updateProfile).toHaveBeenCalledWith("default", expect.objectContaining({ config: { "limits.cpu": "2" } })));
   });

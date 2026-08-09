@@ -103,4 +103,11 @@ describe("API endpoints", () => {
     await clusterApi.listMembers();
     expect(fetchMock).toHaveBeenCalledWith("/1.0/cluster/members?recursion=1", expect.anything());
   });
+
+  it("server metadata is not project-scoped", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { configs: [{ key: "limits.memory", description: "Memory limit" }] }));
+    vi.stubGlobal("fetch", fetchMock);
+    await serverApi.metadata();
+    expect(fetchMock).toHaveBeenCalledWith("/1.0/metadata", expect.anything());
+  });
 });

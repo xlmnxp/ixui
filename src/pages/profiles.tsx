@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
-import { infraApi } from "../api";
+import { infraApi, serverApi } from "../api";
 import type { Profile } from "../api/types";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
@@ -21,12 +21,23 @@ export function ProfilesPage() {
   const [description, setDescription] = useState("");
   const [config, setConfig] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [descriptions, setDescriptions] = useState<Record<string, string>>({});
 
   const refresh = useCallback(() => {
     void infraApi.listProfiles().then(setProfiles).catch(() => {});
   }, []);
 
   useEffect(refresh, [refresh]);
+
+  useEffect(() => {
+    void serverApi.metadata()
+      .then((m) => {
+        const map: Record<string, string> = {};
+        for (const c of m.configs ?? []) if (c.key) map[c.key] = c.description;
+        setDescriptions(map);
+      })
+      .catch(() => {});
+  }, []);
 
   const create = async () => {
     setBusy(true);
@@ -125,7 +136,7 @@ export function ProfilesPage() {
       }>
         <div className="space-y-3">
           <Input label="Description" name="profile-description" data-testid="profile-description" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <KeyValueEditor values={config} onChange={setConfig} dataTestId="profile-editor" />
+          <KeyValueEditor values={config} onChange={setConfig} dataTestId="profile-editor" descriptions={descriptions} />
         </div>
       </Dialog>
 

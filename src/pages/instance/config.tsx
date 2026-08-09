@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, RotateCcw } from "lucide-react";
-import { instancesApi } from "../../api";
+import { instancesApi, serverApi } from "../../api";
 import type { Instance } from "../../api/types";
 import { KeyValueEditor } from "../../components/key-value-editor";
 import { Input } from "../../components/input";
@@ -18,6 +18,7 @@ export function ConfigTab({ instanceName }: ConfigTabProps) {
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [descriptions, setDescriptions] = useState<Record<string, string>>({});
 
   const refresh = useCallback(() => {
     instancesApi.get(instanceName).then((i) => {
@@ -28,6 +29,16 @@ export function ConfigTab({ instanceName }: ConfigTabProps) {
   }, [instanceName]);
 
   useEffect(refresh, [refresh]);
+
+  useEffect(() => {
+    void serverApi.metadata()
+      .then((m) => {
+        const map: Record<string, string> = {};
+        for (const c of m.configs ?? []) if (c.key) map[c.key] = c.description;
+        setDescriptions(map);
+      })
+      .catch(() => {});
+  }, []);
 
   const save = async () => {
     const nextErrors: Record<string, string> = {};
@@ -55,7 +66,7 @@ export function ConfigTab({ instanceName }: ConfigTabProps) {
       <Input label="Description" name="config-description" data-testid="config-description" value={description} onChange={(e) => setDescription(e.target.value)} />
       <div>
         <div className="mb-1 text-xs font-medium text-text-secondary">Configuration</div>
-        <KeyValueEditor values={config} onChange={setConfig} dataTestId="config-editor" />
+        <KeyValueEditor values={config} onChange={setConfig} dataTestId="config-editor" descriptions={descriptions} />
       </div>
       {Object.values(errors)[0] && <p className="text-xs text-red-300">{Object.values(errors)[0]}</p>}
       <div className="flex gap-2">
