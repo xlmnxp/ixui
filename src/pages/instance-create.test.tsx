@@ -92,4 +92,23 @@ describe("InstanceCreatePage", () => {
     expect(screen.getByTestId("instance-create-page")).toBeInTheDocument();
     expect(screen.queryByTestId("detail-page")).not.toBeInTheDocument();
   });
+
+  it("does not send a project field in the create body", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../api");
+    render(
+      <MemoryRouter initialEntries={["/instances/new"]}>
+        <Routes>
+          <Route path="/instances/new" element={<InstanceCreatePage />} />
+          <Route path="*" element={null} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByText("Ubuntu 24.04");
+    await user.type(screen.getByTestId("create-name"), "web1");
+    await user.click(screen.getByTestId("create-submit"));
+    await waitFor(() => expect(instancesApi.create).toHaveBeenCalled());
+    const body = vi.mocked(instancesApi.create).mock.calls[0]![0] as unknown as Record<string, unknown>;
+    expect(body).not.toHaveProperty("project");
+  });
 });

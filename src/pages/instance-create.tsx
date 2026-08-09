@@ -6,12 +6,9 @@ import { Select } from "../components/select";
 import { Checkbox } from "../components/checkbox";
 import { Button } from "../components/button";
 import { toast } from "../components/toast";
-import { currentProjectStore } from "../state/projects";
-import { useStore } from "../state/store";
 import type { Image, Profile, AsyncResponse } from "../api/types";
 
 export function InstanceCreatePage() {
-  const project = useStore(currentProjectStore);
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [type, setType] = useState<"container" | "virtual-machine">("container");
@@ -59,7 +56,6 @@ export function InstanceCreatePage() {
         profiles: profileNames,
         source: imageFingerprint ? { type: "image" as const, fingerprint: imageFingerprint } : undefined,
         config,
-        project,
       };
       const result = await instancesApi.create(body);
       if (result && result.type === "async") {

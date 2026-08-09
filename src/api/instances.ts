@@ -24,11 +24,11 @@ export class InstancesApi {
   }
 
   create(body: CreateInstanceBody): Promise<AsyncResponse | SyncResponse | null> {
-    return this.client.post(`/instances`, body);
+    return this.client.post(`/instances${projectQuery()}`, body);
   }
 
   update(name: string, body: { config?: Record<string, string>; description?: string; ephemeral?: boolean }): Promise<AsyncResponse | SyncResponse | null> {
-    return this.client.put(`/instances/${name}`, body);
+    return this.client.put(`/instances/${name}${projectQuery()}`, body);
   }
 
   delete(name: string): Promise<void> {
@@ -44,7 +44,7 @@ export class InstancesApi {
   }
 
   state(name: string): Promise<InstanceStateInfo> {
-    return this.client.get<InstanceStateInfo>(`/instances/${name}/state`);
+    return this.client.get<InstanceStateInfo>(`/instances/${name}/state${projectQuery()}`);
   }
 
   exec(name: string, command: string[], interactive: boolean): Promise<AsyncResponse | null> {

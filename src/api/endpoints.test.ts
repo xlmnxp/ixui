@@ -77,4 +77,16 @@ describe("API endpoints", () => {
     expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/instances?project=prod&recursion=1");
     expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/images?project=prod&recursion=1");
   });
+
+  it("scopes instance create, update, and state to the current project", async () => {
+    setProjectProvider(() => "prod");
+    const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
+    vi.stubGlobal("fetch", fetchMock);
+    await instancesApi.create({ name: "web1", type: "container" });
+    await instancesApi.update("web1", { description: "x" });
+    await instancesApi.state("web1");
+    expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/instances?project=prod");
+    expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/instances/web1?project=prod");
+    expect(fetchMock.mock.calls[2]![0]).toBe("/1.0/instances/web1/state?project=prod");
+  });
 });
