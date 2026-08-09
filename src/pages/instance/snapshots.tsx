@@ -50,6 +50,7 @@ export function SnapshotsTab({ instanceName }: SnapshotsTabProps) {
     try {
       await instancesApi.restoreSnapshot(instanceName, restoreName);
       toast("success", `Restored ${restoreName}`);
+      refresh();
       setRestoreName(null);
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Restore failed");
