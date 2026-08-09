@@ -28,7 +28,7 @@ export function LogsTab({ instanceName }: LogsTabProps) {
   if (files.length === 0) return <EmptyState title="No logs" description="This instance has no log files." />;
 
   return (
-    <div className="space-y-3" data-testid="logs-tab">
+    <div className="space-y-3 p-3" data-testid="logs-tab">
       <div className="flex flex-wrap gap-2">
         {files.map((file) => (
           <button

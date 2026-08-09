@@ -96,7 +96,7 @@ export function InstancesPage({ location, onCreate }: { location?: string; onCre
 
   return (
     <div className="space-y-4" data-testid="instances-page">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-3 pt-2">
         <h1 className="text-lg font-semibold text-text-primary">Instances</h1>
         <div className="flex gap-2">
           {onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create"><Plus size={14} /> Create instance</Button>}
@@ -110,6 +110,7 @@ export function InstancesPage({ location, onCreate }: { location?: string; onCre
 
       {scoped.length === 0 ? (
         <EmptyState
+          className="m-3"
           title="No instances"
           description="Create your first instance to get started."
           action={onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create-empty"><Plus size={14} /> Create instance</Button>}
