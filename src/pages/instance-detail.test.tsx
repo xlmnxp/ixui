@@ -47,7 +47,7 @@ describe("InstanceDetailPage", () => {
       </MemoryRouter>
     );
     await screen.findByText("web1");
-    await user.click(screen.getByTestId("tab-config"));
+    await user.click(screen.getByTestId("vtab-config"));
     expect(screen.getByTestId("config-tab")).toBeInTheDocument();
   });
 

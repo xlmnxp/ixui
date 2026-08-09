@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Camera, FileText, Gauge, Settings, Terminal } from "lucide-react";
 import { instancesApi } from "../api";
 import type { Instance } from "../api/types";
-import { Tabs } from "../components/tabs";
+import { VerticalTabs } from "../components/vertical-tabs";
 import { Badge } from "../components/badge";
 import { Button } from "../components/button";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { toast } from "../components/toast";
 import { instanceStatusTone } from "../lib/instance-status";
+import { InstanceStatusIcon } from "../shell/instance-icon";
 import { OverviewTab } from "./instance-overview";
 import { ConsoleTab } from "./instance/console";
 import { SnapshotsTab } from "./instance/snapshots";
@@ -60,16 +62,17 @@ export function InstanceDetailPage() {
   if (!instance) return <div className="p-6" data-testid="instance-loading">Loading…</div>;
 
   const tabs = [
-    { key: "overview", label: "Overview" },
-    { key: "console", label: "Console" },
-    { key: "snapshots", label: "Snapshots" },
-    { key: "config", label: "Config" },
-    { key: "logs", label: "Logs" },
+    { key: "overview", label: "Overview", icon: <Gauge size={14} /> },
+    { key: "console", label: "Console", icon: <Terminal size={14} /> },
+    { key: "snapshots", label: "Snapshots", icon: <Camera size={14} /> },
+    { key: "config", label: "Config", icon: <Settings size={14} /> },
+    { key: "logs", label: "Logs", icon: <FileText size={14} /> },
   ];
 
   return (
-    <div className="space-y-4 p-6" data-testid="instance-detail-page">
-      <div className="flex items-center gap-3">
+    <div className="flex h-full flex-col" data-testid="instance-detail-page">
+      <div className="flex items-center gap-3 p-6 pb-4">
+        <InstanceStatusIcon status={instance.status} />
         <h1 className="text-lg font-semibold text-text-primary">{instance.name}</h1>
         <Badge tone={instanceStatusTone(instance.status)}>{instance.status}</Badge>
         <div className="ml-auto flex gap-2">
@@ -80,13 +83,16 @@ export function InstanceDetailPage() {
         </div>
       </div>
 
-      <Tabs tabs={tabs} active={tab} onChange={(key) => navigate(`/instances/${name}/${key}`)} />
-
-      {tab === "overview" && <OverviewTab instance={instance} />}
-      {tab === "console" && <ConsoleTab instanceName={name} />}
-      {tab === "snapshots" && <SnapshotsTab instanceName={name} />}
-      {tab === "config" && <ConfigTab instanceName={name} />}
-      {tab === "logs" && <LogsTab instanceName={name} />}
+      <div className="flex h-full min-h-0">
+        <VerticalTabs tabs={tabs} active={tab} onChange={(key) => navigate(`/instances/${name}/${key}`)} />
+        <div className="min-w-0 flex-1 overflow-auto p-6">
+          {tab === "overview" && <OverviewTab instance={instance} />}
+          {tab === "console" && <ConsoleTab instanceName={name} />}
+          {tab === "snapshots" && <SnapshotsTab instanceName={name} />}
+          {tab === "config" && <ConfigTab instanceName={name} />}
+          {tab === "logs" && <LogsTab instanceName={name} />}
+        </div>
+      </div>
 
       <ConfirmDialog
         open={deleteOpen}
