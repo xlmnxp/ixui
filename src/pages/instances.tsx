@@ -13,6 +13,7 @@ import { Button } from "../components/button";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { EmptyState } from "../components/empty-state";
 import { toast } from "../components/toast";
+import { Play, Square, RotateCw, Snowflake, Trash2, Plus, Eye } from "lucide-react";
 import type { Instance } from "../api/types";
 
 type Action = "start" | "stop" | "restart" | "freeze" | "unfreeze";
@@ -83,8 +84,9 @@ export function InstancesPage({ location, onCreate }: { location?: string; onCre
       key: "actions", header: "", align: "right",
       render: (i) => (
         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-          <Button size="sm" variant="ghost" disabled={busy[i.name] ?? false} data-testid={`row-start-${i.name}`} onClick={() => runAction("start", [i.name])}>Start</Button>
-          <Button size="sm" variant="ghost" disabled={busy[i.name] ?? false} data-testid={`row-stop-${i.name}`} onClick={() => runAction("stop", [i.name])}>Stop</Button>
+          <Button size="sm" variant="ghost" data-testid={`row-overview-${i.name}`} onClick={() => navigate(`/instances/${i.name}`)} aria-label={`Overview ${i.name}`}><Eye size={14} /></Button>
+          <Button size="sm" variant="ghost" disabled={busy[i.name] ?? false} data-testid={`row-start-${i.name}`} onClick={() => runAction("start", [i.name])}><Play size={14} /> Start</Button>
+          <Button size="sm" variant="ghost" disabled={busy[i.name] ?? false} data-testid={`row-stop-${i.name}`} onClick={() => runAction("stop", [i.name])}><Square size={14} /> Stop</Button>
         </div>
       ),
     },
@@ -93,16 +95,16 @@ export function InstancesPage({ location, onCreate }: { location?: string; onCre
   const actionDisabled = selectedKeys.length === 0;
 
   return (
-    <div className="space-y-4 p-6" data-testid="instances-page">
+    <div className="space-y-4" data-testid="instances-page">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text-primary">Instances</h1>
         <div className="flex gap-2">
-          {onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create">Create instance</Button>}
-          <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-start" onClick={() => runAction("start", selectedKeys)}>Start</Button>
-          <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-stop" onClick={() => runAction("stop", selectedKeys)}>Stop</Button>
-          <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-restart" onClick={() => runAction("restart", selectedKeys)}>Restart</Button>
-          <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-freeze" onClick={() => runAction("freeze", selectedKeys)}>Freeze</Button>
-          <Button size="sm" variant="danger" disabled={actionDisabled} data-testid="action-delete" onClick={() => setDeleteOpen(true)}>Delete</Button>
+          {onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create"><Plus size={14} /> Create instance</Button>}
+          <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-start" onClick={() => runAction("start", selectedKeys)}><Play size={14} /> Start</Button>
+          <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-stop" onClick={() => runAction("stop", selectedKeys)}><Square size={14} /> Stop</Button>
+          <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-restart" onClick={() => runAction("restart", selectedKeys)}><RotateCw size={14} /> Restart</Button>
+          <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-freeze" onClick={() => runAction("freeze", selectedKeys)}><Snowflake size={14} /> Freeze</Button>
+          <Button size="sm" variant="danger" disabled={actionDisabled} data-testid="action-delete" onClick={() => setDeleteOpen(true)}><Trash2 size={14} /> Delete</Button>
         </div>
       </div>
 
@@ -110,7 +112,7 @@ export function InstancesPage({ location, onCreate }: { location?: string; onCre
         <EmptyState
           title="No instances"
           description="Create your first instance to get started."
-          action={onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create-empty">Create instance</Button>}
+          action={onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create-empty"><Plus size={14} /> Create instance</Button>}
         />
       ) : (
         <Table
