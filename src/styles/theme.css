@@ -3,29 +3,29 @@
 @theme {
   --font-sans: ui-sans-serif, system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
 
-  /* Incus accent — blue family anchored on the Incus brand color */
-  --color-accent-300: #7fb8ff;
-  --color-accent-400: #5799f0;
-  --color-accent-500: #3d8cff;
-  --color-accent-600: #2f6fd0;
-  --color-accent-700: #275ba8;
+  /* Incus brand accent — anchored on the official logo color #dd4814 */
+  --color-accent-300: #f59b70;
+  --color-accent-400: #f0763f;
+  --color-accent-500: #e85c26;
+  --color-accent-600: #dd4814;
+  --color-accent-700: #b03910;
 
-  /* Dark slate surfaces (Proxmox-dark base) */
-  --color-surface-950: #15181b;
-  --color-surface-900: #1a1d21;
-  --color-surface-800: #22262b;
-  --color-surface-700: #2b3036;
-  --color-surface-600: #343b42;
-  --color-surface-500: #3f474f;
-  --color-sidebar: #1a1d21;
+  /* Warm dark surfaces */
+  --color-surface-950: #191817;
+  --color-surface-900: #1f1e1d;
+  --color-surface-800: #262524;
+  --color-surface-700: #2e2d2b;
+  --color-surface-600: #383634;
+  --color-surface-500: #44413e;
+  --color-sidebar: #1f1e1d;
 
   /* Text + borders */
-  --color-text-primary: #e8eaed;
-  --color-text-secondary: #aeb4bc;
-  --color-text-tertiary: #7d848d;
-  --color-border: #383f47;
+  --color-text-primary: #edebe8;
+  --color-text-secondary: #b5b1ab;
+  --color-text-tertiary: #7e7a74;
+  --color-border: #3a3835;
 
-  /* Semantic */
+  /* Semantic (unchanged) */
   --color-success: #3fb950;
   --color-warning: #d29922;
   --color-danger: #f85149;

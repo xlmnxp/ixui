@@ -70,11 +70,11 @@ export function Table<T>({
 
   return (
     <div className="overflow-x-auto rounded border border-border">
-      <table className="w-full text-sm" data-testid={dataTestId}>
+      <table className="w-full text-[13px]" data-testid={dataTestId}>
         <thead className="bg-surface-700 text-left text-xs text-text-secondary">
           <tr>
             {onSelectionChange && (
-              <th className="w-8 px-3 py-2">
+              <th className="w-8 px-2.5 py-1.5">
                 <input type="checkbox" data-testid="select-all" checked={allSelected} onChange={toggleAll} className="accent-accent-600" aria-label="Select all" />
               </th>
             )}
@@ -83,7 +83,7 @@ export function Table<T>({
                 key={col.key}
                 data-testid={`th-${col.key}`}
                 onClick={() => headerClick(col)}
-                className={`px-3 py-2 ${col.align === "right" ? "text-right" : ""} ${col.sortValue ? "cursor-pointer select-none hover:text-text-primary" : ""}`}
+                className={`px-2.5 py-1.5 ${col.align === "right" ? "text-right" : ""} ${col.sortValue ? "cursor-pointer select-none hover:text-text-primary" : ""}`}
                 style={{ width: col.width }}
               >
                 {col.header}
@@ -112,7 +112,7 @@ export function Table<T>({
                   className={`text-text-primary ${onRowClick ? "cursor-pointer" : ""} ${selected ? "bg-accent-600/10" : "hover:bg-surface-700/60"}`}
                 >
                   {onSelectionChange && (
-                    <td className="px-3 py-2">
+                    <td className="px-2.5 py-1.5">
                       <input
                         type="checkbox"
                         data-testid="row-select"
@@ -125,7 +125,7 @@ export function Table<T>({
                     </td>
                   )}
                   {columns.map((col) => (
-                    <td key={col.key} className={`px-3 py-2 ${col.align === "right" ? "text-right" : ""}`} style={{ width: col.width }}>
+                    <td key={col.key} className={`px-2.5 py-1.5 ${col.align === "right" ? "text-right" : ""}`} style={{ width: col.width }}>
                       {col.render(row)}
                     </td>
                   ))}
