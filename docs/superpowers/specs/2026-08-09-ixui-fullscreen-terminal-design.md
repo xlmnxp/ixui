@@ -1,0 +1,83 @@
+# ixui Full-Screen Layout + Terminal Popup Design
+
+**Date:** 2026-08-09
+**Status:** Approved
+
+## Overview
+
+Three changes to ixui: (1) full-screen layout — remove page paddings, flush the vertical-tabs shell, and make tables edge-to-edge; (2) move the instance terminal out of the detail tabs into a dedicated browser-popup window (`/terminal/:name`), opened from an all-in-one action strip on the instance page; (3) tree hover create buttons (project + member nodes) that open the create wizard, with member-targeted creation via `?target=`.
+
+## Decisions
+
+| Topic | Decision |
+|---|---|
+| Approach | A: Extract + parallelize — terminal extraction and the CSS pass are independent tracks |
+| Top bar | No global bar — an all-in-one action strip on the instance detail page (name + status icon + Start/Stop/Restart/Delete + Terminal) |
+| Terminal popup | `window.open('/ui/terminal/<name>')` — standalone route OUTSIDE the Shell; shell + VGA toggle inside |
+| ConsoleTab | Deleted (logic extracted into `InstanceTerminal`) |
+| Tree hover + | Project node → wizard (current project); member node → wizard with `targetMember` → `POST /1.0/instances?target=<member>` |
+| Button icons | lucide icons (size 14) on all action buttons app-wide |
+| Sidebar/task log | Unchanged (already flush) |
+
+## 1. Full-Screen Layout Pass
+
+- **Page padding removed:** `p-6` on project overview content, instance detail, member view, and dashboard content → flush (0 padding) to the shell edges.
+- **Flush tabs + content:** `VerticalTabs` keeps its `border-r`; the outer gaps between tabs column and content are removed; content areas are borderless and fill the region.
+- **Tables full-width:** the `Table` primitive drops the `rounded border` wrapper div (row separation stays via `divide-y`); cell padding tightens to `px-2 py-1`; sticky header stays. The empty-state row keeps centered text.
+- **Sidebar + task log:** unchanged.
+
+## 2. Terminal Popup
+
+- **`InstanceTerminal`** (`src/pages/instance-terminal.tsx`): full-screen terminal reusing the verified exec/websocket logic from `ConsoleTab` (binary frames, control socket, window-resize, session guard, disconnect on unmount). No buttons or chrome. A small **shell / VGA toggle** (exec vs `PUT /instances/{name}/console`), defaulting to shell.
+- **Route `/terminal/:name`** registered OUTSIDE the `Shell` element (bare page, popup-friendly): full-viewport terminal on the app background, slim instance-name label top-left.
+- **`ConsoleTab` deleted** (`src/pages/instance/console.tsx` + `console.test.tsx`); the Console tab is removed from the instance detail `VerticalTabs`.
+- **All-in-one action strip** on instance detail (replaces the header block, above the side tabs, compact h-10, full-width, flush): instance name + `InstanceStatusIcon`, `Start`, `Stop`, `Restart`, `Delete` (existing action logic), then `Terminal` → `window.open(\`/ui/terminal/${name}\`, \`terminal-${name}\`, \`width=1000,height=640\`)`.
+
+## 3. Tree Hover Create Buttons
+
+- **`TreeNode` gains `action?: ReactNode`** in the Tree primitive — rendered at the row's right edge, visible on row hover (group-hover); the action's click stops propagation so it doesn't toggle expand/select.
+- **Tree model:** project node + each member node get an action: small `+` button `data-testid="tree-create-<node>"`.
+  - Project `+` → opens the wizard (current project).
+  - Member `+` → opens the wizard with `targetMember` set.
+- **Wizard `targetMember?: string`:** read-only line in the stage-4 summary ("Target member: <name>"); create call appends `?target=` when set.
+- **API:** `InstancesApi.create` gains optional `target?: string` — appended as `?target=` on the URL; body unchanged.
+- **Sidebar state:** `wizardOpen` + `wizardTarget` in the Sidebar; one wizard instance mounted in the sidebar alongside the tree (the overview's wizard instance stays independent).
+
+## 4. Button Icons Pass
+
+All action buttons app-wide get a lucide icon (size 14, before the label):
+
+| Button | Icon |
+|---|---|
+| Start | `Play` |
+| Stop | `Square` |
+| Restart | `RotateCw` |
+| Freeze | `Snowflake` |
+| Delete | `Trash2` |
+| Create instance (toolbar + tree +) | `Plus` |
+| Wizard Create (final stage) | `Check` |
+| Pull image / Pull (dialog) | `Download` |
+| Terminal / Open shell | `Terminal` |
+| Disconnect | `X` |
+| Back / Next | `ChevronLeft` / `ChevronRight` |
+| Cancel | `X` |
+| Save | `Check` |
+| Reset | `RotateCcw` |
+| Volumes | `Database` |
+| Set default | `Star` |
+| Task-log dismiss | `X` |
+
+- Icon-only buttons keep `aria-label` (already present where needed).
+- `Button` primitive needs no change (icons render as children with the existing `gap-2`).
+- Plain navigational text links (tree labels) get no icons.
+
+## 5. Testing
+
+- **Tree action:** unit test — node with `action` renders the action only on hover (assert presence + stopPropagation on click); tree-model test — project/member nodes carry `tree-create-*` actions.
+- **Wizard target:** test — `targetMember` prop flows into the create call URL (`?target=`); summary shows the target line.
+- **API:** test — `create` with `target` appends `?target=` and keeps `?project=`.
+- **Terminal page:** extraction keeps the existing console tests' coverage (exec + console flows) — port the meaningful assertions from `console.test.tsx` to `instance-terminal.test.tsx`; shell/VGA toggle test.
+- **Action strip:** instance-detail test — strip renders name/status/actions/Terminal; Terminal button calls `window.open` with the right URL (stub `window.open`).
+- **Layout pass:** no new tests (visual); existing tests must stay green (they assert testids/text, not paddings).
+- **Icons pass:** existing tests stay green (class/testid assertions unaffected); no icon-specific tests.
+- Manual Playwright verification at the end: popup opens a real terminal against the live cluster; tree hover + creates with target; full-screen tables.
