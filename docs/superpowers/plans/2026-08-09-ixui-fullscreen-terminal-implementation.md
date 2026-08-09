@@ -522,7 +522,7 @@ git commit -m "feat: instance table icons and overview row action"
 
 - [ ] **Step 4: README**
 
-`README.md` — under the component-system/dev section, add a line: terminal opens in a browser popup at `/ui/terminal/<instance>` (shell + VGA toggle), and the sidebar tree's `+` buttons create instances (member-targeted).
+`README.md` — under the component-system/dev section, add: terminal opens in a browser popup at `/ui/terminal/<instance>` (shell + VGA toggle); the sidebar tree's `+` buttons create instances (member-targeted); config-key descriptions come from `GET /1.0/metadata` — enable on the server with `incus config set metadata.enabled true` (the UI shows "—" when unavailable).
 
 - [ ] **Step 5: Full gates + build**
 
@@ -670,11 +670,7 @@ Pass `descriptions={descriptions}` to KeyValueEditor. Import `serverApi` from ".
 
 `src/pages/profiles.tsx` — same pattern in the edit-dialog flow: fetch metadata once on mount, pass `descriptions` to the KeyValueEditor in the edit dialog.
 
-- [ ] **Step 6: README note**
-
-`README.md` — in the dev section add: config-key descriptions come from `GET /1.0/metadata`; enable on the server with `incus config set metadata.enabled true` (the UI shows "—" when unavailable).
-
-- [ ] **Step 7: Verify**
+- [ ] **Step 6: Verify**
 
 Run: `npx vitest run && npm run typecheck && npm run lint`
 Expected: all pass.
