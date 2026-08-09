@@ -34,12 +34,15 @@ export function TopBar() {
   const chip = chipByStatus[auth];
 
   return (
-    <header className="flex h-12 items-center gap-4 border-b border-border bg-surface-900 px-4" data-testid="top-bar">
-      <Breadcrumbs items={crumbs} />
-      <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-text-secondary" data-testid="auth-chip">
-        <span className={`h-2 w-2 rounded-full ${chip.tone}`} />
-        {chip.label}
-      </span>
-    </header>
+    <>
+      <div className="h-1 bg-accent-600" data-testid="accent-band" />
+      <header className="flex h-12 items-center gap-4 border-b border-border bg-surface-900 px-4" data-testid="top-bar">
+        <Breadcrumbs items={crumbs} />
+        <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-text-secondary" data-testid="auth-chip">
+          <span className={`h-2 w-2 rounded-full ${chip.tone}`} />
+          {chip.label}
+        </span>
+      </header>
+    </>
   );
 }
