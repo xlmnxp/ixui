@@ -1,7 +1,9 @@
 # ixui — Incus Web UI
 
 A hand-crafted React web UI for Incus. Dark Proxmox-style theme with ESXi-style
-layout, built entirely on a custom component system (no UI libraries).
+layout, built entirely on a custom component system (no UI libraries). Features
+a cluster-aware member/instance tree, a project selector, vertical tabs for
+instance views, and a floating create-instance wizard.
 
 ## Development
 
@@ -17,6 +19,9 @@ npm run dev
 Open http://localhost:5173/ui/. The Vite plugin proxies `/1.0`, `/1.0/events`,
 and `/oidc` to incusd using your client cert. Override with `INCUS_CERT_DIR`
 and `INCUS_TARGET` env vars.
+
+`lucide-react` is the only icon dependency (component system rule: no other UI
+libraries).
 
 ## Testing
 
@@ -46,5 +51,6 @@ browser has the server's client certificate installed, or via OIDC otherwise.
 ## Component system
 
 Design tokens live in `src/styles/theme.css` (`@theme`). Primitives live in
-`src/components/`, each with unit + component tests. The gallery at
+`src/components/`, each with unit + component tests — including Window,
+VerticalTabs, and ProjectDropdown. The gallery at
 http://localhost:5173/ui/gallery shows every component and its variants.

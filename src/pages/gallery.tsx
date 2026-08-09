@@ -19,6 +19,10 @@ import { Tree } from "../components/tree";
 import { EmptyState } from "../components/empty-state";
 import { SplitPane } from "../components/split-pane";
 import { toast } from "../components/toast";
+import { Window } from "../components/window";
+import { VerticalTabs } from "../components/vertical-tabs";
+import { ProjectDropdown } from "../components/project-dropdown";
+import { InstanceIcon } from "../shell/instance-icon";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -33,6 +37,8 @@ export function Gallery() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [tab, setTab] = useState("a");
+  const [windowOpen, setWindowOpen] = useState(false);
+  const [vtab, setVtab] = useState("a");
 
   return (
     <div className="space-y-4 p-6" data-testid="gallery">
@@ -82,6 +88,27 @@ export function Gallery() {
         <Button onClick={() => setDialogOpen(true)}>Open dialog</Button>
         <Button onClick={() => setConfirmOpen(true)}>Open confirm</Button>
         <Tooltip label="Tooltip text"><Button>Hover me</Button></Tooltip>
+      </Section>
+
+      <Section title="Window">
+        <Button onClick={() => setWindowOpen(true)}>Open window</Button>
+        <Window open={windowOpen} onClose={() => setWindowOpen(false)} title="Example window" footer={<Button size="sm">OK</Button>}>
+          A floating window body.
+        </Window>
+      </Section>
+
+      <Section title="VerticalTabs">
+        <VerticalTabs tabs={[{ key: "a", label: "Tab A" }, { key: "b", label: "Tab B" }]} active={vtab} onChange={setVtab} />
+      </Section>
+
+      <Section title="ProjectDropdown">
+        <div className="w-56"><ProjectDropdown /></div>
+      </Section>
+
+      <Section title="InstanceIcon">
+        <InstanceIcon status="Running" type="container" />
+        <InstanceIcon status="Stopped" type="virtual-machine" />
+        <InstanceIcon status="Error" type="container" />
       </Section>
 
       <Section title="Progress">
