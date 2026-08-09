@@ -41,4 +41,17 @@ describe("Window", () => {
     fireEvent.pointerUp(window);
     expect(panel).toHaveStyle({ transform: "translate(50px, 20px)" });
   });
+
+  it("clamps drag to the centered viewport range", () => {
+    render(<Window open onClose={() => {}} title="T">x</Window>);
+    const header = screen.getByTestId("window-drag");
+    const panel = screen.getByTestId("window");
+    fireEvent.pointerDown(header, { clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(window, { clientX: 5000, clientY: 5000 });
+    expect(panel).toHaveStyle({ transform: "translate(192px, 124px)" });
+    fireEvent.pointerUp(window);
+    fireEvent.pointerDown(header, { clientX: 400, clientY: 300 });
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 0 });
+    expect(panel).toHaveStyle({ transform: "translate(-192px, -124px)" });
+  });
 });

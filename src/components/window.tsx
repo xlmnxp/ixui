@@ -38,13 +38,13 @@ export function Window({ open, onClose, title, subtitle, children, footer }: Win
     const onMove = (e: PointerEvent) => {
       const d = dragRef.current;
       if (!d) return;
-      const width = panelRef.current?.offsetWidth ?? 640;
-      const height = panelRef.current?.offsetHeight ?? 520;
+      const width = panelRef.current?.offsetWidth || 640;
+      const height = panelRef.current?.offsetHeight || 520;
       const maxX = Math.max(0, window.innerWidth - width);
       const maxY = Math.max(0, window.innerHeight - height);
       setPos({
-        x: Math.min(maxX, Math.max(0, d.origX + e.clientX - d.startX)),
-        y: Math.min(maxY, Math.max(0, d.origY + e.clientY - d.startY)),
+        x: Math.min(maxX / 2, Math.max(-maxX / 2, d.origX + e.clientX - d.startX)),
+        y: Math.min(maxY / 2, Math.max(-maxY / 2, d.origY + e.clientY - d.startY)),
       });
     };
     const onUp = () => {
