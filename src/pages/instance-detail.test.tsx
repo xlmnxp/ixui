@@ -65,4 +65,34 @@ describe("InstanceDetailPage", () => {
     await user.click(screen.getByTestId("detail-action-start"));
     await waitFor(() => expect(instancesApi.setState).toHaveBeenCalledWith("web1", "start"));
   });
+
+  it("renders the action strip", async () => {
+    render(
+      <MemoryRouter initialEntries={["/instances/web1"]}>
+        <Routes>
+          <Route path="/instances/:name/:tab?" element={<InstanceDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByText("web1");
+    expect(screen.getByTestId("instance-strip")).toBeInTheDocument();
+  });
+
+  it("opens the terminal popup", async () => {
+    const user = userEvent.setup();
+    const openSpy = vi.fn();
+    const restore = () => vi.unstubAllGlobals();
+    vi.stubGlobal("open", openSpy);
+    render(
+      <MemoryRouter initialEntries={["/instances/web1"]}>
+        <Routes>
+          <Route path="/instances/:name/:tab?" element={<InstanceDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByText("web1");
+    await user.click(screen.getByTestId("detail-terminal"));
+    expect(openSpy).toHaveBeenCalledWith("/ui/terminal/web1", "terminal-web1", "width=1000,height=640");
+    restore();
+  });
 });
