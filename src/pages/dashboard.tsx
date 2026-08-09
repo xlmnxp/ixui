@@ -76,7 +76,7 @@ export function DashboardPage() {
   const memPercent = resources ? Math.min(100, Math.max(0, Math.round((memSum / resources.memory.total) * 100))) : undefined;
 
   return (
-    <div className="space-y-4 p-6" data-testid="dashboard-page">
+    <div className="space-y-4" data-testid="dashboard-page">
       <h1 className="text-lg font-semibold text-text-primary">Dashboard</h1>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Card title="Server" value={server?.hostname ?? "…"} sub={server ? `Version ${server.version}` : undefined} />
