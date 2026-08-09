@@ -41,6 +41,20 @@ export function CreateInstanceWizard({ open, onClose }: CreateInstanceWizardProp
 
   useEffect(() => {
     if (!open) return;
+    setStage(1);
+    setType("container");
+    setName("");
+    setDescription("");
+    setImageFingerprint("");
+    setSearch("");
+    setProfiles(["default"]);
+    setMemory("");
+    setCpu("");
+    setNetwork("");
+    setPullOpen(false);
+    setPullAlias("");
+    setPullServer("https://images.linuxcontainers.org");
+    setBusy(false);
     void Promise.all([infraApi.listImages(), infraApi.listProfiles(), infraApi.listNetworks()])
       .then(([imgs, profs, nets]) => {
         setImages(imgs);

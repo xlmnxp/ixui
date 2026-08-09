@@ -16,7 +16,7 @@ const instanceNode = (i: Instance): TreeNode => ({
   label: (
     <span className="flex items-center gap-2">
       <InstanceIcon status={i.status} type={i.type} />
-      <span>{i.name}</span>
+      <Link to={`/instances/${i.name}`}>{i.name}</Link>
     </span>
   ),
 });
@@ -29,7 +29,7 @@ export function buildTree({ project, members, instancesByMember, unassigned }: T
       label: (
         <span className="flex items-center gap-2">
           <Server size={14} className="text-text-secondary" />
-          <span>{m.server_name}</span>
+          <Link to={`/members/${m.server_name}`}>{m.server_name}</Link>
           <span className={`h-2 w-2 rounded-full ${m.status === "Online" ? "bg-success" : "bg-text-tertiary"}`} />
         </span>
       ),

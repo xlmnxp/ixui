@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { Shell } from "./layout";
 import { operationsStore } from "../state/operations";
@@ -13,8 +14,16 @@ vi.mock("../api", () => ({
     listNetworks: vi.fn().mockResolvedValue([]),
     listPools: vi.fn().mockResolvedValue([]),
   },
-  instancesApi: { list: vi.fn().mockResolvedValue([]) },
-  clusterApi: { listMembers: vi.fn().mockResolvedValue([]) },
+  instancesApi: {
+    list: vi.fn().mockResolvedValue([
+      { name: "web1", status: "Running", type: "container", description: "", created_at: "t", last_used_at: "t", config: {}, devices: {}, profiles: [], project: "default", location: "incus-1", ephemeral: false },
+    ]),
+  },
+  clusterApi: {
+    listMembers: vi.fn().mockResolvedValue([
+      { server_name: "incus-1", url: "https://incus-1:8443", database: true, status: "Online", message: "", architecture: "x86_64" },
+    ]),
+  },
   eventStream: { connect: vi.fn(), onEvent: vi.fn() },
   eventsUrl: vi.fn(),
 }));
@@ -38,6 +47,29 @@ describe("Shell", () => {
     expect(await screen.findByTestId("sidebar")).toBeInTheDocument();
     expect(screen.getByTestId("project-selector")).toBeInTheDocument();
     expect(screen.getByTestId("tree")).toBeInTheDocument();
+  });
+
+  it("navigates to instance detail when an instance label is clicked", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<div>home</div>} />
+            <Route path="instances/:name" element={<div data-testid="instance-detail-page">detail</div>} />
+            <Route path="members/:name" element={<div data-testid="member-view">member</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(await screen.findByText("incus-1")).toBeInTheDocument();
+    await user.click(screen.getByTestId("tree-member-incus-1"));
+    expect(await screen.findByText("web1")).toBeInTheDocument();
+    await user.click(screen.getByText("web1"));
+    expect(await screen.findByTestId("instance-detail-page")).toBeInTheDocument();
+    await user.click(screen.getByText("incus-1"));
+    expect(await screen.findByTestId("member-view")).toBeInTheDocument();
+    await act(async () => {});
   });
 
   it("renders operations in the task log", async () => {

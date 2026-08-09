@@ -110,7 +110,7 @@ export function InstancesPage({ location, onCreate }: { location?: string; onCre
         <EmptyState
           title="No instances"
           description="Create your first instance to get started."
-          action={onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create">Create instance</Button>}
+          action={onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create-empty">Create instance</Button>}
         />
       ) : (
         <Table
