@@ -25,24 +25,34 @@ export function ConsoleTab({ instanceName }: ConsoleTabProps) {
   const termRef = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const controlRef = useRef<WebSocket | null>(null);
+  const sessionRef = useRef(0);
 
-  const disconnect = () => {
+  const cleanup = () => {
     wsRef.current?.close();
     wsRef.current = null;
     controlRef.current?.close();
     controlRef.current = null;
     termRef.current?.dispose();
     termRef.current = null;
+  };
+
+  const disconnect = () => {
+    sessionRef.current++;
+    cleanup();
     setStatus("idle");
   };
 
   const connect = async (kind: "exec" | "console") => {
     if (!containerRef.current) return;
+    disconnect();
+    const session = sessionRef.current;
     setStatus("connecting");
     try {
       const result = await (kind === "exec"
         ? instancesApi.exec(instanceName, ["/bin/sh"], true)
         : instancesApi.console(instanceName, 80, 24));
+      if (session !== sessionRef.current) return;
+
       const resultOp = (result as AsyncResponse | null)?.operation;
       const opId = resultOp?.split("/").pop();
       const metadata = (result as AsyncResponse)?.metadata;
@@ -65,7 +75,11 @@ export function ConsoleTab({ instanceName }: ConsoleTabProps) {
       const control = controlPath ? new WebSocket(toWsUrl(controlPath)) : null;
       controlRef.current = control;
 
+      let reachedConnected = false;
+      let lastDims: { cols: number; rows: number } | null = null;
+
       const sendResize = (cols: number, rows: number) => {
+        lastDims = { cols, rows };
         if (control && control.readyState === WebSocket.OPEN) {
           control.send(
             JSON.stringify({ command: "window-resize", args: { width: String(cols), height: String(rows) } })
@@ -79,7 +93,13 @@ export function ConsoleTab({ instanceName }: ConsoleTabProps) {
         if (dims) sendResize(dims.cols, dims.rows);
       };
 
+      if (control) {
+        control.onopen = () => {
+          if (lastDims) sendResize(lastDims.cols, lastDims.rows);
+        };
+      }
       ws.onopen = () => {
+        reachedConnected = true;
         fitAndResize();
         terminal.focus();
         setStatus("connected");
@@ -89,11 +109,13 @@ export function ConsoleTab({ instanceName }: ConsoleTabProps) {
         if (data) terminal.write(data);
       };
       ws.onclose = () => {
-        const wasConnected = wsRef.current === ws;
-        disconnect();
-        if (wasConnected) toast("info", "Console disconnected");
+        if (wsRef.current !== ws) return;
+        cleanup();
+        setStatus("idle");
+        if (reachedConnected) toast("info", "Console disconnected");
       };
       ws.onerror = () => {
+        cleanup();
         setStatus("error");
         toast("danger", "Console connection failed");
       };
@@ -102,6 +124,8 @@ export function ConsoleTab({ instanceName }: ConsoleTabProps) {
       });
       terminal.onResize(fitAndResize);
     } catch (err) {
+      if (session !== sessionRef.current) return;
+      cleanup();
       setStatus("error");
       toast("danger", err instanceof Error ? err.message : "Console failed to connect");
     }
