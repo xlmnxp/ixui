@@ -35,7 +35,9 @@ describe("InstanceDetailPage", () => {
     );
     expect(await screen.findByText("web1")).toBeInTheDocument();
     expect(screen.getByText("web server")).toBeInTheDocument();
+    expect(screen.getByTestId("kv-table")).toBeInTheDocument();
     expect(screen.getByText("512MiB")).toBeInTheDocument();
+    expect(screen.getByText("Property")).toBeInTheDocument();
   });
 
   it("switches tabs", async () => {
