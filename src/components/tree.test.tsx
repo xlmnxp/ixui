@@ -33,6 +33,17 @@ describe("Tree", () => {
     await user.click(screen.getByTestId("tree-instances"));
     expect(onSelect).toHaveBeenCalledWith("instances");
   });
+
+  it("renders a hover action and stops propagation", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const onAction = vi.fn();
+    render(<Tree nodes={[{ id: "n", label: "node", action: <button data-testid="node-action" onClick={onAction}>+</button> }]} onSelect={onSelect} />);
+    expect(screen.getByTestId("node-action")).toBeInTheDocument();
+    await user.click(screen.getByTestId("node-action"));
+    expect(onAction).toHaveBeenCalledTimes(1);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
 });
 
 describe("EmptyState", () => {

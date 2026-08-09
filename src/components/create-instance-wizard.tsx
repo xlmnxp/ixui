@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Box, Monitor, Search, RefreshCw } from "lucide-react";
+import { Box, Monitor, Search, RefreshCw, ChevronLeft, ChevronRight, Check, Download } from "lucide-react";
 import { Window } from "./window";
 import { Button } from "./button";
 import { Input } from "./input";
@@ -15,11 +15,12 @@ import type { Image, Profile, Network } from "../api/types";
 export interface CreateInstanceWizardProps {
   open: boolean;
   onClose: () => void;
+  targetMember?: string;
 }
 
 const LIMIT_KEYS: Record<"memory" | "cpu", string> = { memory: "limits.memory", cpu: "limits.cpu" };
 
-export function CreateInstanceWizard({ open, onClose }: CreateInstanceWizardProps) {
+export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInstanceWizardProps) {
   const project = useStore(currentProjectStore);
   const [stage, setStage] = useState(1);
   const [type, setType] = useState<"container" | "virtual-machine">("container");
@@ -114,7 +115,7 @@ export function CreateInstanceWizard({ open, onClose }: CreateInstanceWizardProp
         source: { type: "image", fingerprint: imageFingerprint },
         config,
         devices,
-      });
+      }, targetMember);
       if (result && "type" in result && result.type === "async") {
         const op = await operationsApi.wait(result.operation);
         if (op.status !== "Success") throw new Error(op.err ?? "Create failed");
@@ -137,9 +138,9 @@ export function CreateInstanceWizard({ open, onClose }: CreateInstanceWizardProp
       subtitle={`Stage ${stage} of 4`}
       footer={
         <>
-          {stage > 1 && <Button variant="secondary" onClick={back} data-testid="wizard-back">Back</Button>}
-          {stage < 4 && <Button onClick={next} disabled={stage === 1 ? !nameValid : stage === 2 ? !stage2Complete : false} data-testid="wizard-next">Next</Button>}
-          {stage === 4 && <Button onClick={create} loading={busy} data-testid="wizard-create">Create</Button>}
+          {stage > 1 && <Button variant="secondary" onClick={back} data-testid="wizard-back"><ChevronLeft size={14} /> Back</Button>}
+          {stage < 4 && <Button onClick={next} disabled={stage === 1 ? !nameValid : stage === 2 ? !stage2Complete : false} data-testid="wizard-next">Next <ChevronRight size={14} /></Button>}
+          {stage === 4 && <Button onClick={create} loading={busy} data-testid="wizard-create"><Check size={14} /> Create</Button>}
         </>
       }
     >
@@ -198,7 +199,7 @@ export function CreateInstanceWizard({ open, onClose }: CreateInstanceWizardProp
               <div className="space-y-2 rounded border border-border bg-surface-900 p-3">
                 <Input label="Alias" name="pull-alias" data-testid="wizard-pull-alias" value={pullAlias} onChange={(e) => setPullAlias(e.target.value)} placeholder="ubuntu/24.04" />
                 <Input label="Server" name="pull-server" data-testid="wizard-pull-server" value={pullServer} onChange={(e) => setPullServer(e.target.value)} />
-                <Button size="sm" onClick={pull} loading={busy} data-testid="wizard-pull-submit">Pull</Button>
+                <Button size="sm" onClick={pull} loading={busy} data-testid="wizard-pull-submit"><Download size={13} /> Pull</Button>
               </div>
             )}
           </div>
@@ -237,6 +238,7 @@ export function CreateInstanceWizard({ open, onClose }: CreateInstanceWizardProp
             {memory.trim() && <p><span className="text-text-tertiary">Memory:</span> {memory.trim()}</p>}
             {cpu.trim() && <p><span className="text-text-tertiary">CPU:</span> {cpu.trim()}</p>}
             {network && <p><span className="text-text-tertiary">Network:</span> {network}</p>}
+            {targetMember && <p><span className="text-text-tertiary">Target member:</span> {targetMember}</p>}
           </div>
         )}
       </div>

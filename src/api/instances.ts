@@ -23,8 +23,9 @@ export class InstancesApi {
     return this.client.get<Instance>(`/instances/${name}${projectQuery()}`);
   }
 
-  create(body: CreateInstanceBody): Promise<AsyncResponse | SyncResponse | null> {
-    return this.client.post(`/instances${projectQuery()}`, body);
+  create(body: CreateInstanceBody, target?: string): Promise<AsyncResponse | SyncResponse | null> {
+    const targetQuery = target ? `&target=${encodeURIComponent(target)}` : "";
+    return this.client.post(`/instances${projectQuery()}${targetQuery}`, body);
   }
 
   update(name: string, body: { config?: Record<string, string>; description?: string; ephemeral?: boolean }): Promise<AsyncResponse | SyncResponse | null> {
