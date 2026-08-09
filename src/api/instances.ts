@@ -58,7 +58,7 @@ export class InstancesApi {
   }
 
   console(name: string, width: number, height: number): Promise<AsyncResponse | null> {
-    return this.client.put(`/instances/${name}/console${projectQuery()}`, { width, height, type: "console" });
+    return this.client.post(`/instances/${name}/console${projectQuery()}`, { width, height, type: "vga", force: true });
   }
 
   listSnapshots(name: string): Promise<Instance[]> {

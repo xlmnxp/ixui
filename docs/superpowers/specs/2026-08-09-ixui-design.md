@@ -5,7 +5,7 @@
 
 ## Overview
 
-A web UI for Incus (the container/VM management daemon) that does not reuse the LXD UI or any pre-built UI component library. The look blends Proxmox's dark theme and density with ESXi's layout clarity, using Incus brand colors. Every component is hand-built on top of a React + Tailwind v4 stack with a custom design-token system.
+A web UI for Incus (the container/VM management daemon) built from scratch — no reuse of any existing Incus UI and no pre-built UI component library. The look blends Proxmox's dark theme and density with ESXi's layout clarity, using Incus brand colors. Every component is hand-built on top of a React + Tailwind v4 stack with a custom design-token system.
 
 In production the built static assets are served by incusd itself at the `/ui/` path (same-origin with the API). In development a Vite proxy plugin authenticates to a local incusd using the user's existing client certificate.
 

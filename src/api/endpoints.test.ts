@@ -32,6 +32,16 @@ describe("API endpoints", () => {
     expect(JSON.parse(init?.body as string)).toEqual({ command: ["/bin/sh"], interactive: true, environment: { TERM: "xterm" }, "wait-for-websocket": true });
   });
 
+  it("vga console posts with type vga and force", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
+    vi.stubGlobal("fetch", fetchMock);
+    await instancesApi.console("Win11", 80, 24);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("/1.0/instances/Win11/console?project=default");
+    expect(init?.method).toBe("POST");
+    expect(JSON.parse(init?.body as string)).toEqual({ width: 80, height: 24, type: "vga", force: true });
+  });
+
   it("snapshot restore posts restore flag", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
     vi.stubGlobal("fetch", fetchMock);

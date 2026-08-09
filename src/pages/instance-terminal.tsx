@@ -3,6 +3,7 @@ import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
 import { Monitor, SquareTerminal, Terminal as TerminalIcon } from "lucide-react";
+import { SpiceMainConn, handle_resize } from "../../lib/spice/src/main.js";
 import { instancesApi } from "../api";
 import type { AsyncResponse } from "../api/types";
 import { Button } from "../components/button";
@@ -27,6 +28,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const termRef = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const controlRef = useRef<WebSocket | null>(null);
+  const spiceRef = useRef<{ stop?: () => void } | null>(null);
   const sessionRef = useRef(0);
 
   const cleanup = () => {
@@ -36,6 +38,10 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
     controlRef.current = null;
     termRef.current?.dispose();
     termRef.current = null;
+    spiceRef.current?.stop?.();
+    spiceRef.current = null;
+    (window as { spice_connection?: unknown }).spice_connection = undefined;
+    window.removeEventListener("resize", handle_resize);
   };
 
   const disconnect = () => {
@@ -64,6 +70,31 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
       if (!opId || !secret) throw new Error("No websocket endpoint in operation metadata");
       const wsPath = `/1.0/operations/${opId}/websocket?secret=${encodeURIComponent(secret)}`;
       const controlPath = controlSecret ? `/1.0/operations/${opId}/websocket?secret=${encodeURIComponent(controlSecret)}` : null;
+
+      if (nextKind === "console") {
+        const control = controlPath ? new WebSocket(toWsUrl(controlPath)) : null;
+        controlRef.current = control;
+        const onError = () => {
+          cleanup();
+          setStatus("error");
+          toast("danger", "Console connection failed");
+        };
+        if (control) control.onerror = onError;
+        const conn = new SpiceMainConn({
+          uri: toWsUrl(wsPath),
+          password: "",
+          screen_id: "spice-screen",
+          onerror: onError,
+          onsuccess: () => {
+            setStatus("connected");
+            handle_resize();
+          },
+        });
+        (window as { spice_connection?: unknown }).spice_connection = conn;
+        spiceRef.current = conn;
+        window.addEventListener("resize", handle_resize);
+        return;
+      }
 
       const terminal = new Terminal({ cursorBlink: true, fontSize: 13, theme: { background: "#191817" } });
       const fit = new FitAddon();
@@ -169,7 +200,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
           </Button>
         </div>
       </div>
-      <div ref={containerRef} className="min-h-0 flex-1 bg-surface-950" />
+      <div ref={containerRef} id="spice-screen" className="min-h-0 flex-1 bg-surface-950" />
       {status === "error" && (
         <p className="px-3 pb-2 text-xs text-red-300" data-testid="term-error">
           Connection failed. Is the instance running?

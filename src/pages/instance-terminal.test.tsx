@@ -45,6 +45,14 @@ vi.mock("@xterm/addon-fit", () => ({
   },
 }));
 
+vi.mock("../../lib/spice/src/main.js", () => ({
+  SpiceMainConn: class {
+    stop = vi.fn();
+    constructor(_opts: unknown) {}
+  },
+  handle_resize: vi.fn(),
+}));
+
 vi.mock("../api", () => ({
   instancesApi: {
     exec: apiMocks.exec,
@@ -84,7 +92,7 @@ function consoleResponse() {
     type: "async",
     status_code: 100,
     operation: "/1.0/operations/op2",
-    metadata: { metadata: { fds: { "0": "secretv" } } },
+    metadata: { metadata: { fds: { "0": "secretv", control: "secretvc" } } },
   };
 }
 
