@@ -14,6 +14,7 @@ vi.mock("../api", () => ({
     listPools: vi.fn().mockResolvedValue([]),
   },
   instancesApi: { list: vi.fn().mockResolvedValue([]) },
+  clusterApi: { listMembers: vi.fn().mockResolvedValue([]) },
   eventStream: { connect: vi.fn(), onEvent: vi.fn() },
   eventsUrl: vi.fn(),
 }));
@@ -24,7 +25,7 @@ describe("Shell", () => {
     authStore.setState("authenticated");
   });
 
-  it("renders sidebar, top bar, and task log", async () => {
+  it("renders sidebar with project dropdown and tree", async () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
@@ -35,8 +36,8 @@ describe("Shell", () => {
       </MemoryRouter>
     );
     expect(await screen.findByTestId("sidebar")).toBeInTheDocument();
-    expect(screen.getByTestId("top-bar")).toBeInTheDocument();
-    expect(screen.getByTestId("task-log")).toBeInTheDocument();
+    expect(screen.getByTestId("project-selector")).toBeInTheDocument();
+    expect(screen.getByTestId("tree")).toBeInTheDocument();
   });
 
   it("renders operations in the task log", async () => {
