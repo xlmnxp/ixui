@@ -25,9 +25,19 @@ Convert all three "overview" views — instance detail, member (node) view, and 
 
 - `KeyValueTable({ rows, dataTestId? }: { rows: { key: string; value: ReactNode }[]; dataTestId?: string })`
 - Built on the existing `Table` primitive with two fixed columns (Property, Value), no selection/sorting/row-click.
+- **Table-parity design (user directive):** renders the standard thead header row (`Property | Value`) AND an **inert checkbox column** — disabled checkboxes per row, no select-all, no selection state — so it reads identically to the real tables while staying read-only.
 - Value cells render arbitrary ReactNode (Badges, formatted text).
 - `data-testid="kv-table"` default.
-- Unit + RTL tests: renders rows, renders the default and custom testids, empty rows render the table's empty message.
+- Unit + RTL tests: renders rows, header, inert checkboxes (disabled), custom testid, empty rows render the table's empty message.
+
+## 1b. Config Editor Table Parity
+
+The shared `KeyValueEditor` (instance Config tab + Profiles dialog) matches the real `Table` design:
+
+- **Header row:** thead with a checkbox header (select-all, like the real Table) + `Key | Value | Description`.
+- **Checkbox column:** per-row checkboxes drive selection — **multi-select** like the real Table (checking a row no longer clears others; row-click no longer selects). `Edit` acts on the first selected row; `Remove` removes all selected rows; both stay disabled with no selection.
+- Hover pencil (`kv-edit-<key>`) and double-click value editing unchanged.
+- Tests updated: selection via checkboxes (multi-select, select-all), Edit on first selected, Remove-all-selected.
 
 ## 2. Instance Overview
 
