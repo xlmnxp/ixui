@@ -46,10 +46,26 @@ describe("CreateInstanceWizard", () => {
     await user.click(screen.getByTestId("wizard-next"));
     expect(screen.getByTestId("wizard-summary")).toHaveTextContent("web1");
     await user.click(screen.getByTestId("wizard-create"));
-    await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: "web1", type: "container", source: expect.objectContaining({ fingerprint: "f1" }) })));
+    await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: "web1", type: "container", source: expect.objectContaining({ fingerprint: "f1" }) }), undefined));
     expect(operationsApi.wait).toHaveBeenCalled();
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(vi.mocked(instancesApi.create).mock.calls[0]![0]).not.toHaveProperty("project");
+  });
+
+  it("passes the target member to create and shows it in the summary", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../api");
+    render(<CreateInstanceWizard open onClose={() => {}} targetMember="incus-1" />);
+    await screen.findByTestId("wizard-name");
+    await user.type(screen.getByTestId("wizard-name"), "web1");
+    await user.click(screen.getByTestId("wizard-next"));
+    await screen.findByTestId("wizard-image-f1");
+    await user.click(screen.getByTestId("wizard-image-f1"));
+    await user.click(screen.getByTestId("wizard-next"));
+    await user.click(screen.getByTestId("wizard-next"));
+    expect(screen.getByText("Target member:")).toBeInTheDocument();
+    await user.click(screen.getByTestId("wizard-create"));
+    await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: "web1" }), "incus-1"));
   });
 
   it("toasts an error and does not close when the async create fails", async () => {

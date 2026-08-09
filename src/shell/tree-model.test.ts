@@ -8,6 +8,17 @@ const instance = (name: string, location?: string): Instance => ({
 });
 
 describe("buildTree", () => {
+  it("adds hover create actions to project and member nodes", () => {
+    const onCreate = vi.fn();
+    const tree = buildTree({ project: "default", members: [member("incus-1")], instancesByMember: { "incus-1": [] }, unassigned: [], onCreate });
+    const projectNode = tree[1]!;
+    expect(projectNode.action).toBeDefined();
+    const memberNode = projectNode.children![0]!;
+    expect(memberNode.action).toBeDefined();
+    expect(projectNode.id).toBe("project-default");
+    expect(memberNode.id).toBe("member-incus-1");
+  });
+
   it("nests instances under their member", () => {
     const tree = buildTree({
       project: "default",

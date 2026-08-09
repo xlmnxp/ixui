@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Tree } from "../components/tree";
 import { ProjectDropdown } from "../components/project-dropdown";
@@ -5,13 +6,16 @@ import { buildTree } from "./tree-model";
 import { useTreeData } from "./use-tree-data";
 import { currentProjectStore } from "../state/projects";
 import { useStore } from "../state/store";
+import { CreateInstanceWizard } from "../components/create-instance-wizard";
 
 export function Sidebar() {
   const location = useLocation();
   const project = useStore(currentProjectStore);
   const { members, instancesByMember, unassigned } = useTreeData();
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardTarget, setWizardTarget] = useState<string | undefined>(undefined);
 
-  const nodes = buildTree({ project, members, instancesByMember, unassigned });
+  const nodes = buildTree({ project, members, instancesByMember, unassigned, onCreate: (target) => { setWizardTarget(target); setWizardOpen(true); } });
 
   let selectedId: string | null = null;
   const p = location.pathname;
@@ -31,6 +35,7 @@ export function Sidebar() {
       <div className="flex-1 overflow-y-auto py-2">
         <Tree nodes={nodes} selectedId={selectedId} />
       </div>
+      <CreateInstanceWizard open={wizardOpen} onClose={() => setWizardOpen(false)} targetMember={wizardTarget} />
     </aside>
   );
 }

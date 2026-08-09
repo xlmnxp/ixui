@@ -90,6 +90,13 @@ describe("API endpoints", () => {
     expect(fetchMock.mock.calls[2]![0]).toBe("/1.0/instances/web1/state?project=prod");
   });
 
+  it("create appends target and keeps project", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
+    vi.stubGlobal("fetch", fetchMock);
+    await instancesApi.create({ name: "web1", type: "container" }, "incus-1");
+    expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/instances?project=default&target=incus-1");
+  });
+
   it("cluster members list is not project-scoped", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, [{ server_name: "incus-1", url: "https://x", database: true, status: "Online", message: "", architecture: "x86_64" }]));
     vi.stubGlobal("fetch", fetchMock);
