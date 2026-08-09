@@ -30,7 +30,7 @@ export function NetworksPage() {
   const create = async () => {
     setBusy(true);
     try {
-      await infraApi.createNetwork({ name: name.trim(), type });
+      await infraApi.createNetwork({ name: name.trim(), type, description: description.trim() });
       toast("success", `Network ${name} created`);
       setCreateOpen(false);
       setName("");
