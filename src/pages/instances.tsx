@@ -17,7 +17,7 @@ import type { Instance } from "../api/types";
 
 type Action = "start" | "stop" | "restart" | "freeze" | "unfreeze";
 
-export function InstancesPage({ location }: { location?: string } = {}) {
+export function InstancesPage({ location, onCreate }: { location?: string; onCreate?: () => void } = {}) {
   const project = useStore(currentProjectStore);
   const instances = useStore(instancesStore);
   const navigate = useNavigate();
@@ -97,6 +97,7 @@ export function InstancesPage({ location }: { location?: string } = {}) {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text-primary">Instances</h1>
         <div className="flex gap-2">
+          {onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create">Create instance</Button>}
           <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-start" onClick={() => runAction("start", selectedKeys)}>Start</Button>
           <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-stop" onClick={() => runAction("stop", selectedKeys)}>Stop</Button>
           <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-restart" onClick={() => runAction("restart", selectedKeys)}>Restart</Button>
@@ -109,7 +110,7 @@ export function InstancesPage({ location }: { location?: string } = {}) {
         <EmptyState
           title="No instances"
           description="Create your first instance to get started."
-          action={<Button onClick={() => navigate("/instances/new")}>Create instance</Button>}
+          action={onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create">Create instance</Button>}
         />
       ) : (
         <Table

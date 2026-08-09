@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Boxes, Database, Image as ImageIcon, Network, UserCog } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { VerticalTabs } from "../components/vertical-tabs";
 import type { VerticalTabItem } from "../components/vertical-tabs";
 import { Button } from "../components/button";
+import { CreateInstanceWizard } from "../components/create-instance-wizard";
 import { useStore } from "../state/store";
 import { currentProjectStore } from "../state/projects";
 import { InstancesPage } from "./instances";
@@ -25,6 +27,7 @@ const TABS: VerticalTabItem[] = [
 export function ProjectOverview() {
   const project = useStore(currentProjectStore);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [wizardOpen, setWizardOpen] = useState(false);
   const tabParam = searchParams.get("tab");
   const tab: TabKey = TAB_KEYS.includes(tabParam as TabKey) ? (tabParam as TabKey) : "instances";
 
@@ -34,20 +37,21 @@ export function ProjectOverview() {
 
   return (
     <div className="flex h-full flex-col" data-testid="project-overview">
-      <div className="flex items-center justify-between border-b border-border px-6 py-4">
-        <h1 className="text-lg font-semibold text-text-primary">Project {project}</h1>
-        <Button data-testid="overview-create">Create</Button>
+      <div className="flex items-center justify-between border-b border-border bg-surface-900 px-4 py-2.5">
+        <h1 className="text-sm font-semibold text-text-primary">Project {project}</h1>
+        <Button size="sm" data-testid="overview-create" onClick={() => setWizardOpen(true)}>Create instance</Button>
       </div>
       <div className="flex min-h-0 flex-1">
         <VerticalTabs tabs={TABS} active={tab} onChange={setTab} />
         <div className="min-w-0 flex-1 overflow-auto">
-          {tab === "instances" && <InstancesPage />}
+          {tab === "instances" && <InstancesPage onCreate={() => setWizardOpen(true)} />}
           {tab === "images" && <ImagesPage />}
           {tab === "profiles" && <ProfilesPage />}
           {tab === "networks" && <NetworksPage />}
           {tab === "storage" && <StoragePage />}
         </div>
       </div>
+      <CreateInstanceWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
     </div>
   );
 }

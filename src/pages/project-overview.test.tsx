@@ -4,7 +4,11 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { ProjectOverview } from "./project-overview";
 
 vi.mock("../api", () => ({
-  instancesApi: { list: vi.fn().mockResolvedValue([]) },
+  instancesApi: {
+    list: vi.fn().mockResolvedValue([]),
+    create: vi.fn().mockResolvedValue(null),
+  },
+  operationsApi: { wait: vi.fn().mockResolvedValue({ status: "Success" }) },
   clusterApi: { listMembers: vi.fn().mockResolvedValue([]) },
   infraApi: {
     listImages: vi.fn().mockResolvedValue([]),
@@ -44,5 +48,18 @@ describe("ProjectOverview", () => {
     expect(await screen.findByTestId("images-page")).toBeInTheDocument();
     await user.click(screen.getByTestId("vtab-instances"));
     expect(screen.getByTestId("instances-page")).toBeInTheDocument();
+  });
+
+  it("opens the create wizard from the header", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<ProjectOverview />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await user.click(await screen.findByTestId("overview-create"));
+    expect(screen.getByTestId("window")).toBeInTheDocument();
   });
 });

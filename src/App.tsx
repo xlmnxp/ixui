@@ -5,7 +5,6 @@ import { authStore } from "./auth/status";
 import { useStore } from "./state/store";
 import { Toaster } from "./components/toast";
 import { DashboardPage } from "./pages/dashboard";
-import { InstanceCreatePage } from "./pages/instance-create";
 import { InstanceDetailPage } from "./pages/instance-detail";
 import { Gallery } from "./pages/gallery";
 import { ProjectsPage } from "./pages/projects";
@@ -27,7 +26,6 @@ export function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="members/:name" element={<MemberView />} />
           <Route path="instances" element={<Navigate to="/?tab=instances" replace />} />
-          <Route path="instances/new" element={<InstanceCreatePage />} />
           <Route path="images" element={<Navigate to="/?tab=images" replace />} />
           <Route path="profiles" element={<Navigate to="/?tab=profiles" replace />} />
           <Route path="networks" element={<Navigate to="/?tab=networks" replace />} />
