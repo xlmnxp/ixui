@@ -1,4 +1,4 @@
-import { instancesApi, infraApi, serverApi, operationsApi } from "./index";
+import { instancesApi, infraApi, serverApi, operationsApi, clusterApi } from "./index";
 import { setProjectProvider } from "./client";
 
 describe("API endpoints", () => {
@@ -88,5 +88,12 @@ describe("API endpoints", () => {
     expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/instances?project=prod");
     expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/instances/web1?project=prod");
     expect(fetchMock.mock.calls[2]![0]).toBe("/1.0/instances/web1/state?project=prod");
+  });
+
+  it("cluster members list is not project-scoped", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, [{ server_name: "incus-1", url: "https://x", database: true, status: "Online", message: "", architecture: "x86_64" }]));
+    vi.stubGlobal("fetch", fetchMock);
+    await clusterApi.listMembers();
+    expect(fetchMock).toHaveBeenCalledWith("/1.0/cluster/members?recursion=1", expect.anything());
   });
 });

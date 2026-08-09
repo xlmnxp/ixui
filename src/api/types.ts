@@ -34,7 +34,17 @@ export interface Instance {
   devices: Record<string, Record<string, string>>;
   profiles: string[];
   project: string;
+  location?: string;
   ephemeral: boolean;
+}
+
+export interface ClusterMember {
+  server_name: string;
+  url: string;
+  database: boolean;
+  status: string;
+  message: string;
+  architecture: string;
 }
 
 export interface Image {
