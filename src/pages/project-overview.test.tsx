@@ -29,6 +29,7 @@ describe("ProjectOverview", () => {
     expect(await screen.findByTestId("vertical-tabs")).toBeInTheDocument();
     expect(screen.getByTestId("vtab-images")).toBeInTheDocument();
     expect(screen.getByTestId("instances-page")).toBeInTheDocument();
+    expect(screen.getByTestId("overview-create")).toBeInTheDocument();
   });
 
   it("switches tabs via query param", async () => {
