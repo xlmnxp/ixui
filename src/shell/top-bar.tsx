@@ -15,12 +15,20 @@ export function TopBar() {
   const location = useLocation();
   const crumbs: Crumb[] = [{ label: "Incus", to: "/" }];
   const path = location.pathname;
-  if (path.startsWith("/instances")) {
+  if (path === "/dashboard") {
+    crumbs.push({ label: "Dashboard" });
+  } else if (path === "/") {
+    crumbs.push({ label: "Project" });
+  } else if (path.startsWith("/members/")) {
+    crumbs.push({ label: "Members", to: "/" }, { label: path.split("/")[2] ?? "" });
+  } else if (path.startsWith("/instances")) {
     const parts = path.split("/").filter(Boolean);
-    if (parts[1]) crumbs.push({ label: "Instances", to: "/instances" });
+    if (parts[1]) crumbs.push({ label: "Instances", to: "/?tab=instances" });
     if (parts[2]) crumbs.push({ label: parts[2]! });
     if (parts[3]) crumbs.push({ label: parts[3]! });
-  } else if (path !== "/") {
+  } else if (path === "/gallery") {
+    crumbs.push({ label: "Component Gallery" });
+  } else {
     crumbs.push({ label: path.slice(1).replace("/", " ") });
   }
   const chip = chipByStatus[auth];
