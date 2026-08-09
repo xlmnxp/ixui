@@ -17,7 +17,7 @@ export function OverviewTab({ instance }: OverviewTabProps) {
   }, [instance.name]);
 
   const ips = state?.network
-    ? Object.values(state.network).flatMap((iface) => iface.addresses.filter((a) => a.family === "inet").map((a) => a.address))
+    ? Object.values(state.network).flatMap((iface) => iface.addresses.filter((a) => a.family === "inet" || a.family === "inet6").map((a) => a.address))
     : [];
 
   const rows = [

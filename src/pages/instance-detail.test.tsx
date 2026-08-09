@@ -15,7 +15,7 @@ function instance() {
 vi.mock("../api", () => ({
   instancesApi: {
     get: vi.fn().mockResolvedValue(instance()),
-    state: vi.fn().mockResolvedValue({ status: "Stopped", cpu: { usage: 0 }, memory: { usage: 0 }, network: { eth0: { addresses: [] } } }),
+    state: vi.fn().mockResolvedValue({ status: "Stopped", cpu: { usage: 0 }, memory: { usage: 0 }, network: { eth0: { addresses: [{ family: "inet", address: "192.168.0.6", netmask: "16", scope: "global" }, { family: "inet6", address: "2001:db8::1", netmask: "64", scope: "global" }] } } }),
     setState: vi.fn().mockResolvedValue(null),
     delete: vi.fn().mockResolvedValue(undefined),
   },
@@ -38,6 +38,7 @@ describe("InstanceDetailPage", () => {
     expect(screen.getByTestId("kv-table")).toBeInTheDocument();
     expect(screen.getByText("512MiB")).toBeInTheDocument();
     expect(screen.getByText("Property")).toBeInTheDocument();
+    expect(screen.getByText("192.168.0.6, 2001:db8::1")).toBeInTheDocument();
   });
 
   it("switches tabs", async () => {
