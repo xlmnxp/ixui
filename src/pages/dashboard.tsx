@@ -1,18 +1,11 @@
 import { useEffect, useState } from "react";
-import { api, serverApi, infraApi, instancesApi } from "../api";
+import { serverApi, infraApi } from "../api";
 import { useStore } from "../state/store";
 import { currentProjectStore } from "../state/projects";
 import { operationsStore } from "../state/operations";
 import { instancesStore } from "../state/instances";
-import { Card } from "../components/card";
-import { Progress } from "../components/progress";
+import { KeyValueTable } from "../components/key-value-table";
 import { Badge } from "../components/badge";
-import { formatBytes } from "../lib/format";
-
-interface HostResources {
-  cpu: { total: number };
-  memory: { total: number; used: number };
-}
 
 const instanceStateCounts = (instances: { status: string }[]) => {
   const counts: Record<string, number> = {};
@@ -25,9 +18,7 @@ export function DashboardPage() {
   const operations = useStore(operationsStore);
   const instances = useStore(instancesStore);
   const [server, setServer] = useState<{ hostname: string; version: string } | null>(null);
-  const [resources, setResources] = useState<HostResources | null>(null);
   const [counts, setCounts] = useState({ images: 0, profiles: 0, networks: 0, storage: 0 });
-  const [instanceUsage, setInstanceUsage] = useState<{ sum: number } | null>(null);
 
   useEffect(() => {
     void serverApi.info().then((info) => setServer({ hostname: info.environment.server, version: info.environment.server_version })).catch(() => {});
@@ -44,77 +35,38 @@ export function DashboardPage() {
     ).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    void api.get<HostResources>("/resources").then(setResources).catch(() => setResources(null));
-  }, []);
-
   const scoped = Object.values(instances).filter((i) => i.project === project);
-  const running = scoped.filter((i) => i.status === "Started" || i.status === "Running");
-  const runningKey = running.map((i) => i.name).join(",");
-
-  useEffect(() => {
-    if (runningKey === "") {
-      setInstanceUsage({ sum: 0 });
-      return;
-    }
-    let cancelled = false;
-    void Promise.all(
-      runningKey.split(",").map((name) =>
-        instancesApi.state(name).then((s) => s.memory.usage).catch(() => null)
-      )
-    ).then((usages) => {
-      if (cancelled) return;
-      setInstanceUsage(usages.some((u) => u !== null) ? { sum: usages.reduce<number>((total, u) => total + (u ?? 0), 0) } : null);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [runningKey]);
-
   const stateCounts = instanceStateCounts(scoped);
-  const memSum = instanceUsage !== null ? instanceUsage.sum : resources?.memory.used ?? 0;
-  const memPercent = resources ? Math.min(100, Math.max(0, Math.round((memSum / resources.memory.total) * 100))) : undefined;
 
   return (
     <div className="space-y-4" data-testid="dashboard-page">
-      <h1 className="text-lg font-semibold text-text-primary">Dashboard</h1>
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Card title="Server" value={server?.hostname ?? "…"} sub={server ? `Version ${server.version}` : undefined} />
-        <Card title="Instances" value={String(scoped.length)} sub={Object.entries(stateCounts).map(([s, n]) => `${s}: ${n}`).join(" · ")} />
-        <Card title="Images" value={String(counts.images)} />
-        <Card title="Profiles" value={String(counts.profiles)} />
-        <Card title="Networks" value={String(counts.networks)} />
-        <Card title="Storage pools" value={String(counts.storage)} />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="rounded-lg border border-border bg-surface-900 p-4">
-          <h2 className="mb-2 text-sm font-semibold text-text-primary">CPU</h2>
-          {resources ? (
-            <p className="text-xs text-text-secondary">{resources.cpu.total} cores · {running.length} running</p>
-          ) : (
-            <span className="text-xs text-text-tertiary">Unavailable</span>
-          )}
-        </div>
-        <div className="rounded-lg border border-border bg-surface-900 p-4">
-          <h2 className="mb-2 text-sm font-semibold text-text-primary">Memory</h2>
-          {resources && resources.memory.total > 0 ? (
-            <>
-              <Progress value={memPercent} tone={memPercent !== undefined && memPercent > 85 ? "danger" : "accent"} />
-              <p className="mt-1 text-xs text-text-secondary">{formatBytes(memSum)} / {formatBytes(resources.memory.total)}</p>
-            </>
-          ) : (
-            <span className="text-xs text-text-tertiary">Unavailable</span>
-          )}
-        </div>
-      </div>
-      <div className="rounded-lg border border-border bg-surface-900 p-4">
-        <h2 className="mb-2 text-sm font-semibold text-text-primary">Recent operations</h2>
+      <h1 className="px-3 pt-2 text-sm font-semibold text-text-primary">Dashboard</h1>
+      <KeyValueTable
+        rows={[
+          { key: "Hostname", value: server?.hostname ?? "—" },
+          { key: "Version", value: server ? `Version ${server.version}` : "—" },
+          { key: "Project", value: project },
+        ]}
+        dataTestId="dashboard-server-table"
+      />
+      <KeyValueTable
+        rows={[
+          { key: "Instances by state", value: Object.entries(stateCounts).map(([s, n]) => `${s}: ${n}`).join(" · ") || "—" },
+          { key: "Images", value: String(counts.images) },
+          { key: "Profiles", value: String(counts.profiles) },
+          { key: "Networks", value: String(counts.networks) },
+          { key: "Storage pools", value: String(counts.storage) },
+        ]}
+        dataTestId="dashboard-summary-table"
+      />
+      <div className="border-t border-border">
+        <h2 className="px-3 py-2 text-xs font-semibold text-text-secondary">Recent operations</h2>
         {operations.length === 0 ? (
-          <p className="text-xs text-text-tertiary">No operations yet.</p>
+          <p className="px-3 pb-2 text-xs text-text-tertiary">No operations yet.</p>
         ) : (
           <ul className="divide-y divide-border">
             {operations.slice(0, 10).map((op) => (
-              <li key={op.id} className="flex items-center gap-3 py-1.5 text-xs">
+              <li key={op.id} className="flex items-center gap-3 px-3 py-1.5 text-xs">
                 <Badge tone={op.status === "Running" ? "info" : op.status === "Success" ? "success" : op.status === "Failure" ? "danger" : "warning"}>{op.status}</Badge>
                 <span className="text-text-primary">{op.description}</span>
               </li>
