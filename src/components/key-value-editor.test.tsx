@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { KeyValueEditor } from "./key-value-editor";
 
@@ -38,5 +38,12 @@ describe("KeyValueEditor", () => {
     render(<KeyValueEditor values={{ key1: "a" }} onChange={onChange} />);
     await user.click(screen.getByTestId("kv-add"));
     expect(onChange).toHaveBeenCalledWith({ key1: "a", custom_2: "" });
+  });
+
+  it("does not overwrite an existing key when renaming onto it", () => {
+    const onChange = vi.fn();
+    render(<KeyValueEditor values={{ key1: "a", key2: "b" }} onChange={onChange} />);
+    fireEvent.change(screen.getByTestId("kv-key-key1"), { target: { value: "key2" } });
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

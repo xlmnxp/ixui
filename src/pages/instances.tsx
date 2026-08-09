@@ -74,7 +74,7 @@ export function InstancesPage() {
     { key: "type", header: "Type", render: (i) => (i.type === "container" ? "Container" : "VM") },
     {
       key: "ip", header: "IP addresses",
-      render: (i) => <span className="text-xs text-text-secondary">{i.status === "Started" ? (i.devices.eth0?.["ipv4"] ?? "—") : "—"}</span>,
+      render: (i) => <span className="text-xs text-text-secondary">{i.status === "Started" ? (i.devices.eth0?.["ipv4.address"] ?? i.devices.eth0?.["ipv4"] ?? "—") : "—"}</span>,
     },
     {
       key: "actions", header: "", align: "right",

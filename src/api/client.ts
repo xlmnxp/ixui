@@ -1,3 +1,19 @@
+import { markAuthenticated } from "../auth/status";
+
+let projectProvider: () => string = () => "default";
+
+export function setProjectProvider(provider: () => string): void {
+  projectProvider = provider;
+}
+
+export function currentProject(): string {
+  return projectProvider();
+}
+
+export function projectQuery(): string {
+  return `?project=${encodeURIComponent(currentProject())}`;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -30,7 +46,7 @@ export class ApiClient {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
 
-    if (res.status === 403) this.forbiddenHandler?.();
+    if (res.status === 401 || res.status === 403) this.forbiddenHandler?.();
 
     const text = await res.text();
     let json: unknown = null;
@@ -46,6 +62,7 @@ export class ApiClient {
       const err = json as ErrorBody | null;
       throw new ApiError(res.status, err?.error_code, err?.error ?? res.statusText);
     }
+    markAuthenticated();
     return json as T;
   }
 
@@ -53,8 +70,10 @@ export class ApiClient {
     return this.request<T>("GET", path);
   }
 
-  async list<T>(path: string): Promise<T[]> {
-    const items = await this.request<(string | T)[]>("GET", `${path}?recursion=1`);
+  async list<T>(path: string, opts?: { project?: string }): Promise<T[]> {
+    const project = opts?.project;
+    const qs = project !== undefined ? `?project=${encodeURIComponent(project)}&recursion=1` : "?recursion=1";
+    const items = await this.request<(string | T)[]>("GET", `${path}${qs}`);
     return (items ?? []).filter((item): item is T => typeof item !== "string");
   }
 

@@ -22,7 +22,16 @@ export function StoragePage() {
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(() => {
-    void infraApi.listPools().then(setPools).catch(() => {});
+    void infraApi.listPools().then((list) => {
+      setPools(list);
+      setVolumes((prev) => {
+        const next = { ...prev };
+        for (const key of Object.keys(next)) {
+          if (!list.some((p) => p.name === key)) delete next[key];
+        }
+        return next;
+      });
+    }).catch(() => {});
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -59,9 +68,15 @@ export function StoragePage() {
 
   const removePool = async () => {
     if (!deletePoolTarget) return;
+    const poolName = deletePoolTarget.name;
     try {
-      await infraApi.deletePool(deletePoolTarget.name);
-      toast("success", `Pool ${deletePoolTarget.name} deleted`);
+      await infraApi.deletePool(poolName);
+      toast("success", `Pool ${poolName} deleted`);
+      setVolumes((prev) => {
+        const next = { ...prev };
+        delete next[poolName];
+        return next;
+      });
       setDeletePoolTarget(null);
       refresh();
     } catch (err) {

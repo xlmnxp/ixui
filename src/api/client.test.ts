@@ -1,6 +1,8 @@
 import { ApiClient, ApiError } from "./client";
+import { authStore } from "../auth/status";
 
 describe("ApiClient", () => {
+  beforeEach(() => authStore.setState("unknown"));
   afterEach(() => vi.unstubAllGlobals());
 
   const jsonResponse = (status: number, body: unknown) =>
@@ -51,6 +53,22 @@ describe("ApiClient", () => {
     client.setForbiddenHandler(onForbidden);
     await expect(client.get("/x")).rejects.toBeInstanceOf(ApiError);
     expect(onForbidden).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls the forbidden handler on 401", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(401, { error: "unauthorized", error_code: 401 })));
+    const client = new ApiClient("/1.0");
+    const onForbidden = vi.fn();
+    client.setForbiddenHandler(onForbidden);
+    await expect(client.get("/x")).rejects.toBeInstanceOf(ApiError);
+    expect(onForbidden).toHaveBeenCalledTimes(1);
+  });
+
+  it("marks the auth state authenticated on 2xx", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(200, { hello: "world" })));
+    const client = new ApiClient("/1.0");
+    await client.get("/");
+    expect(authStore.getState()).toBe("authenticated");
   });
 
   it("DELETE sends no body", async () => {

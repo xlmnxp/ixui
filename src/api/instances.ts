@@ -1,4 +1,4 @@
-import type { ApiClient } from "./client";
+import { currentProject, projectQuery, type ApiClient } from "./client";
 import type { Instance, InstanceStateInfo, AsyncResponse, SyncResponse } from "./types";
 
 export interface CreateInstanceBody {
@@ -16,11 +16,11 @@ export class InstancesApi {
   constructor(private client: ApiClient) {}
 
   list(): Promise<Instance[]> {
-    return this.client.list<Instance>("/instances");
+    return this.client.list<Instance>("/instances", { project: currentProject() });
   }
 
   get(name: string): Promise<Instance> {
-    return this.client.get<Instance>(`/instances/${name}`);
+    return this.client.get<Instance>(`/instances/${name}${projectQuery()}`);
   }
 
   create(body: CreateInstanceBody): Promise<AsyncResponse | SyncResponse | null> {
@@ -32,7 +32,7 @@ export class InstancesApi {
   }
 
   delete(name: string): Promise<void> {
-    return this.client.delete(`/instances/${name}`);
+    return this.client.delete(`/instances/${name}${projectQuery()}`);
   }
 
   setState(
@@ -40,7 +40,7 @@ export class InstancesApi {
     action: "start" | "stop" | "restart" | "freeze" | "unfreeze",
     force = false
   ): Promise<AsyncResponse | null> {
-    return this.client.put(`/instances/${name}/state`, { action, force });
+    return this.client.put(`/instances/${name}/state${projectQuery()}`, { action, force });
   }
 
   state(name: string): Promise<InstanceStateInfo> {
@@ -48,7 +48,7 @@ export class InstancesApi {
   }
 
   exec(name: string, command: string[], interactive: boolean): Promise<AsyncResponse | null> {
-    return this.client.post(`/instances/${name}/exec`, {
+    return this.client.post(`/instances/${name}/exec${projectQuery()}`, {
       command,
       interactive,
       environment: { TERM: "xterm" },
@@ -57,30 +57,30 @@ export class InstancesApi {
   }
 
   console(name: string, width: number, height: number): Promise<AsyncResponse | null> {
-    return this.client.put(`/instances/${name}/console`, { width, height, type: "console" });
+    return this.client.put(`/instances/${name}/console${projectQuery()}`, { width, height, type: "console" });
   }
 
   listSnapshots(name: string): Promise<Instance[]> {
-    return this.client.list<Instance>(`/instances/${name}/snapshots`);
+    return this.client.list<Instance>(`/instances/${name}/snapshots`, { project: currentProject() });
   }
 
   createSnapshot(name: string, snapName: string, stateful = false): Promise<AsyncResponse | null> {
-    return this.client.post(`/instances/${name}/snapshots`, { name: snapName, stateful });
+    return this.client.post(`/instances/${name}/snapshots${projectQuery()}`, { name: snapName, stateful });
   }
 
   restoreSnapshot(name: string, snapName: string): Promise<AsyncResponse | null> {
-    return this.client.post(`/instances/${name}/snapshots/${snapName}`, { restore: true });
+    return this.client.post(`/instances/${name}/snapshots/${snapName}${projectQuery()}`, { restore: true });
   }
 
   deleteSnapshot(name: string, snapName: string): Promise<void> {
-    return this.client.delete(`/instances/${name}/snapshots/${snapName}`);
+    return this.client.delete(`/instances/${name}/snapshots/${snapName}${projectQuery()}`);
   }
 
   listLogs(name: string): Promise<string[]> {
-    return this.client.get<string[]>(`/instances/${name}/logs`);
+    return this.client.get<string[]>(`/instances/${name}/logs${projectQuery()}`);
   }
 
   readLog(name: string, file: string): Promise<string> {
-    return this.client.get<string>(`/instances/${name}/logs/${file}`);
+    return this.client.get<string>(`/instances/${name}/logs/${file}${projectQuery()}`);
   }
 }

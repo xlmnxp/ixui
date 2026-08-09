@@ -9,5 +9,6 @@ export function markForbidden(): void {
 }
 
 export function markAuthenticated(): void {
+  if (authStore.getState() === "authenticated") return;
   authStore.setState("authenticated");
 }

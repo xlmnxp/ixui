@@ -1,4 +1,4 @@
-import type { ApiClient } from "./client";
+import { currentProject, projectQuery, type ApiClient } from "./client";
 import type { Image, Profile, Network, StoragePool, StorageVolume, Project, AsyncResponse, SyncResponse } from "./types";
 
 export type OpResponse = AsyncResponse | SyncResponse | null;
@@ -7,15 +7,15 @@ export class InfraApi {
   constructor(private client: ApiClient) {}
 
   listImages(): Promise<Image[]> {
-    return this.client.list<Image>("/images");
+    return this.client.list<Image>("/images", { project: currentProject() });
   }
 
   deleteImage(fingerprint: string): Promise<void> {
-    return this.client.delete(`/images/${fingerprint}`);
+    return this.client.delete(`/images/${fingerprint}${projectQuery()}`);
   }
 
   pullImage(source: { alias: string; server: string; protocol?: string; filename?: string }): Promise<OpResponse> {
-    return this.client.post(`/images`, {
+    return this.client.post(`/images${projectQuery()}`, {
       filename: source.filename ?? source.alias,
       public: false,
       source: { type: "image", alias: source.alias, server: source.server, protocol: source.protocol ?? "simplestreams" },
@@ -23,59 +23,59 @@ export class InfraApi {
   }
 
   listProfiles(): Promise<Profile[]> {
-    return this.client.list<Profile>("/profiles");
+    return this.client.list<Profile>("/profiles", { project: currentProject() });
   }
 
   getProfile(name: string): Promise<Profile> {
-    return this.client.get<Profile>(`/profiles/${name}`);
+    return this.client.get<Profile>(`/profiles/${name}${projectQuery()}`);
   }
 
   createProfile(body: { name: string; description?: string; config?: Record<string, string> }): Promise<OpResponse> {
-    return this.client.post(`/profiles`, body);
+    return this.client.post(`/profiles${projectQuery()}`, body);
   }
 
   updateProfile(name: string, body: { description?: string; config?: Record<string, string> }): Promise<OpResponse> {
-    return this.client.put(`/profiles/${name}`, body);
+    return this.client.put(`/profiles/${name}${projectQuery()}`, body);
   }
 
   deleteProfile(name: string): Promise<void> {
-    return this.client.delete(`/profiles/${name}`);
+    return this.client.delete(`/profiles/${name}${projectQuery()}`);
   }
 
   listNetworks(): Promise<Network[]> {
-    return this.client.list<Network>("/networks");
+    return this.client.list<Network>("/networks", { project: currentProject() });
   }
 
   createNetwork(body: { name: string; type: string; description?: string }): Promise<OpResponse> {
-    return this.client.post(`/networks`, body);
+    return this.client.post(`/networks${projectQuery()}`, body);
   }
 
   updateNetwork(name: string, body: { description?: string }): Promise<OpResponse> {
-    return this.client.put(`/networks/${name}`, body);
+    return this.client.put(`/networks/${name}${projectQuery()}`, body);
   }
 
   deleteNetwork(name: string): Promise<void> {
-    return this.client.delete(`/networks/${name}`);
+    return this.client.delete(`/networks/${name}${projectQuery()}`);
   }
 
   listPools(): Promise<StoragePool[]> {
-    return this.client.list<StoragePool>("/storage-pools");
+    return this.client.list<StoragePool>("/storage-pools", { project: currentProject() });
   }
 
   createPool(body: { name: string; driver: string; description?: string }): Promise<OpResponse> {
-    return this.client.post(`/storage-pools`, body);
+    return this.client.post(`/storage-pools${projectQuery()}`, body);
   }
 
   deletePool(name: string): Promise<void> {
-    return this.client.delete(`/storage-pools/${name}`);
+    return this.client.delete(`/storage-pools/${name}${projectQuery()}`);
   }
 
   listPoolVolumes(pool: string): Promise<StorageVolume[]> {
-    return this.client.list<StorageVolume>(`/storage-pools/${pool}/volumes`);
+    return this.client.list<StorageVolume>(`/storage-pools/${pool}/volumes`, { project: currentProject() });
   }
 
   deletePoolVolume(pool: string, name: string): Promise<void> {
-    return this.client.delete(`/storage-pools/${pool}/volumes/${name}`);
+    return this.client.delete(`/storage-pools/${pool}/volumes/${name}${projectQuery()}`);
   }
 
   listProjects(): Promise<Project[]> {

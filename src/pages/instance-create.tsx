@@ -63,7 +63,10 @@ export function InstanceCreatePage() {
       };
       const result = await instancesApi.create(body);
       if (result && result.type === "async") {
-        await operationsApi.wait((result as AsyncResponse).operation);
+        const op = await operationsApi.wait((result as AsyncResponse).operation);
+        if (op.status !== "Success") {
+          throw new Error(op.err ?? "Create failed");
+        }
       }
       toast("success", `Instance ${trimmed} created`);
       navigate(`/instances/${trimmed}`);

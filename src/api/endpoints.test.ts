@@ -1,6 +1,8 @@
 import { instancesApi, infraApi, serverApi, operationsApi } from "./index";
+import { setProjectProvider } from "./client";
 
 describe("API endpoints", () => {
+  beforeEach(() => setProjectProvider(() => "default"));
   afterEach(() => vi.unstubAllGlobals());
 
   const jsonResponse = (status: number, body: unknown) =>
@@ -10,7 +12,7 @@ describe("API endpoints", () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, [{ name: "web1", status: "Started" }]));
     vi.stubGlobal("fetch", fetchMock);
     await instancesApi.list();
-    expect(fetchMock).toHaveBeenCalledWith("/1.0/instances?recursion=1", expect.anything());
+    expect(fetchMock).toHaveBeenCalledWith("/1.0/instances?project=default&recursion=1", expect.anything());
   });
 
   it("instance setState posts action", async () => {
@@ -35,7 +37,7 @@ describe("API endpoints", () => {
     vi.stubGlobal("fetch", fetchMock);
     await instancesApi.restoreSnapshot("web1", "snap1");
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe("/1.0/instances/web1/snapshots/snap1");
+    expect(url).toBe("/1.0/instances/web1/snapshots/snap1?project=default");
     expect(JSON.parse(init?.body as string)).toEqual({ restore: true });
   });
 
@@ -44,7 +46,7 @@ describe("API endpoints", () => {
     vi.stubGlobal("fetch", fetchMock);
     await infraApi.pullImage({ alias: "ubuntu/24.04", server: "https://images.linuxcontainers.org" });
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe("/1.0/images");
+    expect(url).toBe("/1.0/images?project=default");
     const body = JSON.parse(init?.body as string);
     expect(body.source).toEqual({ type: "image", alias: "ubuntu/24.04", server: "https://images.linuxcontainers.org", protocol: "simplestreams" });
   });
@@ -54,7 +56,7 @@ describe("API endpoints", () => {
     vi.stubGlobal("fetch", fetchMock);
     await infraApi.listProjects();
     await infraApi.listPoolVolumes("default");
-    expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/storage-pools/default/volumes?recursion=1");
+    expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/storage-pools/default/volumes?project=default&recursion=1");
   });
 
   it("server info and operation wait", async () => {
@@ -64,5 +66,15 @@ describe("API endpoints", () => {
     await operationsApi.wait("op1");
     expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/");
     expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/operations/op1/wait");
+  });
+
+  it("scopes requests to the current project", async () => {
+    setProjectProvider(() => "prod");
+    const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, [])));
+    vi.stubGlobal("fetch", fetchMock);
+    await instancesApi.list();
+    await infraApi.listImages();
+    expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/instances?project=prod&recursion=1");
+    expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/images?project=prod&recursion=1");
   });
 });

@@ -13,6 +13,8 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor" }: K
   const setValue = (key: string, value: string) => onChange({ ...values, [key]: value });
 
   const setKey = (oldKey: string, newKey: string) => {
+    if (newKey === oldKey) return;
+    if (newKey in values) return;
     const next = { ...values };
     const value = next[oldKey];
     delete next[oldKey];

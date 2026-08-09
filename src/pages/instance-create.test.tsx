@@ -2,6 +2,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { InstanceCreatePage } from "./instance-create";
+import { toastStore } from "../components/toast";
+import type { Operation } from "../api/types";
 
 vi.mock("../api", () => ({
   infraApi: {
@@ -22,6 +24,8 @@ vi.mock("../api", () => ({
 }));
 
 describe("InstanceCreatePage", () => {
+  beforeEach(() => toastStore.setState([]));
+
   it("validates the name", async () => {
     const user = userEvent.setup();
     render(
@@ -57,5 +61,35 @@ describe("InstanceCreatePage", () => {
         expect.objectContaining({ name: "web1", type: "container", source: expect.objectContaining({ fingerprint: "f1" }) })
       )
     );
+  });
+
+  it("toasts an error and does not navigate when the async create fails", async () => {
+    const user = userEvent.setup();
+    const { instancesApi, operationsApi } = await import("../api");
+    const failedOp: Operation = {
+      id: "op1", class: "task", description: "", status: "Failure", status_code: 400,
+      created_at: "", updated_at: "", may_cancel: false, err: "boom",
+    };
+    vi.mocked(operationsApi.wait).mockResolvedValueOnce(failedOp);
+    render(
+      <MemoryRouter initialEntries={["/instances/new"]}>
+        <Routes>
+          <Route path="/instances/new" element={<InstanceCreatePage />} />
+          <Route path="/instances/:name" element={<div data-testid="detail-page" />} />
+          <Route path="*" element={null} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByText("Ubuntu 24.04");
+    await user.type(screen.getByTestId("create-name"), "web1");
+    await user.click(screen.getByTestId("create-submit"));
+    await waitFor(() => expect(instancesApi.create).toHaveBeenCalled());
+    await waitFor(() => {
+      const toasts = toastStore.getState();
+      expect(toasts.some((t) => t.tone === "danger" && t.message === "boom")).toBe(true);
+      expect(toasts.some((t) => t.tone === "success")).toBe(false);
+    });
+    expect(screen.getByTestId("instance-create-page")).toBeInTheDocument();
+    expect(screen.queryByTestId("detail-page")).not.toBeInTheDocument();
   });
 });
