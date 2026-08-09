@@ -17,7 +17,7 @@ import type { Instance } from "../api/types";
 
 type Action = "start" | "stop" | "restart" | "freeze" | "unfreeze";
 
-export function InstancesPage() {
+export function InstancesPage({ location }: { location?: string } = {}) {
   const project = useStore(currentProjectStore);
   const instances = useStore(instancesStore);
   const navigate = useNavigate();
@@ -26,7 +26,10 @@ export function InstancesPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const scoped = useMemo(() => Object.values(instances).filter((i) => i.project === project), [instances, project]);
+  const scoped = useMemo(
+    () => Object.values(instances).filter((i) => i.project === project && (location === undefined || i.location === location)),
+    [instances, project, location]
+  );
 
   useEffect(() => {
     void loadInstances(project);
@@ -99,7 +102,6 @@ export function InstancesPage() {
           <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-restart" onClick={() => runAction("restart", selectedKeys)}>Restart</Button>
           <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-freeze" onClick={() => runAction("freeze", selectedKeys)}>Freeze</Button>
           <Button size="sm" variant="danger" disabled={actionDisabled} data-testid="action-delete" onClick={() => setDeleteOpen(true)}>Delete</Button>
-          <Button size="sm" onClick={() => navigate("/instances/new")} data-testid="action-create">Create instance</Button>
         </div>
       </div>
 
