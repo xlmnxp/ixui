@@ -52,6 +52,19 @@ describe("InstanceDetailPage", () => {
     expect(screen.getByTestId("config-tab")).toBeInTheDocument();
   });
 
+  it("falls back to Overview for stale console deep links", async () => {
+    render(
+      <MemoryRouter initialEntries={["/instances/web1/console"]}>
+        <Routes>
+          <Route path="/instances/:name/:tab?" element={<InstanceDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByText("web1");
+    expect(screen.getByTestId("overview-tab")).toBeInTheDocument();
+    expect(screen.getByTestId("vtab-overview")).toHaveAttribute("aria-selected", "true");
+  });
+
   it("starts the instance from the header", async () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../api");

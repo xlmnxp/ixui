@@ -22,7 +22,7 @@ export function VerticalTabs({ tabs, active, onChange }: VerticalTabsProps) {
           aria-selected={active === t.key}
           data-testid={`vtab-${t.key}`}
           onClick={() => onChange(t.key)}
-          className={`flex items-center gap-2 rounded border-l-2 px-2.5 py-1.5 text-left text-[13px] ${active === t.key ? "border-accent-600 bg-accent-600/10 text-text-primary" : "border-transparent text-text-secondary hover:bg-surface-700 hover:text-text-primary"}`}
+          className={`flex items-center gap-2 border-l-2 px-2.5 py-1.5 text-left text-[13px] ${active === t.key ? "border-accent-600 bg-accent-600/10 text-text-primary" : "border-transparent text-text-secondary hover:bg-surface-700 hover:text-text-primary"}`}
         >
           {t.icon}
           <span className="truncate">{t.label}</span>

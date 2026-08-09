@@ -23,6 +23,7 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
 
   const entries = Object.entries(displayValues);
   const entryCount = entries.length;
+  const selectedExists = selected !== null && selected in displayValues;
 
   const startEditing = (key: string) => {
     editingRef.current = key;
@@ -41,6 +42,7 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
     }
     next[finalKey] = newValue;
     setEditing(null);
+    setSelected(finalKey);
     if (finalKey === oldKey && next[oldKey] === values[oldKey]) return;
     const nextDisplay = { ...displayValues };
     if (finalKey !== oldKey) {
@@ -121,8 +123,8 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
     <div className="space-y-2" data-testid={dataTestId}>
       <div className="flex items-center gap-2">
         <Button variant="secondary" size="sm" data-testid="kv-add" onClick={addEntry}><Plus size={13} /> Add</Button>
-        <Button variant="secondary" size="sm" data-testid="kv-edit" onClick={() => { if (selected) startEditing(selected); }} disabled={!selected}><Pencil size={13} /> Edit</Button>
-        <Button variant="secondary" size="sm" data-testid="kv-remove" onClick={removeSelected} disabled={!selected}><Trash2 size={13} /> Remove</Button>
+        <Button variant="secondary" size="sm" data-testid="kv-edit" onClick={() => { if (selected) startEditing(selected); }} disabled={!selectedExists}><Pencil size={13} /> Edit</Button>
+        <Button variant="secondary" size="sm" data-testid="kv-remove" onClick={removeSelected} disabled={!selectedExists}><Trash2 size={13} /> Remove</Button>
       </div>
       <table className="w-full border-collapse">
         <thead>

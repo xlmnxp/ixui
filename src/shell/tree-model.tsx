@@ -28,7 +28,7 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
     <button
       data-testid={testId}
       onClick={(e) => { e.stopPropagation(); onCreate?.(target); }}
-      className="rounded p-0.5 text-text-tertiary hover:bg-surface-600 hover:text-text-primary"
+      className="p-0.5 text-text-tertiary hover:bg-surface-600 hover:text-text-primary"
       aria-label="Create instance"
     >
       <Plus size={13} />

@@ -64,6 +64,7 @@ export function InstanceDetailPage() {
     { key: "config", label: "Config", icon: <Settings size={14} /> },
     { key: "logs", label: "Logs", icon: <FileText size={14} /> },
   ];
+  const activeTab = tabs.some((t) => t.key === tab) ? tab : "overview";
 
   return (
     <div className="flex h-full flex-col" data-testid="instance-detail-page">
@@ -80,12 +81,12 @@ export function InstanceDetailPage() {
       </div>
 
       <div className="flex h-full min-h-0">
-        <VerticalTabs tabs={tabs} active={tab} onChange={(key) => navigate(`/instances/${name}/${key}`)} />
+        <VerticalTabs tabs={tabs} active={activeTab} onChange={(key) => navigate(`/instances/${name}/${key}`)} />
         <div className="min-w-0 flex-1 overflow-auto">
-          {tab === "overview" && <OverviewTab instance={instance} />}
-          {tab === "snapshots" && <SnapshotsTab instanceName={name} />}
-          {tab === "config" && <ConfigTab instanceName={name} />}
-          {tab === "logs" && <LogsTab instanceName={name} />}
+          {activeTab === "overview" && <OverviewTab instance={instance} />}
+          {activeTab === "snapshots" && <SnapshotsTab instanceName={name} />}
+          {activeTab === "config" && <ConfigTab instanceName={name} />}
+          {activeTab === "logs" && <LogsTab instanceName={name} />}
         </div>
       </div>
 

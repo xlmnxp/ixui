@@ -84,6 +84,23 @@ describe("KeyValueEditor", () => {
     expect(onChange).toHaveBeenLastCalledWith({ key2: "b" });
   });
 
+  it("retargets the selection after a rename so Remove deletes the renamed row", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<Editable onChange={onChange} />);
+    await user.click(screen.getByTestId("kv-row-key1"));
+    await user.click(screen.getByTestId("kv-edit"));
+    const keyInput = screen.getByTestId("kv-key-edit-key1");
+    await user.clear(keyInput);
+    await user.type(keyInput, "key2");
+    await user.keyboard("{Enter}");
+    expect(onChange).toHaveBeenLastCalledWith({ key2: "a" });
+    expect(screen.getByTestId("kv-row-key2")).toHaveAttribute("data-selected", "true");
+    expect(screen.getByTestId("kv-remove")).toBeEnabled();
+    await user.click(screen.getByTestId("kv-remove"));
+    expect(onChange).toHaveBeenLastCalledWith({});
+  });
+
   it("removes the selected row via the Remove button", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

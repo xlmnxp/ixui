@@ -1,5 +1,6 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { toastStore } from "../components/toast";
 import { InstanceTerminal } from "./instance-terminal";
 
 const terminalState = vi.hoisted(() => ({
@@ -7,6 +8,8 @@ const terminalState = vi.hoisted(() => ({
     _onData: ((d: string) => void) | null;
     write: ReturnType<typeof vi.fn>;
   } | null,
+  terminals: [] as unknown[],
+  disposes: 0,
 }));
 
 const apiMocks = vi.hoisted(() => ({
@@ -24,10 +27,13 @@ vi.mock("xterm", () => ({
     });
     onResize = vi.fn();
     write = vi.fn();
-    dispose = vi.fn();
+    dispose = vi.fn(() => {
+      terminalState.disposes++;
+    });
     _onData: ((d: string) => void) | null = null;
     constructor() {
       terminalState.lastTerminal = this;
+      terminalState.terminals.push(this);
     }
   },
 }));
@@ -86,10 +92,13 @@ describe("InstanceTerminal", () => {
   beforeEach(() => {
     FakeWebSocket.instances = [];
     terminalState.lastTerminal = null;
+    terminalState.terminals = [];
+    terminalState.disposes = 0;
     apiMocks.exec.mockReset();
     apiMocks.console.mockReset();
     apiMocks.exec.mockResolvedValue(execResponse());
     apiMocks.console.mockResolvedValue(consoleResponse());
+    toastStore.setState([]);
     vi.stubGlobal("WebSocket", FakeWebSocket);
   });
   afterEach(() => {
@@ -123,6 +132,47 @@ describe("InstanceTerminal", () => {
     act(() => data.onopen?.());
     await user.click(screen.getByTestId("term-vga"));
     expect(apiMocks.console).toHaveBeenCalledWith("web1", 80, 24);
+  });
+
+  it("closes the previous session and disposes its terminal before reconnecting", async () => {
+    const user = userEvent.setup();
+    render(<InstanceTerminal instanceName="web1" />);
+    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
+    const firstData = FakeWebSocket.instances[0]!;
+    const firstControl = FakeWebSocket.instances[1]!;
+    firstData.readyState = FakeWebSocket.OPEN;
+    act(() => firstData.onopen?.());
+    await user.click(screen.getByTestId("term-vga"));
+    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(3));
+    expect(firstData.close).toHaveBeenCalled();
+    expect(firstControl.close).toHaveBeenCalled();
+    expect(terminalState.disposes).toBe(1);
+    const firstTerminal = terminalState.terminals[0] as { dispose: ReturnType<typeof vi.fn> };
+    expect(firstTerminal.dispose).toHaveBeenCalled();
+  });
+
+  it("shows the error state and a danger toast when exec fails", async () => {
+    apiMocks.exec.mockRejectedValue(new Error("boom"));
+    render(<InstanceTerminal instanceName="web1" />);
+    expect(await screen.findByTestId("term-error")).toBeInTheDocument();
+    const toasts = toastStore.getState();
+    expect(toasts.some((t) => t.tone === "danger" && t.message === "boom")).toBe(true);
+  });
+
+  it("flushes the latest window-resize over the control socket on open", async () => {
+    render(<InstanceTerminal instanceName="web1" />);
+    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
+    const data = FakeWebSocket.instances[0]!;
+    const control = FakeWebSocket.instances[1]!;
+    data.readyState = FakeWebSocket.OPEN;
+    act(() => data.onopen?.());
+    expect(control.send).not.toHaveBeenCalled();
+    control.readyState = FakeWebSocket.OPEN;
+    act(() => control.onopen?.());
+    expect(control.send).toHaveBeenCalledTimes(1);
+    expect(control.send.mock.calls[0]![0]).toBe(
+      JSON.stringify({ command: "window-resize", args: { width: "80", height: "24" } })
+    );
   });
 
   it("shows the instance name", () => {
