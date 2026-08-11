@@ -12,12 +12,16 @@ Convert all three "overview" views — instance detail, member (node) view, and 
 | Topic | Decision |
 |---|---|
 | Shared component | `KeyValueTable` — read-only two-column table (Property \| Value) built on the existing `Table` primitive |
-| Instance overview | `OverviewTab` renders a `KeyValueTable` (Name, Status, Type, Created, Last used, Profiles, IPs, Memory limit, CPU limit) + description below |
+| Checkbox column | Present in EVERY table — functional with selection, inert (disabled) otherwise |
+| Descriptions | Field help — muted helper text under the value in the Value cell, NOT a column |
+| IP rows | One row per IP address; IPv4 + IPv6 |
+| Instance overview | `OverviewTab` renders a `KeyValueTable` (Status, Type, Created, Last used, Profiles, one IP row per address, Memory limit, CPU limit) + description below |
 | Member view | Gains `VerticalTabs` — **Overview \| Instances**; Overview = member `KeyValueTable` (Member, Status, Architecture, Database, URL, Message); Instances = the existing location-filtered table; header strip stays above |
-| Global overview | `/dashboard` becomes the global overview: server `KeyValueTable` (Hostname, Version, Project, API status) + resource-summary `KeyValueTable` (Instances by state, Images, Profiles, Networks, Storage pools) + recent operations list below |
+| Global overview | `/dashboard` becomes the global overview: server `KeyValueTable` (Hostname, Version, Project) + resource-summary `KeyValueTable` (Instances by state, Images, Profiles, Networks, Storage pools) + recent operations list below |
 | Gauges | Dropped (CPU/memory gauges and per-instance state aggregation superseded by the summary tables) |
 | Routing | Member tabs use `?tab=` (default `overview`) like the project overview; no other route changes |
 | API | No new surface — all data already fetched |
+| Non-table content | Content that is not a table after vertical tabs (e.g. the Logs tab) gets padding (`p-3`) so it doesn't butt against the tab bar |
 
 ## 1. KeyValueTable Component
 
@@ -25,19 +29,25 @@ Convert all three "overview" views — instance detail, member (node) view, and 
 
 - `KeyValueTable({ rows, dataTestId? }: { rows: { key: string; value: ReactNode }[]; dataTestId?: string })`
 - Built on the existing `Table` primitive with two fixed columns (Property, Value), no selection/sorting/row-click.
-- **Table-parity design (user directive):** renders the standard thead header row (`Property | Value`) AND an **inert checkbox column** — disabled checkboxes per row, no select-all, no selection state — so it reads identically to the real tables while staying read-only.
+- **Table-parity design (user directive):** renders the standard thead header row (`Property | Value`); the checkbox column is present in EVERY table (functional when selection is wired, inert disabled checkboxes otherwise — handled by the `Table` primitive itself).
 - Value cells render arbitrary ReactNode (Badges, formatted text).
 - `data-testid="kv-table"` default.
 - Unit + RTL tests: renders rows, header, inert checkboxes (disabled), custom testid, empty rows render the table's empty message.
 
 ## 1b. Config Editor Table Parity
 
-The shared `KeyValueEditor` (instance Config tab + Profiles dialog) matches the real `Table` design:
+The shared `KeyValueEditor` (instance Config tab + Profiles dialog) matches the real `Table` design exactly:
 
-- **Header row:** thead with a checkbox header (select-all, like the real Table) + `Key | Value | Description`.
+- **Header row:** thead with a checkbox header (select-all) + `Key | Value`. NO description column — descriptions are field help, rendered as muted helper text under the value inside the Value cell.
 - **Checkbox column:** per-row checkboxes drive selection — **multi-select** like the real Table (checking a row no longer clears others; row-click no longer selects). `Edit` acts on the first selected row; `Remove` removes all selected rows; both stay disabled with no selection.
+- **Visual parity:** same `text-[13px]` sizing, `divide-y` row separation, `bg-surface-800` tbody, and row hover as the regular Table.
 - Hover pencil (`kv-edit-<key>`) and double-click value editing unchanged.
-- Tests updated: selection via checkboxes (multi-select, select-all), Edit on first selected, Remove-all-selected.
+- Tests updated: selection via checkboxes (multi-select, select-all), Edit on first selected, Remove-all-selected, description-as-helper-text.
+
+## 1c. IP Rows and IPv6
+
+- The instance overview shows **each IP on its own row** (key "IP address", one row per address).
+- Both IPv4 (`inet`) and IPv6 (`inet6`) addresses are included.
 
 ## 2. Instance Overview
 

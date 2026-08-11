@@ -75,15 +75,34 @@ All action buttons app-wide get a lucide icon (size 14, before the label):
 
 ## 6. Table-Style Config Editor
 
-The shared `KeyValueEditor` (instance Config tab + Profiles edit dialog) becomes a table with columns **Key | Value | Description**:
+The shared `KeyValueEditor` (instance Config tab + Profiles edit dialog) matches the regular `Table` design — columns **Key | Value** (no description column):
 
-- **Description column:** fed from `GET /1.0/metadata` (`configs[]` → `key`/`description`) fetched by the consumers into a `descriptions?: Record<string, string>` prop; unknown keys and unavailable metadata (the endpoint requires the server setting `incus config set metadata.enabled true`) render "—". The metadata fetch is global (not project-scoped).
+- **Descriptions are field help:** fed from `GET /1.0/metadata` (`configs[]` → `key`/`description`) into a `descriptions?: Record<string, string>` prop; rendered as muted helper text under the value inside the Value cell (absent when the server lacks `metadata.enabled`). The metadata fetch is global (not project-scoped).
 - **Three edit paths into the same inline row-edit mode** (Enter/blur commits, Esc cancels):
-  1. Double-click a **value** cell → inline input (keys read-only on double-click)
+  1. Double-click a **value** cell → inline input
   2. Select a row + **Edit** button (`kv-edit`, `Pencil`, enabled with a selection) → key + value both editable
   3. Hover the row → **Pencil icon** (`kv-edit-<key>`) → key + value both editable
-- **Add / Remove** buttons above the table (`kv-add` `Plus`, `kv-remove` `Trash2`); Remove enabled only with a selection.
-- Key-collision no-op rule preserved; edit-mode inputs use `kv-key-edit-<key>` / `kv-value-edit-<key>` testids (avoids the mid-edit testid-change trap).
+- **Checkbox column:** per-row multi-select checkboxes + select-all in the header; `Edit` acts on the first selected row; `Remove` removes all selected.
+- **Add / Remove** buttons above the table (`kv-add` `Plus`, `kv-remove` `Trash2`).
+- Key-collision no-op rule preserved; edit-mode inputs use `kv-key-edit-<key>` / `kv-value-edit-<key>` testids.
+
+## 6b. VGA Console (SPICE)
+
+The VGA console works via the Incus console websocket carrying the SPICE protocol:
+
+- **API:** the console endpoint requires **POST** (PUT returns 501); `InstancesApi.console()` posts `{ width, height, type: "vga", force: true }`.
+- **Rendering:** the vendored spice-html5 library (`lib/spice/src`, LGPL) renders the VGA mode into a canvas via `SpiceMainConn` fed by the operation websocket, with a control websocket alongside. The connection instance is exposed as `window.spice_connection` (required by the library's resize helpers).
+- **Fit:** the canvas scales to fit the terminal window (`#spice-screen` flex + `max-width/height` + `object-fit: contain`); the guest-side resolution change (SPICE monitors-config) only applies when the guest runs the SPICE guest agent.
+- **Input mapping:** mouse coordinates are scaled from CSS pixels back to framebuffer pixels (`canvas.width / rect.width`) so the pointer aligns on scaled canvases.
+- Shell mode keeps xterm (unchanged).
+- jsdom shims: legacy `crypto.random` polyfill and the module mock for tests.
+
+## 6c. Table/Key-Value Design Unification (directives)
+
+- The config editor (`KeyValueEditor`) and the overview tables (`KeyValueTable`) share the regular `Table`'s visual design: same `text-[13px]` sizing, `border-collapse`, thead styling, `divide-y` rows, `bg-surface-800` tbody, and row hover.
+- The checkbox column is present in every table — functional when selection is wired, inert (disabled) checkboxes otherwise.
+- Rounded corners removed from `VerticalTabs` tab buttons, `Tree` rows, and tree action buttons (flush layout).
+- Content that is not a table after vertical tabs gets padding (`p-3`) so it doesn't butt against the tab bar (e.g. the Logs tab).
 
 ## 7. Testing (updated)
 
