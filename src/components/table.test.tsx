@@ -45,13 +45,13 @@ describe("Table", () => {
     expect(onSelectionChange).toHaveBeenCalledWith(["web1", "db1"]);
   });
 
-  it("renders an inert checkbox column when requested", () => {
-    render(<Table columns={columns} rows={rows} rowKey={(r) => r.name} inertCheckboxColumn />);
-    const boxes = screen.getAllByTestId("inert-checkbox");
-    expect(boxes).toHaveLength(rows.length);
-    expect(boxes[0]).toBeDisabled();
-    expect(screen.queryByTestId("select-all")).not.toBeInTheDocument();
-  });
+it("renders an inert checkbox column without selection", () => {
+  render(<Table columns={columns} rows={rows} rowKey={(r) => r.name} />);
+  const boxes = screen.getAllByTestId("inert-checkbox");
+  expect(boxes).toHaveLength(rows.length);
+  expect(boxes[0]).toBeDisabled();
+  expect(screen.queryByTestId("select-all")).not.toBeInTheDocument();
+});
 
   it("shows empty message", () => {
     render(<Table columns={columns} rows={[]} rowKey={(r) => r.name} emptyMessage="Nothing here" />);

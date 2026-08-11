@@ -17,5 +17,5 @@ export function KeyValueTable({ rows, dataTestId = "kv-table" }: KeyValueTablePr
     { key: "property", header: "Property", render: (r) => r.key },
     { key: "value", header: "Value", render: (r) => r.value },
   ];
-  return <Table columns={columns} rows={rows} rowKey={(r) => r.key} inertCheckboxColumn emptyMessage="No data" dataTestId={dataTestId} />;
+  return <Table columns={columns} rows={rows} rowKey={(r) => r.key} emptyMessage="No data" dataTestId={dataTestId} />;
 }

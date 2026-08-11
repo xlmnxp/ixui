@@ -17,7 +17,6 @@ export interface TableProps<T> {
   onRowClick?: (row: T) => void;
   selectedKeys?: string[];
   onSelectionChange?: (keys: string[]) => void;
-  inertCheckboxColumn?: boolean;
   emptyMessage?: string;
   dataTestId?: string;
 }
@@ -29,7 +28,6 @@ export function Table<T>({
   onRowClick,
   selectedKeys,
   onSelectionChange,
-  inertCheckboxColumn,
   emptyMessage = "No data",
   dataTestId = "table",
 }: TableProps<T>) {
@@ -79,9 +77,9 @@ export function Table<T>({
               <th className="w-8 px-3 py-2">
                 <input type="checkbox" data-testid="select-all" checked={allSelected} onChange={toggleAll} className="accent-accent-600" aria-label="Select all" />
               </th>
-            ) : inertCheckboxColumn ? (
+            ) : (
               <th className="w-8 px-3 py-2" aria-hidden="true" />
-            ) : null}
+            )}
             {columns.map((col) => (
               <th
                 key={col.key}
@@ -99,7 +97,7 @@ export function Table<T>({
         <tbody className="divide-y divide-border bg-surface-800">
           {sorted.length === 0 ? (
             <tr>
-              <td colSpan={columns.length + (onSelectionChange || inertCheckboxColumn ? 1 : 0)} className="px-2 py-8 text-center text-text-tertiary">
+              <td colSpan={columns.length + 1} className="px-2 py-8 text-center text-text-tertiary">
                 {emptyMessage}
               </td>
             </tr>
@@ -127,11 +125,11 @@ export function Table<T>({
                         aria-label={`Select ${key}`}
                       />
                     </td>
-                  ) : inertCheckboxColumn ? (
+                  ) : (
                     <td className="px-3 py-2">
                       <input type="checkbox" data-testid="inert-checkbox" disabled aria-label="Read-only" className="accent-accent-600" />
                     </td>
-                  ) : null}
+                  )}
                   {columns.map((col) => (
                     <td key={col.key} className={`px-2 py-1 ${col.align === "right" ? "text-right" : ""}`} style={{ width: col.width }}>
                       {col.render(row)}
