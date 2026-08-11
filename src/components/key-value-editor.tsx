@@ -160,17 +160,17 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
                 <input type="checkbox" data-testid={`kv-check-${key}`} checked={selectedKeys.includes(key)} onChange={() => toggle(key)} className="accent-accent-600" aria-label={`Select ${key}`} />
               </td>
               <td data-testid={`kv-key-${key}`} onDoubleClick={() => startEditing(key)} className="px-2 py-1 font-mono text-xs text-text-primary">
-                {editing === key ? keyInput(key) : (
+                {editing === key ? keyInput(key) : key}
+              </td>
+              <td data-testid={`kv-value-${key}`} onDoubleClick={() => startEditing(key)} className="px-2 py-1 text-sm text-text-primary">
+                {editing === key ? valueInput(key) : (
                   <span className="inline-flex items-center gap-1.5">
-                    {key}
+                    {value}
                     <span className="opacity-0 transition-opacity group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); startEditing(key); }}>
                       <button data-testid={`kv-edit-${key}`} aria-label={`Edit ${key}`} type="button" className="text-text-tertiary hover:text-text-primary"><Pencil size={13} /></button>
                     </span>
                   </span>
                 )}
-              </td>
-              <td data-testid={`kv-value-${key}`} onDoubleClick={() => startEditing(key)} className="px-2 py-1 text-sm text-text-primary">
-                {editing === key ? valueInput(key) : value}
                 {descriptions?.[key] && <div className="text-xs text-text-tertiary">{descriptions[key]}</div>}
               </td>
             </tr>
