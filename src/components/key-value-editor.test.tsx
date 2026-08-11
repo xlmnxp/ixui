@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { KeyValueEditor } from "./key-value-editor";
 
@@ -36,12 +36,28 @@ describe("KeyValueEditor", () => {
     expect(onChange).toHaveBeenCalledWith({ key2: "b" });
   });
 
-  it("adds entries", async () => {
+  it("adds an unfilled row in edit mode with the key preselected", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<KeyValueEditor values={{ key1: "a" }} onChange={onChange} />);
     await user.click(screen.getByTestId("kv-add"));
-    expect(onChange).toHaveBeenCalledWith({ key1: "a", custom_2: "" });
+    expect(onChange).toHaveBeenCalledWith({ key1: "a", "": "" });
+    const keyInput = screen.getByTestId("kv-key-edit-") as HTMLInputElement;
+    await waitFor(() => expect(keyInput).toHaveFocus());
+    expect(keyInput.value).toBe("");
+    await user.type(keyInput, "custom");
+    await user.keyboard("{Enter}");
+    expect(onChange).toHaveBeenLastCalledWith({ key1: "a", custom: "" });
+  });
+
+  it("removes a newly created row on Escape", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<KeyValueEditor values={{ key1: "a" }} onChange={onChange} />);
+    await user.click(screen.getByTestId("kv-add"));
+    await user.keyboard("{Escape}");
+    expect(onChange).toHaveBeenLastCalledWith({ key1: "a" });
+    expect(screen.queryByTestId("kv-row-")).not.toBeInTheDocument();
   });
 
   it("does not overwrite an existing key when renaming onto it", async () => {

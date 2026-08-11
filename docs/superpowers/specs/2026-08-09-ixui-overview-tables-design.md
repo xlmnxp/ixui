@@ -41,8 +41,15 @@ The shared `KeyValueEditor` (instance Config tab + Profiles dialog) matches the 
 - **Header row:** thead with a checkbox header (select-all) + `Key | Value`. NO description column — descriptions are field help, rendered as muted helper text under the value inside the Value cell.
 - **Checkbox column:** per-row checkboxes drive selection — **multi-select** like the real Table (checking a row no longer clears others; row-click no longer selects). `Edit` acts on the first selected row; `Remove` removes all selected rows; both stay disabled with no selection.
 - **Visual parity:** same `text-[13px]` sizing, `divide-y` row separation, `bg-surface-800` tbody, and row hover as the regular Table.
-- Hover pencil (`kv-edit-<key>`) and double-click value editing unchanged.
+- Hover pencil (`kv-edit-<key>`, next to the VALUE) and double-click value editing unchanged.
 - Tests updated: selection via checkboxes (multi-select, select-all), Edit on first selected, Remove-all-selected, description-as-helper-text.
+
+## 1c. Config Page Layout (directives)
+
+- **Full-width table:** the Config tab has no max-width/padding — the editor table spans the full content width like the overview tables.
+- **Description as a nullable first row:** the instance description is a first table row ("Description") in the editor — editable inline like any row, nullable (empty allowed), wired via `description`/`onDescriptionChange` props. Not a top input, not a column.
+- **No Add button — in-table placeholder:** the toolbar Add button is gone; a ghost "+ Add row" row at the bottom of the table (`kv-add-row`) appends an EMPTY row (no `custom_N` prefill), enters edit mode with the key input focused and preselected. **Escape removes the freshly created row** (existing rows: Escape just cancels).
+- **Save/Cancel/Delete in the instance bar (Config tab only):** the config editor lifts its actions up via `registerActions` (save, cancel, removeSelected, dirty, selectedCount); the instance action strip shows **Save (disabled unless dirty) | Cancel | Delete (enabled when rows are selected)** on the Config tab, grouped before the lifecycle buttons.
 
 ## 1c. IP Rows and IPv6
 

@@ -91,6 +91,15 @@ export function KeyValueEditor({
   };
 
   const cancelEdit = () => {
+    if (editing === "" && editingRef.current === "") {
+      const next = { ...values };
+      delete next[""];
+      const nextDisplay = { ...displayValues };
+      delete nextDisplay[""];
+      setDisplayValues(nextDisplay);
+      setSelectedKeys((prev) => prev.filter((k) => k !== ""));
+      onChange(next);
+    }
     editingRef.current = null;
     setEditing(null);
   };
@@ -115,7 +124,7 @@ export function KeyValueEditor({
   };
 
   const addEntry = () => {
-    const key = `custom_${entryCount + 1}`;
+    const key = "";
     const next = { ...values, [key]: "" };
     const nextDisplay = { ...displayValues, [key]: "" };
     setDisplayValues(nextDisplay);
@@ -127,7 +136,7 @@ export function KeyValueEditor({
   const selectKeyOnEditRef = useRef(false);
 
   useEffect(() => {
-    if (!editing || !selectKeyOnEditRef.current) return;
+    if (editing === null || !selectKeyOnEditRef.current) return;
     selectKeyOnEditRef.current = false;
     const input = document.querySelector<HTMLInputElement>(`[data-testid="kv-key-edit-${editing}"]`);
     input?.focus();
