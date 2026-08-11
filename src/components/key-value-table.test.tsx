@@ -2,13 +2,13 @@ import { render, screen } from "@testing-library/react";
 import { KeyValueTable } from "./key-value-table";
 
 describe("KeyValueTable", () => {
-  it("renders rows with header and inert checkboxes", () => {
+  it("renders rows with header", () => {
     render(<KeyValueTable rows={[{ key: "Status", value: "Running" }, { key: "Type", value: "Container" }]} />);
     expect(screen.getByTestId("kv-table")).toBeInTheDocument();
     expect(screen.getByText("Property")).toBeInTheDocument();
     expect(screen.getByText("Value")).toBeInTheDocument();
     expect(screen.getByText("Running")).toBeInTheDocument();
-    expect(screen.getAllByTestId("inert-checkbox")).toHaveLength(2);
+    expect(screen.queryByTestId("inert-checkbox")).not.toBeInTheDocument();
   });
 
   it("supports a custom testid", () => {
