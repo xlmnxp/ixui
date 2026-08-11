@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { infraApi } from "../api";
 import type { Network } from "../api/types";
@@ -11,9 +11,10 @@ import { Input } from "../components/input";
 import { Select } from "../components/select";
 import { EmptyState } from "../components/empty-state";
 import { PageBar } from "../components/page-bar";
+import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
 
-export function NetworksPage() {
+export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [networks, setNetworks] = useState<Network[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Network | null>(null);
@@ -105,15 +106,22 @@ export function NetworksPage() {
     },
   ];
 
+  const barActions = useMemo(
+    () => [
+      <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
+      <Button key="create" size="sm" data-testid="network-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create network</Button>,
+    ],
+    [selectedKeys, setDeleteManyOpen, setCreateOpen]
+  );
+
+  useEffect(() => {
+    registerBar?.({ title: "Networks", actions: barActions });
+    return () => registerBar?.(null);
+  }, [registerBar, barActions]);
+
   return (
     <div className="space-y-4" data-testid="networks-page">
-      <PageBar
-        title="Networks"
-        actions={[
-          <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
-          <Button key="create" size="sm" data-testid="network-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create network</Button>,
-        ]}
-      />
+      {!registerBar && <PageBar title="Networks" actions={barActions} />}
 
       {networks.length === 0 ? (
         <EmptyState title="No networks" />

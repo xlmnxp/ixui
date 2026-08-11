@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Database, Plus, Trash2, X } from "lucide-react";
 import { infraApi } from "../api";
 import type { StoragePool, StorageVolume } from "../api/types";
@@ -11,9 +11,10 @@ import { Input } from "../components/input";
 import { Select } from "../components/select";
 import { EmptyState } from "../components/empty-state";
 import { PageBar } from "../components/page-bar";
+import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
 
-export function StoragePage() {
+export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [pools, setPools] = useState<StoragePool[]>([]);
   const [volumes, setVolumes] = useState<Record<string, StorageVolume[]>>({});
   const [createOpen, setCreateOpen] = useState(false);
@@ -153,15 +154,22 @@ export function StoragePage() {
     },
   ];
 
+  const barActions = useMemo(
+    () => [
+      <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
+      <Button key="create" size="sm" data-testid="pool-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create pool</Button>,
+    ],
+    [selectedKeys, setDeleteManyOpen, setCreateOpen]
+  );
+
+  useEffect(() => {
+    registerBar?.({ title: "Storage pools", actions: barActions });
+    return () => registerBar?.(null);
+  }, [registerBar, barActions]);
+
   return (
     <div className="space-y-4" data-testid="storage-page">
-      <PageBar
-        title="Storage pools"
-        actions={[
-          <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
-          <Button key="create" size="sm" data-testid="pool-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create pool</Button>,
-        ]}
-      />
+      {!registerBar && <PageBar title="Storage pools" actions={barActions} />}
 
       {pools.length === 0 ? (
         <EmptyState title="No storage pools" />

@@ -33,7 +33,7 @@ describe("ProjectOverview", () => {
     expect(await screen.findByTestId("vertical-tabs")).toBeInTheDocument();
     expect(screen.getByTestId("vtab-images")).toBeInTheDocument();
     expect(screen.getByTestId("instances-page")).toBeInTheDocument();
-    expect(screen.getByTestId("overview-create")).toBeInTheDocument();
+    expect(screen.getByTestId("action-create")).toBeInTheDocument();
   });
 
   it("switches tabs via query param", async () => {
@@ -59,7 +59,19 @@ describe("ProjectOverview", () => {
         </Routes>
       </MemoryRouter>
     );
-    await user.click(await screen.findByTestId("overview-create"));
+    await user.click(await screen.findByTestId("action-create"));
     expect(screen.getByTestId("window")).toBeInTheDocument();
+  });
+
+  it("renders the images actions in the project bar", async () => {
+    render(
+      <MemoryRouter initialEntries={["/?tab=images"]}>
+        <Routes>
+          <Route path="/" element={<ProjectOverview />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(await screen.findByTestId("images-page")).toBeInTheDocument();
+    expect(screen.getByTestId("page-bar")).toContainElement(screen.getByTestId("pull-open"));
   });
 });

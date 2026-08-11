@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { infraApi, serverApi } from "../api";
 import type { Profile } from "../api/types";
@@ -11,9 +11,10 @@ import { Input } from "../components/input";
 import { KeyValueEditor } from "../components/key-value-editor";
 import { EmptyState } from "../components/empty-state";
 import { PageBar } from "../components/page-bar";
+import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
 
-export function ProfilesPage() {
+export function ProfilesPage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Profile | null>(null);
@@ -124,15 +125,22 @@ export function ProfilesPage() {
     },
   ];
 
+  const barActions = useMemo(
+    () => [
+      <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
+      <Button key="create" size="sm" data-testid="profile-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create profile</Button>,
+    ],
+    [selectedKeys, setDeleteManyOpen, setCreateOpen]
+  );
+
+  useEffect(() => {
+    registerBar?.({ title: "Profiles", actions: barActions });
+    return () => registerBar?.(null);
+  }, [registerBar, barActions]);
+
   return (
     <div className="space-y-4" data-testid="profiles-page">
-      <PageBar
-        title="Profiles"
-        actions={[
-          <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
-          <Button key="create" size="sm" data-testid="profile-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create profile</Button>,
-        ]}
-      />
+      {!registerBar && <PageBar title="Profiles" actions={barActions} />}
 
       {profiles.length === 0 ? (
         <EmptyState title="No profiles" />

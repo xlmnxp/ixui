@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, Trash2, X } from "lucide-react";
 import { infraApi } from "../api";
 import type { Image } from "../api/types";
@@ -11,10 +11,11 @@ import { Input } from "../components/input";
 import { Select } from "../components/select";
 import { EmptyState } from "../components/empty-state";
 import { PageBar } from "../components/page-bar";
+import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
 import { formatBytes } from "../lib/format";
 
-export function ImagesPage() {
+export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [images, setImages] = useState<Image[]>([]);
   const [pullOpen, setPullOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Image | null>(null);
@@ -88,15 +89,22 @@ export function ImagesPage() {
     },
   ];
 
+  const barActions = useMemo(
+    () => [
+      <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
+      <Button key="pull" size="sm" data-testid="pull-open" onClick={() => setPullOpen(true)}><Download size={14} /> Pull image</Button>,
+    ],
+    [selectedKeys, setDeleteManyOpen, setPullOpen]
+  );
+
+  useEffect(() => {
+    registerBar?.({ title: "Images", actions: barActions });
+    return () => registerBar?.(null);
+  }, [registerBar, barActions]);
+
   return (
     <div className="space-y-4" data-testid="images-page">
-      <PageBar
-        title="Images"
-        actions={[
-          <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
-          <Button key="pull" size="sm" data-testid="pull-open" onClick={() => setPullOpen(true)}><Download size={14} /> Pull image</Button>,
-        ]}
-      />
+      {!registerBar && <PageBar title="Images" actions={barActions} />}
 
       {images.length === 0 ? (
         <EmptyState title="No images" description="Pull an image from a remote to get started." />

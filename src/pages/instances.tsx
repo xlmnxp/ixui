@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { instancesApi } from "../api";
 import { useStore } from "../state/store";
@@ -13,13 +13,14 @@ import { Button } from "../components/button";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { EmptyState } from "../components/empty-state";
 import { PageBar } from "../components/page-bar";
+import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
 import { Play, Square, RotateCw, Snowflake, Trash2, Plus, Eye } from "lucide-react";
 import type { Instance } from "../api/types";
 
 type Action = "start" | "stop" | "restart" | "freeze" | "unfreeze";
 
-export function InstancesPage({ location, onCreate }: { location?: string; onCreate?: () => void } = {}) {
+export function InstancesPage({ location, onCreate, registerBar }: { location?: string; onCreate?: () => void; registerBar?: (bar: BarState | null) => void } = {}) {
   const project = useStore(currentProjectStore);
   const instances = useStore(instancesStore);
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ export function InstancesPage({ location, onCreate }: { location?: string; onCre
     void loadInstances(project);
   }, [project]);
 
-  const runAction = async (action: Action, names: string[]) => {
+  const runAction = useCallback(async (action: Action, names: string[]) => {
     setBusy(() => Object.fromEntries(names.map((n) => [n, true])));
     try {
       await Promise.all(names.map((n) => instancesApi.setState(n, action)));
@@ -46,7 +47,7 @@ export function InstancesPage({ location, onCreate }: { location?: string; onCre
     } finally {
       setBusy(() => Object.fromEntries(names.map((n) => [n, false])));
     }
-  };
+  }, []);
 
   const confirmDelete = async () => {
     setDeleting(true);
@@ -95,19 +96,26 @@ export function InstancesPage({ location, onCreate }: { location?: string; onCre
 
   const actionDisabled = selectedKeys.length === 0;
 
+  const barActions = useMemo(
+    () => [
+      ...(onCreate ? [<Button key="create" size="sm" onClick={onCreate} data-testid="action-create"><Plus size={14} /> Create instance</Button>] : []),
+      <Button key="start" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-start" onClick={() => runAction("start", selectedKeys)}><Play size={14} /> Start</Button>,
+      <Button key="stop" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-stop" onClick={() => runAction("stop", selectedKeys)}><Square size={14} /> Stop</Button>,
+      <Button key="restart" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-restart" onClick={() => runAction("restart", selectedKeys)}><RotateCw size={14} /> Restart</Button>,
+      <Button key="freeze" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-freeze" onClick={() => runAction("freeze", selectedKeys)}><Snowflake size={14} /> Freeze</Button>,
+      <Button key="delete" size="sm" variant="danger" disabled={actionDisabled} data-testid="action-delete" onClick={() => setDeleteOpen(true)}><Trash2 size={14} /> Delete</Button>,
+    ],
+    [onCreate, actionDisabled, selectedKeys, runAction, setDeleteOpen]
+  );
+
+  useEffect(() => {
+    registerBar?.({ title: "Instances", actions: barActions });
+    return () => registerBar?.(null);
+  }, [registerBar, barActions]);
+
   return (
     <div data-testid="instances-page">
-      <PageBar
-        title="Instances"
-        actions={[
-          ...(onCreate ? [<Button key="create" size="sm" onClick={onCreate} data-testid="action-create"><Plus size={14} /> Create instance</Button>] : []),
-          <Button key="start" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-start" onClick={() => runAction("start", selectedKeys)}><Play size={14} /> Start</Button>,
-          <Button key="stop" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-stop" onClick={() => runAction("stop", selectedKeys)}><Square size={14} /> Stop</Button>,
-          <Button key="restart" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-restart" onClick={() => runAction("restart", selectedKeys)}><RotateCw size={14} /> Restart</Button>,
-          <Button key="freeze" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-freeze" onClick={() => runAction("freeze", selectedKeys)}><Snowflake size={14} /> Freeze</Button>,
-          <Button key="delete" size="sm" variant="danger" disabled={actionDisabled} data-testid="action-delete" onClick={() => setDeleteOpen(true)}><Trash2 size={14} /> Delete</Button>,
-        ]}
-      />
+      {!registerBar && <PageBar title="Instances" actions={barActions} />}
 
       {scoped.length === 0 ? (
         <EmptyState

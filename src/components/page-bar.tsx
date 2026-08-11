@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
 
+export interface BarState {
+  title: ReactNode;
+  actions: ReactNode[];
+}
+
 export interface PageBarProps {
   title: ReactNode;
   actions?: ReactNode[];
