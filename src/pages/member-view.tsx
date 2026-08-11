@@ -8,6 +8,7 @@ import { KeyValueTable } from "../components/key-value-table";
 import { VerticalTabs } from "../components/vertical-tabs";
 import type { VerticalTabItem } from "../components/vertical-tabs";
 import { InstancesPage } from "./instances";
+import type { BarState } from "../components/page-bar";
 
 const tabs: VerticalTabItem[] = [
   { key: "overview", label: "Overview", icon: <Gauge size={14} /> },
@@ -21,6 +22,7 @@ export function MemberView() {
   const tab = tabParam === "instances" ? "instances" : "overview";
   const [members, setMembers] = useState<ClusterMember[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [tabBar, setTabBar] = useState<BarState | null>(null);
 
   useEffect(() => {
     void clusterApi.listMembers().then((m) => {
@@ -49,6 +51,9 @@ export function MemberView() {
           <h1 className="text-base font-semibold text-text-primary">{member.server_name}</h1>
           <Badge tone={member.status === "Online" ? "success" : "neutral"}>{member.status}</Badge>
           <span className="text-xs text-text-tertiary">{member.architecture}</span>
+          {tabBar?.actions && tabBar.actions.length > 0 && (
+            <div className="ml-auto flex items-center gap-1.5">{tabBar.actions}</div>
+          )}
         </div>
       )}
       <div className="flex min-h-0 flex-1">
@@ -64,7 +69,7 @@ export function MemberView() {
               { key: "Message", value: member?.message || "—" },
             ]} />
           )}
-          {tab === "instances" && <InstancesPage location={name} />}
+          {tab === "instances" && <InstancesPage location={name} registerBar={setTabBar} />}
         </div>
       </div>
     </div>
