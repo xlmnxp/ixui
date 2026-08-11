@@ -2,20 +2,42 @@ import { useEffect, useRef, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "./button";
 
+const DESCRIPTION_ROW = "__description__";
+
 export interface KeyValueEditorProps {
   values: Record<string, string>;
   onChange: (values: Record<string, string>) => void;
   dataTestId?: string;
   descriptions?: Record<string, string>;
+  description?: string;
+  onDescriptionChange?: (description: string) => void;
+  selectedKeys?: string[];
+  onSelectionChange?: (keys: string[]) => void;
+  showToolbar?: boolean;
 }
 
-export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", descriptions }: KeyValueEditorProps) {
-  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+export function KeyValueEditor({
+  values,
+  onChange,
+  dataTestId = "kv-editor",
+  descriptions,
+  description,
+  onDescriptionChange,
+  selectedKeys: controlledSelected,
+  onSelectionChange: onControlledSelection,
+  showToolbar = true,
+}: KeyValueEditorProps) {
+  const [internalSelected, setInternalSelected] = useState<string[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [draftKey, setDraftKey] = useState("");
   const [draftValue, setDraftValue] = useState("");
   const [displayValues, setDisplayValues] = useState(values);
   const editingRef = useRef<string | null>(null);
+
+  const selectedKeys = controlledSelected ?? internalSelected;
+  const setSelectedKeys: (keys: string[] | ((prev: string[]) => string[])) => void = controlledSelected !== undefined && onControlledSelection
+    ? (updater) => onControlledSelection(typeof updater === "function" ? updater(selectedKeys) : updater)
+    : setInternalSelected;
 
   useEffect(() => {
     setDisplayValues(values);
@@ -37,14 +59,19 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
 
   const startEditing = (key: string) => {
     editingRef.current = key;
-    setDraftKey(key);
-    setDraftValue(values[key] ?? "");
+    setDraftKey(key === DESCRIPTION_ROW ? "Description" : key);
+    setDraftValue(key === DESCRIPTION_ROW ? (description ?? "") : (values[key] ?? ""));
     setEditing(key);
   };
 
   const commitEdit = (oldKey: string, newKey: string, newValue: string) => {
     if (editingRef.current !== oldKey) return;
     editingRef.current = null;
+    if (oldKey === DESCRIPTION_ROW) {
+      onDescriptionChange?.(newValue);
+      setEditing(null);
+      return;
+    }
     const next = { ...values };
     const finalKey = newKey in next && newKey !== oldKey ? oldKey : newKey;
     if (finalKey !== oldKey) {
@@ -72,10 +99,16 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
     if (selectedKeys.length === 0) return;
     const next = { ...values };
     const nextDisplay = { ...displayValues };
+    let clearDescription = false;
     for (const key of selectedKeys) {
+      if (key === DESCRIPTION_ROW) {
+        clearDescription = true;
+        continue;
+      }
       delete next[key];
       delete nextDisplay[key];
     }
+    if (clearDescription) onDescriptionChange?.("");
     setDisplayValues(nextDisplay);
     setSelectedKeys([]);
     onChange(next);
@@ -87,7 +120,19 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
     const nextDisplay = { ...displayValues, [key]: "" };
     setDisplayValues(nextDisplay);
     onChange(next);
+    selectKeyOnEditRef.current = true;
+    startEditing(key);
   };
+
+  const selectKeyOnEditRef = useRef(false);
+
+  useEffect(() => {
+    if (!editing || !selectKeyOnEditRef.current) return;
+    selectKeyOnEditRef.current = false;
+    const input = document.querySelector<HTMLInputElement>(`[data-testid="kv-key-edit-${editing}"]`);
+    input?.focus();
+    input?.select();
+  }, [editing]);
 
   const keyInput = (rowKey: string) => (
     <input
@@ -133,11 +178,13 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
 
   return (
     <div className="space-y-2" data-testid={dataTestId}>
-      <div className="flex items-center gap-2">
-        <Button variant="secondary" size="sm" data-testid="kv-add" onClick={addEntry}><Plus size={13} /> Add</Button>
-        <Button variant="secondary" size="sm" data-testid="kv-edit" onClick={() => { if (selectedKeys[0]) startEditing(selectedKeys[0]); }} disabled={selectedKeys.length === 0}><Pencil size={13} /> Edit</Button>
-        <Button variant="secondary" size="sm" data-testid="kv-remove" onClick={removeSelected} disabled={selectedKeys.length === 0}><Trash2 size={13} /> Remove</Button>
-      </div>
+      {showToolbar && (
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" data-testid="kv-add" onClick={addEntry}><Plus size={13} /> Add</Button>
+          <Button variant="secondary" size="sm" data-testid="kv-edit" onClick={() => { if (selectedKeys[0]) startEditing(selectedKeys[0]); }} disabled={selectedKeys.length === 0}><Pencil size={13} /> Edit</Button>
+          <Button variant="secondary" size="sm" data-testid="kv-remove" onClick={removeSelected} disabled={selectedKeys.length === 0}><Trash2 size={13} /> Remove</Button>
+        </div>
+      )}
       <table className="w-full border-collapse text-[13px]">
         <thead className="border-b border-border bg-surface-700 text-left text-xs text-text-secondary">
           <tr>
@@ -149,6 +196,28 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
           </tr>
         </thead>
         <tbody className="divide-y divide-border bg-surface-800">
+          {description !== undefined && (
+            <tr
+              data-testid="kv-row-Description"
+              data-selected={selectedKeys.includes(DESCRIPTION_ROW)}
+              className={`group ${selectedKeys.includes(DESCRIPTION_ROW) ? "bg-accent-600/10" : "hover:bg-surface-700/60"}`}
+            >
+              <td className="w-8 px-2 py-1">
+                <input type="checkbox" data-testid="kv-check-Description" checked={selectedKeys.includes(DESCRIPTION_ROW)} onChange={() => toggle(DESCRIPTION_ROW)} className="accent-accent-600" aria-label="Select Description" />
+              </td>
+              <td className="px-2 py-1 text-xs text-text-primary">Description</td>
+              <td data-testid="kv-value-Description" onDoubleClick={() => startEditing(DESCRIPTION_ROW)} className="px-2 py-1 text-sm text-text-primary">
+                {editing === DESCRIPTION_ROW ? valueInput(DESCRIPTION_ROW) : (
+                  <span className="inline-flex items-center gap-1.5">
+                    {description || "—"}
+                    <span className="opacity-0 transition-opacity group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); startEditing(DESCRIPTION_ROW); }}>
+                      <button data-testid={`kv-edit-${DESCRIPTION_ROW}`} aria-label="Edit Description" type="button" className="text-text-tertiary hover:text-text-primary"><Pencil size={13} /></button>
+                    </span>
+                  </span>
+                )}
+              </td>
+            </tr>
+          )}
           {entries.map(([key, value]) => (
             <tr
               key={key}
@@ -175,6 +244,14 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
               </td>
             </tr>
           ))}
+          <tr className="hover:bg-surface-700/60">
+            <td className="w-8 px-2 py-1" />
+            <td className="px-2 py-1" colSpan={2}>
+              <button type="button" data-testid="kv-add-row" onClick={addEntry} className="flex w-full items-center gap-1.5 px-1 py-1 text-left text-xs text-text-tertiary hover:text-text-primary">
+                <Plus size={13} /> Add row
+              </button>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>

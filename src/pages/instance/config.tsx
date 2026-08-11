@@ -1,30 +1,42 @@
-import { useCallback, useEffect, useState } from "react";
-import { Check, RotateCcw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { instancesApi, serverApi } from "../../api";
 import type { Instance } from "../../api/types";
 import { KeyValueEditor } from "../../components/key-value-editor";
-import { Input } from "../../components/input";
-import { Button } from "../../components/button";
 import { toast } from "../../components/toast";
 import { validateConfigKey } from "../../lib/config";
 
-export interface ConfigTabProps {
-  instanceName: string;
+export interface ConfigActions {
+  save: () => Promise<void>;
+  cancel: () => void;
+  removeSelected: () => void;
+  dirty: boolean;
+  selectedCount: number;
 }
 
-export function ConfigTab({ instanceName }: ConfigTabProps) {
+export interface ConfigTabProps {
+  instanceName: string;
+  registerActions?: (actions: ConfigActions | null) => void;
+}
+
+export function ConfigTab({ instanceName, registerActions }: ConfigTabProps) {
   const [instance, setInstance] = useState<Instance | null>(null);
   const [config, setConfig] = useState<Record<string, string>>({});
   const [description, setDescription] = useState("");
+  const [initialConfig, setInitialConfig] = useState<Record<string, string>>({});
+  const [initialDescription, setInitialDescription] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
   const refresh = useCallback(() => {
     instancesApi.get(instanceName).then((i) => {
       setInstance(i);
       setConfig(i.config);
       setDescription(i.description);
+      setInitialConfig(i.config);
+      setInitialDescription(i.description);
+      setErrors({});
+      setSelectedKeys([]);
     }).catch(() => {});
   }, [instanceName]);
 
@@ -40,7 +52,12 @@ export function ConfigTab({ instanceName }: ConfigTabProps) {
       .catch(() => {});
   }, []);
 
-  const save = async () => {
+  const dirty = useMemo(
+    () => JSON.stringify(config) !== JSON.stringify(initialConfig) || description !== initialDescription,
+    [config, initialConfig, description, initialDescription]
+  );
+
+  const save = useCallback(async () => {
     const nextErrors: Record<string, string> = {};
     for (const key of Object.keys(config)) {
       const error = validateConfigKey(key);
@@ -48,31 +65,60 @@ export function ConfigTab({ instanceName }: ConfigTabProps) {
     }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
-    setSaving(true);
     try {
       await instancesApi.update(instanceName, { config, description });
       toast("success", "Configuration saved");
+      setInitialConfig(config);
+      setInitialDescription(description);
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Save failed");
-    } finally {
-      setSaving(false);
     }
-  };
+  }, [instanceName, config, description]);
+
+  const cancel = useCallback(() => {
+    setConfig(initialConfig);
+    setDescription(initialDescription);
+    setErrors({});
+    setSelectedKeys([]);
+  }, [initialConfig, initialDescription]);
+
+  const removeSelected = useCallback(() => {
+    if (selectedKeys.length === 0) return;
+    const next = { ...config };
+    let clearDescription = false;
+    for (const key of selectedKeys) {
+      if (key === "__description__") {
+        clearDescription = true;
+        continue;
+      }
+      delete next[key];
+    }
+    setConfig(next);
+    if (clearDescription) setDescription("");
+    setSelectedKeys([]);
+  }, [config, selectedKeys]);
+
+  useEffect(() => {
+    registerActions?.({ save, cancel, removeSelected, dirty, selectedCount: selectedKeys.length });
+    return () => registerActions?.(null);
+  }, [registerActions, save, cancel, removeSelected, dirty, selectedKeys.length]);
 
   if (!instance) return <div data-testid="config-tab">Loading…</div>;
 
   return (
-    <div className="max-w-2xl space-y-4" data-testid="config-tab">
-      <Input label="Description" name="config-description" data-testid="config-description" value={description} onChange={(e) => setDescription(e.target.value)} />
-      <div>
-        <div className="mb-1 text-xs font-medium text-text-secondary">Configuration</div>
-        <KeyValueEditor values={config} onChange={setConfig} dataTestId="config-editor" descriptions={descriptions} />
-      </div>
-      {Object.values(errors)[0] && <p className="text-xs text-red-300">{Object.values(errors)[0]}</p>}
-      <div className="flex gap-2">
-        <Button onClick={save} loading={saving} data-testid="config-save"><Check size={14} /> Save</Button>
-        <Button variant="secondary" onClick={refresh} data-testid="config-reset"><RotateCcw size={14} /> Reset</Button>
-      </div>
+    <div data-testid="config-tab">
+      <KeyValueEditor
+        values={config}
+        onChange={setConfig}
+        dataTestId="config-editor"
+        descriptions={descriptions}
+        description={description}
+        onDescriptionChange={setDescription}
+        selectedKeys={selectedKeys}
+        onSelectionChange={setSelectedKeys}
+        showToolbar={false}
+      />
+      {Object.values(errors)[0] && <p className="px-3 py-2 text-xs text-red-300">{Object.values(errors)[0]}</p>}
     </div>
   );
 }

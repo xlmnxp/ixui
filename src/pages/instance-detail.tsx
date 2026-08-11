@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Camera, FileText, Gauge, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2 } from "lucide-react";
+import { Camera, Check, FileText, Gauge, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
 import { instancesApi } from "../api";
 import type { Instance } from "../api/types";
 import { VerticalTabs } from "../components/vertical-tabs";
@@ -11,6 +11,7 @@ import { InstanceStatusIcon } from "../shell/instance-icon";
 import { OverviewTab } from "./instance-overview";
 import { SnapshotsTab } from "./instance/snapshots";
 import { ConfigTab } from "./instance/config";
+import type { ConfigActions } from "./instance/config";
 import { LogsTab } from "./instance/logs";
 
 export function InstanceDetailPage() {
@@ -20,6 +21,7 @@ export function InstanceDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [configActions, setConfigActions] = useState<ConfigActions | null>(null);
 
   const refresh = useCallback(() => {
     instancesApi.get(name).then(setInstance).catch(() => setNotFound(true));
@@ -72,6 +74,14 @@ export function InstanceDetailPage() {
         <h1 className="truncate text-sm font-semibold text-text-primary">{instance.name}</h1>
         <InstanceStatusIcon status={instance.status} />
         <div className="ml-auto flex items-center gap-1.5">
+          {activeTab === "config" && configActions && (
+            <>
+              <Button size="sm" variant="secondary" data-testid="config-save" disabled={!configActions.dirty} onClick={() => void configActions.save()}><Check size={14} /> Save</Button>
+              <Button size="sm" variant="ghost" data-testid="config-cancel" onClick={configActions.cancel}><X size={14} /> Cancel</Button>
+              <Button size="sm" variant="ghost" data-testid="config-delete" disabled={configActions.selectedCount === 0} onClick={configActions.removeSelected}><Trash2 size={14} /> Delete</Button>
+              <span className="mx-1 h-5 w-px bg-border" />
+            </>
+          )}
           <Button size="sm" variant="ghost" data-testid="detail-action-start" disabled={instance.status === "Started" || instance.status === "Running"} onClick={() => setState("start")}><Play size={14} /> Start</Button>
           <Button size="sm" variant="ghost" data-testid="detail-action-stop" disabled={instance.status === "Stopped" || instance.status === "Error" || instance.status === "Stopping" || instance.status === "Freezing"} onClick={() => setState("stop")}><Square size={14} /> Stop</Button>
           <Button size="sm" variant="ghost" data-testid="detail-action-restart" disabled={instance.status !== "Started" && instance.status !== "Running"} onClick={() => setState("restart")}><RotateCw size={14} /> Restart</Button>
@@ -85,7 +95,7 @@ export function InstanceDetailPage() {
         <div className="min-w-0 flex-1 overflow-auto">
           {activeTab === "overview" && <OverviewTab instance={instance} />}
           {activeTab === "snapshots" && <SnapshotsTab instanceName={name} />}
-          {activeTab === "config" && <ConfigTab instanceName={name} />}
+          {activeTab === "config" && <ConfigTab instanceName={name} registerActions={setConfigActions} />}
           {activeTab === "logs" && <LogsTab instanceName={name} />}
         </div>
       </div>
