@@ -21,6 +21,9 @@ export function NetworksPage() {
   const [type, setType] = useState("bridge");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [deleteManyOpen, setDeleteManyOpen] = useState(false);
+  const [deletingMany, setDeletingMany] = useState(false);
 
   const refresh = useCallback(() => {
     void infraApi.listNetworks().then(setNetworks).catch(() => {});
@@ -70,6 +73,20 @@ export function NetworksPage() {
     }
   };
 
+  const removeMany = async () => {
+    setDeletingMany(true);
+    try {
+      await Promise.all(selectedKeys.map((name) => infraApi.deleteNetwork(name)));
+      toast("success", `Deleted ${selectedKeys.length} network(s)`);
+      setSelectedKeys([]);
+      setDeleteManyOpen(false);
+      refresh();
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Delete failed");
+      setDeletingMany(false);
+    }
+  };
+
   const columns: Column<Network>[] = [
     { key: "name", header: "Name", sortValue: (n) => n.name, render: (n) => <span className="font-medium">{n.name}</span> },
     { key: "type", header: "Type", render: (n) => n.type },
@@ -91,13 +108,16 @@ export function NetworksPage() {
     <div className="space-y-4" data-testid="networks-page">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text-primary">Networks</h1>
-        <Button size="sm" data-testid="network-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create network</Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>
+          <Button size="sm" data-testid="network-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create network</Button>
+        </div>
       </div>
 
       {networks.length === 0 ? (
         <EmptyState title="No networks" />
       ) : (
-        <Table columns={columns} rows={networks} rowKey={(n) => n.name} />
+        <Table columns={columns} rows={networks} rowKey={(n) => n.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
       )}
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create network" footer={
@@ -135,6 +155,16 @@ export function NetworksPage() {
         tone="danger"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
+      />
+      <ConfirmDialog
+        open={deleteManyOpen}
+        title="Delete networks"
+        body={`Delete ${selectedKeys.length} selected network(s)?`}
+        confirmLabel="Delete"
+        tone="danger"
+        loading={deletingMany}
+        onConfirm={removeMany}
+        onCancel={() => setDeleteManyOpen(false)}
       />
     </div>
   );

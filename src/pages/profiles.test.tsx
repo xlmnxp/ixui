@@ -8,7 +8,7 @@ function profile(name: string) {
 
 vi.mock("../api", () => ({
   infraApi: {
-    listProfiles: vi.fn().mockResolvedValue([profile("default")]),
+    listProfiles: vi.fn().mockResolvedValue([profile("default"), profile("web")]),
     getProfile: vi.fn().mockResolvedValue(profile("default")),
     createProfile: vi.fn().mockResolvedValue(null),
     updateProfile: vi.fn().mockResolvedValue(null),
@@ -46,5 +46,19 @@ describe("ProfilesPage", () => {
     expect(await screen.findByTestId("kv-key-limits.cpu")).toHaveTextContent("limits.cpu");
     await user.click(screen.getByTestId("profile-save"));
     await waitFor(() => expect(infraApi.updateProfile).toHaveBeenCalledWith("default", expect.objectContaining({ config: { "limits.cpu": "2" } })));
+  });
+
+  it("bulk deletes selected profiles", async () => {
+    const user = userEvent.setup();
+    const { infraApi } = await import("../api");
+    render(<ProfilesPage />);
+    await screen.findByText("default");
+    const checkboxes = screen.getAllByTestId("row-select");
+    await user.click(checkboxes[0]!);
+    await user.click(checkboxes[1]!);
+    await user.click(screen.getByTestId("action-delete"));
+    await user.click(screen.getByTestId("confirm-confirm"));
+    await waitFor(() => expect(infraApi.deleteProfile).toHaveBeenCalledWith("default"));
+    await waitFor(() => expect(infraApi.deleteProfile).toHaveBeenCalledWith("web"));
   });
 });

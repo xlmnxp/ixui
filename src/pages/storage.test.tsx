@@ -4,7 +4,10 @@ import { StoragePage } from "./storage";
 
 vi.mock("../api", () => ({
   infraApi: {
-    listPools: vi.fn().mockResolvedValue([{ name: "data", description: "", driver: "zfs", status: "Created", used_by: ["/1.0/instances/db1"] }]),
+    listPools: vi.fn().mockResolvedValue([
+      { name: "data", description: "", driver: "zfs", status: "Created", used_by: ["/1.0/instances/db1"] },
+      { name: "fast", description: "", driver: "dir", status: "Created", used_by: [] },
+    ]),
     listPoolVolumes: vi.fn().mockResolvedValue([{ name: "db1", type: "container", content_type: "filesystem" }]),
     createPool: vi.fn().mockResolvedValue(null),
     deletePool: vi.fn().mockResolvedValue(undefined),
@@ -28,5 +31,19 @@ describe("StoragePage", () => {
     await user.type(screen.getByTestId("pool-name"), "fast");
     await user.click(screen.getByTestId("pool-create-submit"));
     await waitFor(() => expect(infraApi.createPool).toHaveBeenCalledWith(expect.objectContaining({ name: "fast", driver: "dir" })));
+  });
+
+  it("bulk deletes selected pools", async () => {
+    const user = userEvent.setup();
+    const { infraApi } = await import("../api");
+    render(<StoragePage />);
+    await screen.findByText("data");
+    const checkboxes = screen.getAllByTestId("row-select");
+    await user.click(checkboxes[0]!);
+    await user.click(checkboxes[1]!);
+    await user.click(screen.getByTestId("action-delete"));
+    await user.click(screen.getByTestId("confirm-confirm"));
+    await waitFor(() => expect(infraApi.deletePool).toHaveBeenCalledWith("data"));
+    await waitFor(() => expect(infraApi.deletePool).toHaveBeenCalledWith("fast"));
   });
 });

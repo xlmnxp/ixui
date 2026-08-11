@@ -21,6 +21,9 @@ export function StoragePage() {
   const [name, setName] = useState("");
   const [driver, setDriver] = useState("dir");
   const [busy, setBusy] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [deleteManyOpen, setDeleteManyOpen] = useState(false);
+  const [deletingMany, setDeletingMany] = useState(false);
 
   const refresh = useCallback(() => {
     void infraApi.listPools().then((list) => {
@@ -85,6 +88,25 @@ export function StoragePage() {
     }
   };
 
+  const removeMany = async () => {
+    setDeletingMany(true);
+    try {
+      await Promise.all(selectedKeys.map((poolName) => infraApi.deletePool(poolName)));
+      toast("success", `Deleted ${selectedKeys.length} pool(s)`);
+      setVolumes((prev) => {
+        const next = { ...prev };
+        for (const poolName of selectedKeys) delete next[poolName];
+        return next;
+      });
+      setSelectedKeys([]);
+      setDeleteManyOpen(false);
+      refresh();
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Delete failed");
+      setDeletingMany(false);
+    }
+  };
+
   const removeVolume = async () => {
     if (!deleteVolumeTarget) return;
     try {
@@ -134,13 +156,16 @@ export function StoragePage() {
     <div className="space-y-4" data-testid="storage-page">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text-primary">Storage pools</h1>
-        <Button size="sm" data-testid="pool-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create pool</Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>
+          <Button size="sm" data-testid="pool-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create pool</Button>
+        </div>
       </div>
 
       {pools.length === 0 ? (
         <EmptyState title="No storage pools" />
       ) : (
-        <Table columns={columns} rows={pools} rowKey={(p) => p.name} />
+        <Table columns={columns} rows={pools} rowKey={(p) => p.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
       )}
 
       {Object.entries(volumes).map(([poolName, list]) => (
@@ -175,6 +200,16 @@ export function StoragePage() {
         tone="danger"
         onConfirm={removePool}
         onCancel={() => setDeletePoolTarget(null)}
+      />
+      <ConfirmDialog
+        open={deleteManyOpen}
+        title="Delete pools"
+        body={`Delete ${selectedKeys.length} selected pool(s)?`}
+        confirmLabel="Delete"
+        tone="danger"
+        loading={deletingMany}
+        onConfirm={removeMany}
+        onCancel={() => setDeleteManyOpen(false)}
       />
       <ConfirmDialog
         open={deleteVolumeTarget !== null}

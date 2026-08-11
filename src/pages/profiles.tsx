@@ -22,6 +22,9 @@ export function ProfilesPage() {
   const [config, setConfig] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [deleteManyOpen, setDeleteManyOpen] = useState(false);
+  const [deletingMany, setDeletingMany] = useState(false);
 
   const refresh = useCallback(() => {
     void infraApi.listProfiles().then(setProfiles).catch(() => {});
@@ -92,6 +95,20 @@ export function ProfilesPage() {
     }
   };
 
+  const removeMany = async () => {
+    setDeletingMany(true);
+    try {
+      await Promise.all(selectedKeys.map((name) => infraApi.deleteProfile(name)));
+      toast("success", `Deleted ${selectedKeys.length} profile(s)`);
+      setSelectedKeys([]);
+      setDeleteManyOpen(false);
+      refresh();
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Delete failed");
+      setDeletingMany(false);
+    }
+  };
+
   const columns: Column<Profile>[] = [
     { key: "name", header: "Name", sortValue: (p) => p.name, render: (p) => <span className="font-medium">{p.name}</span> },
     { key: "description", header: "Description", render: (p) => p.description || "—" },
@@ -110,13 +127,16 @@ export function ProfilesPage() {
     <div className="space-y-4" data-testid="profiles-page">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text-primary">Profiles</h1>
-        <Button size="sm" data-testid="profile-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create profile</Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>
+          <Button size="sm" data-testid="profile-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create profile</Button>
+        </div>
       </div>
 
       {profiles.length === 0 ? (
         <EmptyState title="No profiles" />
       ) : (
-        <Table columns={columns} rows={profiles} rowKey={(p) => p.name} />
+        <Table columns={columns} rows={profiles} rowKey={(p) => p.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
       )}
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create profile" footer={
@@ -148,6 +168,16 @@ export function ProfilesPage() {
         tone="danger"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
+      />
+      <ConfirmDialog
+        open={deleteManyOpen}
+        title="Delete profiles"
+        body={`Delete ${selectedKeys.length} selected profile(s)?`}
+        confirmLabel="Delete"
+        tone="danger"
+        loading={deletingMany}
+        onConfirm={removeMany}
+        onCancel={() => setDeleteManyOpen(false)}
       />
     </div>
   );
