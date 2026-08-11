@@ -10,6 +10,7 @@ import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
 import { KeyValueEditor } from "../components/key-value-editor";
 import { EmptyState } from "../components/empty-state";
+import { PageBar } from "../components/page-bar";
 import { toast } from "../components/toast";
 
 export function ProfilesPage() {
@@ -125,13 +126,13 @@ export function ProfilesPage() {
 
   return (
     <div className="space-y-4" data-testid="profiles-page">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text-primary">Profiles</h1>
-        <div className="flex gap-2">
-          <Button size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>
-          <Button size="sm" data-testid="profile-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create profile</Button>
-        </div>
-      </div>
+      <PageBar
+        title="Profiles"
+        actions={[
+          <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
+          <Button key="create" size="sm" data-testid="profile-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create profile</Button>,
+        ]}
+      />
 
       {profiles.length === 0 ? (
         <EmptyState title="No profiles" />

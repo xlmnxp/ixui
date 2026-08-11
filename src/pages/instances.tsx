@@ -12,6 +12,7 @@ import { instanceStatusTone } from "../lib/instance-status";
 import { Button } from "../components/button";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { EmptyState } from "../components/empty-state";
+import { PageBar } from "../components/page-bar";
 import { toast } from "../components/toast";
 import { Play, Square, RotateCw, Snowflake, Trash2, Plus, Eye } from "lucide-react";
 import type { Instance } from "../api/types";
@@ -95,18 +96,18 @@ export function InstancesPage({ location, onCreate }: { location?: string; onCre
   const actionDisabled = selectedKeys.length === 0;
 
   return (
-    <div className="space-y-4" data-testid="instances-page">
-      <div className="flex items-center justify-between px-3 pt-2">
-        <h1 className="text-lg font-semibold text-text-primary">Instances</h1>
-        <div className="flex gap-2">
-          {onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create"><Plus size={14} /> Create instance</Button>}
-          <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-start" onClick={() => runAction("start", selectedKeys)}><Play size={14} /> Start</Button>
-          <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-stop" onClick={() => runAction("stop", selectedKeys)}><Square size={14} /> Stop</Button>
-          <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-restart" onClick={() => runAction("restart", selectedKeys)}><RotateCw size={14} /> Restart</Button>
-          <Button size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-freeze" onClick={() => runAction("freeze", selectedKeys)}><Snowflake size={14} /> Freeze</Button>
-          <Button size="sm" variant="danger" disabled={actionDisabled} data-testid="action-delete" onClick={() => setDeleteOpen(true)}><Trash2 size={14} /> Delete</Button>
-        </div>
-      </div>
+    <div data-testid="instances-page">
+      <PageBar
+        title="Instances"
+        actions={[
+          ...(onCreate ? [<Button key="create" size="sm" onClick={onCreate} data-testid="action-create"><Plus size={14} /> Create instance</Button>] : []),
+          <Button key="start" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-start" onClick={() => runAction("start", selectedKeys)}><Play size={14} /> Start</Button>,
+          <Button key="stop" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-stop" onClick={() => runAction("stop", selectedKeys)}><Square size={14} /> Stop</Button>,
+          <Button key="restart" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-restart" onClick={() => runAction("restart", selectedKeys)}><RotateCw size={14} /> Restart</Button>,
+          <Button key="freeze" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-freeze" onClick={() => runAction("freeze", selectedKeys)}><Snowflake size={14} /> Freeze</Button>,
+          <Button key="delete" size="sm" variant="danger" disabled={actionDisabled} data-testid="action-delete" onClick={() => setDeleteOpen(true)}><Trash2 size={14} /> Delete</Button>,
+        ]}
+      />
 
       {scoped.length === 0 ? (
         <EmptyState

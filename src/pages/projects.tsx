@@ -11,6 +11,7 @@ import { Dialog } from "../components/dialog";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
 import { Badge } from "../components/badge";
+import { PageBar } from "../components/page-bar";
 import { toast } from "../components/toast";
 
 export function ProjectsPage() {
@@ -80,10 +81,12 @@ export function ProjectsPage() {
 
   return (
     <div className="space-y-4" data-testid="projects-page">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text-primary">Projects</h1>
-        <Button size="sm" data-testid="project-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create project</Button>
-      </div>
+      <PageBar
+        title="Projects"
+        actions={[
+          <Button key="create" size="sm" data-testid="project-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create project</Button>,
+        ]}
+      />
 
       <Table columns={columns} rows={projects} rowKey={(p) => p.name} emptyMessage="No projects" />
 

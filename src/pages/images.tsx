@@ -10,6 +10,7 @@ import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
 import { Select } from "../components/select";
 import { EmptyState } from "../components/empty-state";
+import { PageBar } from "../components/page-bar";
 import { toast } from "../components/toast";
 import { formatBytes } from "../lib/format";
 
@@ -89,13 +90,13 @@ export function ImagesPage() {
 
   return (
     <div className="space-y-4" data-testid="images-page">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text-primary">Images</h1>
-        <div className="flex gap-2">
-          <Button size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>
-          <Button size="sm" data-testid="pull-open" onClick={() => setPullOpen(true)}><Download size={14} /> Pull image</Button>
-        </div>
-      </div>
+      <PageBar
+        title="Images"
+        actions={[
+          <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
+          <Button key="pull" size="sm" data-testid="pull-open" onClick={() => setPullOpen(true)}><Download size={14} /> Pull image</Button>,
+        ]}
+      />
 
       {images.length === 0 ? (
         <EmptyState title="No images" description="Pull an image from a remote to get started." />

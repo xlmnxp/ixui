@@ -6,6 +6,7 @@ import { operationsStore } from "../state/operations";
 import { instancesStore } from "../state/instances";
 import { KeyValueTable } from "../components/key-value-table";
 import { Badge } from "../components/badge";
+import { PageBar } from "../components/page-bar";
 
 const instanceStateCounts = (instances: { status: string }[]) => {
   const counts: Record<string, number> = {};
@@ -40,7 +41,7 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-4" data-testid="dashboard-page">
-      <h1 className="px-3 pt-2 text-sm font-semibold text-text-primary">Dashboard</h1>
+      <PageBar title="Dashboard" />
       <KeyValueTable
         rows={[
           { key: "Hostname", value: server?.hostname ?? "—" },

@@ -10,6 +10,7 @@ import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
 import { Select } from "../components/select";
 import { EmptyState } from "../components/empty-state";
+import { PageBar } from "../components/page-bar";
 import { toast } from "../components/toast";
 
 export function NetworksPage() {
@@ -106,13 +107,13 @@ export function NetworksPage() {
 
   return (
     <div className="space-y-4" data-testid="networks-page">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text-primary">Networks</h1>
-        <div className="flex gap-2">
-          <Button size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>
-          <Button size="sm" data-testid="network-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create network</Button>
-        </div>
-      </div>
+      <PageBar
+        title="Networks"
+        actions={[
+          <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
+          <Button key="create" size="sm" data-testid="network-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create network</Button>,
+        ]}
+      />
 
       {networks.length === 0 ? (
         <EmptyState title="No networks" />

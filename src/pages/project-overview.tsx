@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Boxes, Database, Image as ImageIcon, Network, UserCog } from "lucide-react";
+import { Boxes, Database, Image as ImageIcon, Network, Plus, UserCog } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { VerticalTabs } from "../components/vertical-tabs";
 import type { VerticalTabItem } from "../components/vertical-tabs";
 import { Button } from "../components/button";
+import { PageBar } from "../components/page-bar";
 import { CreateInstanceWizard } from "../components/create-instance-wizard";
 import { useStore } from "../state/store";
 import { currentProjectStore } from "../state/projects";
@@ -37,10 +38,7 @@ export function ProjectOverview() {
 
   return (
     <div className="flex h-full flex-col" data-testid="project-overview">
-      <div className="flex items-center justify-between border-b border-border bg-surface-900 px-4 py-2.5">
-        <h1 className="text-sm font-semibold text-text-primary">Project {project}</h1>
-        <Button size="sm" data-testid="overview-create" onClick={() => setWizardOpen(true)}>Create instance</Button>
-      </div>
+      <PageBar title={`Project ${project}`} actions={[<Button key="create" size="sm" data-testid="overview-create" onClick={() => setWizardOpen(true)}><Plus size={14} /> Create instance</Button>]} />
       <div className="flex min-h-0 flex-1">
         <VerticalTabs tabs={TABS} active={tab} onChange={setTab} />
         <div className="min-w-0 flex-1 overflow-auto">
