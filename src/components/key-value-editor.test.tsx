@@ -142,9 +142,10 @@ describe("KeyValueEditor", () => {
     expect(screen.getByTestId("kv-check-key2")).toBeChecked();
   });
 
-  it("renders descriptions from the prop with fallback", () => {
+  it("renders descriptions as helper text under the value", () => {
     render(<KeyValueEditor values={{ key1: "a", key2: "b" }} descriptions={{ key1: "Memory limit" }} onChange={() => {}} />);
     expect(screen.getByText("Memory limit")).toBeInTheDocument();
-    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Description")).not.toBeInTheDocument();
+    expect(screen.getByTestId("kv-value-key1")).toHaveTextContent("aMemory limit");
   });
 });

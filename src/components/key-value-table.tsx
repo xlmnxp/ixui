@@ -14,7 +14,7 @@ export interface KeyValueTableProps {
 
 export function KeyValueTable({ rows, dataTestId = "kv-table" }: KeyValueTableProps) {
   const columns: Column<KeyValueRow>[] = [
-    { key: "property", header: "Property", render: (r) => <span className="text-text-secondary">{r.key}</span> },
+    { key: "property", header: "Property", render: (r) => r.key },
     { key: "value", header: "Value", render: (r) => r.value },
   ];
   return <Table columns={columns} rows={rows} rowKey={(r) => r.key} inertCheckboxColumn emptyMessage="No data" dataTestId={dataTestId} />;

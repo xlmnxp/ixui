@@ -138,7 +138,7 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
         <Button variant="secondary" size="sm" data-testid="kv-edit" onClick={() => { if (selectedKeys[0]) startEditing(selectedKeys[0]); }} disabled={selectedKeys.length === 0}><Pencil size={13} /> Edit</Button>
         <Button variant="secondary" size="sm" data-testid="kv-remove" onClick={removeSelected} disabled={selectedKeys.length === 0}><Trash2 size={13} /> Remove</Button>
       </div>
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse text-[13px]">
         <thead className="border-b border-border bg-surface-700 text-left text-xs text-text-secondary">
           <tr>
             <th className="w-8 px-2 py-1">
@@ -146,16 +146,15 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
             </th>
             <th className="px-2 py-1">Key</th>
             <th className="px-2 py-1">Value</th>
-            <th className="px-2 py-1">Description</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-border bg-surface-800">
           {entries.map(([key, value]) => (
             <tr
               key={key}
               data-testid={`kv-row-${key}`}
               data-selected={selectedKeys.includes(key)}
-              className={`group ${selectedKeys.includes(key) ? "bg-accent-600/10" : ""}`}
+              className={`group ${selectedKeys.includes(key) ? "bg-accent-600/10" : "hover:bg-surface-700/60"}`}
             >
               <td className="w-8 px-2 py-1">
                 <input type="checkbox" data-testid={`kv-check-${key}`} checked={selectedKeys.includes(key)} onChange={() => toggle(key)} className="accent-accent-600" aria-label={`Select ${key}`} />
@@ -172,8 +171,8 @@ export function KeyValueEditor({ values, onChange, dataTestId = "kv-editor", des
               </td>
               <td data-testid={`kv-value-${key}`} onDoubleClick={() => startEditing(key)} className="px-2 py-1 text-sm text-text-primary">
                 {editing === key ? valueInput(key) : value}
+                {descriptions?.[key] && <div className="text-xs text-text-tertiary">{descriptions[key]}</div>}
               </td>
-              <td className="px-2 py-1 text-xs text-text-tertiary">{descriptions?.[key] ?? "—"}</td>
             </tr>
           ))}
         </tbody>
