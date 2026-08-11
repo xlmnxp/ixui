@@ -12,6 +12,7 @@ import { Select } from "../components/select";
 import { EmptyState } from "../components/empty-state";
 import { toast } from "../components/toast";
 import { formatBytes } from "../lib/format";
+import { registerPageBar } from "../state/page-bar";
 
 export function ImagesPage() {
   const [images, setImages] = useState<Image[]>([]);
@@ -20,12 +21,27 @@ export function ImagesPage() {
   const [alias, setAlias] = useState("");
   const [server, setServer] = useState("https://images.linuxcontainers.org");
   const [busy, setBusy] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [deleteManyOpen, setDeleteManyOpen] = useState(false);
+  const [deletingMany, setDeletingMany] = useState(false);
 
   const refresh = useCallback(() => {
     void infraApi.listImages().then(setImages).catch(() => {});
   }, []);
 
   useEffect(refresh, [refresh]);
+
+  useEffect(
+    () =>
+      registerPageBar({
+        title: "Images",
+        actions: [
+          <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
+          <Button key="pull" size="sm" data-testid="pull-open" onClick={() => setPullOpen(true)}><Download size={14} /> Pull image</Button>,
+        ],
+      }),
+    [selectedKeys.length]
+  );
 
   const pull = async () => {
     setBusy(true);
@@ -54,6 +70,20 @@ export function ImagesPage() {
     }
   };
 
+  const removeMany = async () => {
+    setDeletingMany(true);
+    try {
+      await Promise.all(selectedKeys.map((fp) => infraApi.deleteImage(fp)));
+      toast("success", `Deleted ${selectedKeys.length} image(s)`);
+      setSelectedKeys([]);
+      setDeleteManyOpen(false);
+      refresh();
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Delete failed");
+      setDeletingMany(false);
+    }
+  };
+
   const columns: Column<Image>[] = [
     { key: "name", header: "Description", sortValue: (i) => i.description, render: (i) => i.description || i.filename },
     { key: "fingerprint", header: "Fingerprint", render: (i) => <span className="font-mono text-xs">{i.fingerprint.slice(0, 12)}</span> },
@@ -71,16 +101,17 @@ export function ImagesPage() {
   ];
 
   return (
-    <div className="space-y-4" data-testid="images-page">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text-primary">Images</h1>
-        <Button size="sm" data-testid="pull-open" onClick={() => setPullOpen(true)}><Download size={14} /> Pull image</Button>
-      </div>
-
+    <div data-testid="images-page">
       {images.length === 0 ? (
         <EmptyState title="No images" description="Pull an image from a remote to get started." />
       ) : (
-        <Table columns={columns} rows={images} rowKey={(i) => i.fingerprint} />
+        <Table
+          columns={columns}
+          rows={images}
+          rowKey={(i) => i.fingerprint}
+          selectedKeys={selectedKeys}
+          onSelectionChange={setSelectedKeys}
+        />
       )}
 
       <Dialog open={pullOpen} onClose={() => setPullOpen(false)} title="Pull image" footer={
@@ -107,6 +138,16 @@ export function ImagesPage() {
         tone="danger"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
+      />
+      <ConfirmDialog
+        open={deleteManyOpen}
+        title="Delete images"
+        body={`Delete ${selectedKeys.length} selected image(s)?`}
+        confirmLabel="Delete"
+        tone="danger"
+        loading={deletingMany}
+        onConfirm={removeMany}
+        onCancel={() => setDeleteManyOpen(false)}
       />
     </div>
   );
