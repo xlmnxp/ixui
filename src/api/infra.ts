@@ -1,5 +1,5 @@
 import { currentProject, projectQuery, type ApiClient } from "./client";
-import type { Image, Profile, Network, StoragePool, StorageVolume, Project, AsyncResponse, SyncResponse } from "./types";
+import type { Image, ImageAlias, Profile, Network, StoragePool, StorageVolume, Project, AsyncResponse, SyncResponse } from "./types";
 
 export type OpResponse = AsyncResponse | SyncResponse | null;
 
@@ -20,6 +20,18 @@ export class InfraApi {
       public: false,
       source: { type: "image", alias: source.alias, server: source.server, protocol: source.protocol ?? "simplestreams" },
     });
+  }
+
+  listAliases(): Promise<ImageAlias[]> {
+    return this.client.get<ImageAlias[]>(`/images/aliases?recursion=1`);
+  }
+
+  createAlias(body: { name: string; target: string; description?: string }): Promise<OpResponse> {
+    return this.client.post(`/images/aliases`, body);
+  }
+
+  deleteAlias(name: string): Promise<void> {
+    return this.client.delete(`/images/aliases/${encodeURIComponent(name)}`);
   }
 
   listProfiles(): Promise<Profile[]> {

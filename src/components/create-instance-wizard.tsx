@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { Box, Monitor, Search, RefreshCw, ChevronLeft, ChevronRight, Check, Download } from "lucide-react";
+import { Box, Monitor, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Window } from "./window";
 import { Button } from "./button";
 import { Input } from "./input";
 import { Select } from "./select";
 import { Checkbox } from "./checkbox";
+import { ImagePicker } from "./image-picker";
+import type { PickedImage } from "./image-picker";
 import { instancesApi, operationsApi, infraApi } from "../api";
 import { loadInstances } from "../state/instances";
 import { currentProjectStore } from "../state/projects";
 import { useStore } from "../state/store";
 import { toast } from "./toast";
-import type { Image, Profile, Network } from "../api/types";
+import type { Profile, Network } from "../api/types";
 
 export interface CreateInstanceWizardProps {
   open: boolean;
@@ -26,18 +28,13 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
   const [type, setType] = useState<"container" | "virtual-machine">("container");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [imageFingerprint, setImageFingerprint] = useState("");
-  const [search, setSearch] = useState("");
+  const [picked, setPicked] = useState<PickedImage | null>(null);
   const [profiles, setProfiles] = useState<string[]>(["default"]);
   const [memory, setMemory] = useState("");
   const [cpu, setCpu] = useState("");
   const [network, setNetwork] = useState("");
-  const [images, setImages] = useState<Image[]>([]);
   const [profileList, setProfileList] = useState<Profile[]>([]);
   const [networkList, setNetworkList] = useState<Network[]>([]);
-  const [pullOpen, setPullOpen] = useState(false);
-  const [pullAlias, setPullAlias] = useState("");
-  const [pullServer, setPullServer] = useState("https://images.linuxcontainers.org");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -46,33 +43,35 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
     setType("container");
     setName("");
     setDescription("");
-    setImageFingerprint("");
-    setSearch("");
+    setPicked(null);
     setProfiles(["default"]);
     setMemory("");
     setCpu("");
     setNetwork("");
-    setPullOpen(false);
-    setPullAlias("");
-    setPullServer("https://images.linuxcontainers.org");
     setBusy(false);
-    void Promise.all([infraApi.listImages(), infraApi.listProfiles(), infraApi.listNetworks()])
-      .then(([imgs, profs, nets]) => {
-        setImages(imgs);
+    void Promise.all([infraApi.listProfiles(), infraApi.listNetworks()])
+      .then(([profs, nets]) => {
         setProfileList(profs);
         setNetworkList(nets);
       })
       .catch(() => {});
   }, [open]);
 
-  const nameValid = /^[a-zA-Z0-9-]+$/.test(name.trim());
-  const filteredImages = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return images.filter((i) => i.type === type && (q === "" || (i.description + i.filename + (i.properties?.description ?? "")).toLowerCase().includes(q)));
-  }, [images, type, search]);
+  useEffect(() => {
+    setPicked(null);
+  }, [type]);
 
-  const stage2Complete = imageFingerprint !== "";
-  const stage4Complete = nameValid && imageFingerprint !== "";
+  const nameValid = /^[a-zA-Z0-9-]+$/.test(name.trim());
+  const stage2Complete = picked !== null;
+  const stage4Complete = nameValid && picked !== null;
+
+  const cloudInitEnabled = useMemo(
+    () =>
+      profileList.some(
+        (p) => profiles.includes(p.name) && Object.keys(p.config).some((k) => k.startsWith("cloud-init."))
+      ),
+    [profileList, profiles]
+  );
 
   const next = () => {
     if (stage === 1 && !nameValid) return;
@@ -81,24 +80,8 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
   };
   const back = () => setStage((s) => Math.max(1, s - 1));
 
-  const pull = async () => {
-    setBusy(true);
-    try {
-      await infraApi.pullImage({ alias: pullAlias.trim(), server: pullServer.trim() });
-      toast("success", `Pulling ${pullAlias.trim()}`);
-      const imgs = await infraApi.listImages();
-      setImages(imgs);
-      setPullOpen(false);
-      setPullAlias("");
-    } catch (err) {
-      toast("danger", err instanceof Error ? err.message : "Pull failed");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const create = async () => {
-    if (!stage4Complete) return;
+    if (!stage4Complete || !picked) return;
     setBusy(true);
     try {
       const config: Record<string, string> = {};
@@ -107,12 +90,15 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
       const devices: Record<string, Record<string, string>> | undefined = network
         ? { eth0: { nictype: "bridged", parent: network } }
         : undefined;
+      const source = picked.fingerprint
+        ? { type: "image" as const, fingerprint: picked.fingerprint }
+        : { type: "image" as const, server: picked.server, protocol: picked.protocol, alias: picked.alias };
       const result = await instancesApi.create({
         name: name.trim(),
         type,
         description: description.trim() || undefined,
         profiles,
-        source: { type: "image", fingerprint: imageFingerprint },
+        source,
         config,
         devices,
       }, targetMember);
@@ -166,43 +152,12 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
           </div>
         )}
         {stage === 2 && (
-          <div className="space-y-3">
-            <div className="relative">
-              <Search size={14} className="absolute left-2.5 top-2.5 text-text-tertiary" />
-              <input
-                data-testid="wizard-image-search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search images…"
-                className="h-8 w-full rounded border border-border bg-surface-500 pl-8 pr-2.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
-              />
-            </div>
-            <div className="max-h-56 space-y-1 overflow-auto">
-              {filteredImages.length === 0 && <p className="py-4 text-center text-xs text-text-tertiary">No images for this type.</p>}
-              {filteredImages.map((img) => (
-                <button
-                  key={img.fingerprint}
-                  type="button"
-                  data-testid={`wizard-image-${img.fingerprint}`}
-                  onClick={() => setImageFingerprint(img.fingerprint)}
-                  className={`flex w-full items-center justify-between rounded border px-2.5 py-1.5 text-left text-[13px] ${imageFingerprint === img.fingerprint ? "border-accent-600 bg-accent-600/10 text-text-primary" : "border-border text-text-secondary hover:bg-surface-700"}`}
-                >
-                  <span className="truncate">{img.properties?.description ?? img.description ?? img.filename}</span>
-                  <span className="ml-2 shrink-0 font-mono text-[11px] text-text-tertiary">{img.fingerprint.slice(0, 8)}</span>
-                </button>
-              ))}
-            </div>
-            <Button size="sm" variant="ghost" onClick={() => setPullOpen((o) => !o)} data-testid="wizard-pull-toggle">
-              <RefreshCw size={13} /> Pull from remote
-            </Button>
-            {pullOpen && (
-              <div className="space-y-2 rounded border border-border bg-surface-900 p-3">
-                <Input label="Alias" name="pull-alias" data-testid="wizard-pull-alias" value={pullAlias} onChange={(e) => setPullAlias(e.target.value)} placeholder="ubuntu/24.04" />
-                <Input label="Server" name="pull-server" data-testid="wizard-pull-server" value={pullServer} onChange={(e) => setPullServer(e.target.value)} />
-                <Button size="sm" onClick={pull} loading={busy} data-testid="wizard-pull-submit"><Download size={13} /> Pull</Button>
-              </div>
-            )}
-          </div>
+          <ImagePicker
+            key={type}
+            type={type}
+            cloudInitEnabled={cloudInitEnabled}
+            onSelect={setPicked}
+          />
         )}
         {stage === 3 && (
           <div className="space-y-4">
@@ -233,7 +188,10 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
           <div data-testid="wizard-summary" className="space-y-1.5 text-[13px]">
             <p><span className="text-text-tertiary">Name:</span> {name.trim()}</p>
             <p><span className="text-text-tertiary">Type:</span> {type === "container" ? "Container" : "Virtual machine"}</p>
-            <p><span className="text-text-tertiary">Image:</span> {filteredImages.find((i) => i.fingerprint === imageFingerprint)?.properties?.description ?? imageFingerprint.slice(0, 8)}</p>
+            <p>
+              <span className="text-text-tertiary">Image:</span>{" "}
+              {picked?.fingerprint ? `${picked.alias} (cached local image)` : picked?.alias ?? "—"}
+            </p>
             <p><span className="text-text-tertiary">Profiles:</span> {profiles.join(", ") || "—"}</p>
             {memory.trim() && <p><span className="text-text-tertiary">Memory:</span> {memory.trim()}</p>}
             {cpu.trim() && <p><span className="text-text-tertiary">CPU:</span> {cpu.trim()}</p>}

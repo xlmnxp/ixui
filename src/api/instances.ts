@@ -1,12 +1,21 @@
 import { currentProject, projectQuery, type ApiClient } from "./client";
 import type { Instance, InstanceStateInfo, InstanceBackup, AsyncResponse, SyncResponse } from "./types";
 
+export interface InstanceImageSource {
+  type: "image";
+  image?: string;
+  fingerprint?: string;
+  server?: string;
+  alias?: string;
+  protocol?: string;
+}
+
 export interface CreateInstanceBody {
   name: string;
   type: "container" | "virtual-machine";
   description?: string;
   profiles?: string[];
-  source?: { type: "image"; image?: string; fingerprint?: string; server?: string; alias?: string };
+  source?: InstanceImageSource;
   config?: Record<string, string>;
   devices?: Record<string, Record<string, string>>;
   ephemeral?: boolean;
@@ -116,7 +125,7 @@ export class InstancesApi {
     return this.client.post(`/instances/${name}${projectQuery()}`, { migration: true, ...body });
   }
 
-  rebuild(name: string, body: { source: { type: "image"; image?: string; fingerprint?: string; server?: string; alias?: string } }): Promise<AsyncResponse | SyncResponse | null> {
+  rebuild(name: string, body: { source: InstanceImageSource }): Promise<AsyncResponse | SyncResponse | null> {
     return this.client.post(`/instances/${name}/rebuild${projectQuery()}`, body);
   }
 

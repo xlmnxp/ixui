@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Trash2, X } from "lucide-react";
+import { Download, List, Plus, Trash2, X } from "lucide-react";
 import { infraApi } from "../api";
-import type { Image } from "../api/types";
+import type { Image, ImageAlias } from "../api/types";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
 import { Button } from "../components/button";
@@ -25,12 +25,27 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [deleteManyOpen, setDeleteManyOpen] = useState(false);
   const [deletingMany, setDeletingMany] = useState(false);
+  const [aliasesOpen, setAliasesOpen] = useState(false);
+  const [aliases, setAliases] = useState<ImageAlias[]>([]);
+  const [aliasCreateOpen, setAliasCreateOpen] = useState(false);
+  const [aliasName, setAliasName] = useState("");
+  const [aliasTarget, setAliasTarget] = useState("");
+  const [aliasBusy, setAliasBusy] = useState(false);
+  const [aliasDelete, setAliasDelete] = useState<ImageAlias | null>(null);
 
   const refresh = useCallback(() => {
     void infraApi.listImages().then(setImages).catch(() => {});
   }, []);
 
+  const refreshAliases = useCallback(() => {
+    void infraApi.listAliases().then(setAliases).catch(() => {});
+  }, []);
+
   useEffect(refresh, [refresh]);
+
+  useEffect(() => {
+    if (aliasesOpen) refreshAliases();
+  }, [aliasesOpen, refreshAliases]);
 
   const pull = async () => {
     setBusy(true);
@@ -73,6 +88,36 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
     }
   };
 
+  const createAlias = async () => {
+    setAliasBusy(true);
+    try {
+      await infraApi.createAlias({ name: aliasName.trim(), target: aliasTarget.trim() });
+      toast("success", `Alias ${aliasName.trim()} created`);
+      setAliasCreateOpen(false);
+      setAliasName("");
+      setAliasTarget("");
+      refreshAliases();
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Create failed");
+    } finally {
+      setAliasBusy(false);
+    }
+  };
+
+  const removeAlias = async () => {
+    if (!aliasDelete) return;
+    try {
+      await infraApi.deleteAlias(aliasDelete.name);
+      toast("success", "Alias deleted");
+      setAliasDelete(null);
+      refreshAliases();
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Delete failed");
+    }
+  };
+
+  const aliasValid = aliasName.trim() !== "" && aliasTarget.trim() !== "";
+
   const columns: Column<Image>[] = [
     { key: "name", header: "Description", sortValue: (i) => i.description, render: (i) => i.description || i.filename },
     { key: "fingerprint", header: "Fingerprint", render: (i) => <span className="font-mono text-xs">{i.fingerprint.slice(0, 12)}</span> },
@@ -89,12 +134,27 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
     },
   ];
 
+  const aliasColumns: Column<ImageAlias>[] = [
+    { key: "name", header: "Name", sortValue: (a) => a.name, render: (a) => <span className="font-mono text-xs">{a.name}</span> },
+    { key: "target", header: "Target", render: (a) => <span className="font-mono text-xs text-text-secondary">{a.target}</span> },
+    { key: "description", header: "Description", render: (a) => a.description || "—" },
+    {
+      key: "actions", header: "", align: "right",
+      render: (a) => (
+        <div className="flex justify-end">
+          <Button size="sm" variant="ghost" data-testid={`alias-delete-${a.name}`} onClick={() => setAliasDelete(a)}><Trash2 size={14} /> Delete</Button>
+        </div>
+      ),
+    },
+  ];
+
   const barActions = useMemo(
     () => [
+      <Button key="aliases" size="sm" variant="secondary" data-testid="aliases-open" onClick={() => setAliasesOpen((o) => !o)}><List size={14} /> Aliases</Button>,
       <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
       <Button key="pull" size="sm" data-testid="pull-open" onClick={() => setPullOpen(true)}><Download size={14} /> Pull image</Button>,
     ],
-    [selectedKeys, setDeleteManyOpen, setPullOpen]
+    [selectedKeys, aliasesOpen, setDeleteManyOpen, setPullOpen, setAliasesOpen]
   );
 
   useEffect(() => {
@@ -112,6 +172,16 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
         <Table columns={columns} rows={images} rowKey={(i) => i.fingerprint} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
       )}
 
+      {aliasesOpen && (
+        <div className="space-y-2" data-testid="aliases-section">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-text-primary">Aliases</h3>
+            <Button size="sm" data-testid="alias-create-open" onClick={() => setAliasCreateOpen(true)}><Plus size={14} /> New alias</Button>
+          </div>
+          <Table columns={aliasColumns} rows={aliases} rowKey={(a) => a.name} dataTestId="aliases-table" emptyMessage="No aliases" />
+        </div>
+      )}
+
       <Dialog open={pullOpen} onClose={() => setPullOpen(false)} title="Pull image" footer={
         <>
           <Button variant="secondary" onClick={() => setPullOpen(false)}><X size={14} /> Cancel</Button>
@@ -125,6 +195,18 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
             <option value="container">Container</option>
             <option value="virtual-machine">Virtual machine</option>
           </Select>
+        </div>
+      </Dialog>
+
+      <Dialog open={aliasCreateOpen} onClose={() => setAliasCreateOpen(false)} title="Create alias" footer={
+        <>
+          <Button variant="secondary" onClick={() => setAliasCreateOpen(false)}><X size={14} /> Cancel</Button>
+          <Button onClick={createAlias} loading={aliasBusy} disabled={!aliasValid} data-testid="alias-create-submit"><Plus size={14} /> Create</Button>
+        </>
+      }>
+        <div className="space-y-3">
+          <Input label="Name" name="alias-name" data-testid="alias-name" value={aliasName} onChange={(e) => setAliasName(e.target.value)} placeholder="ubuntu/24.04" />
+          <Input label="Target" name="alias-target" data-testid="alias-target" value={aliasTarget} onChange={(e) => setAliasTarget(e.target.value)} placeholder="ubuntu-24.04-default-amd64" />
         </div>
       </Dialog>
 
@@ -146,6 +228,15 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
         loading={deletingMany}
         onConfirm={removeMany}
         onCancel={() => setDeleteManyOpen(false)}
+      />
+      <ConfirmDialog
+        open={aliasDelete !== null}
+        title="Delete alias"
+        body={`Delete alias ${aliasDelete?.name}?`}
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={removeAlias}
+        onCancel={() => setAliasDelete(null)}
       />
     </div>
   );
