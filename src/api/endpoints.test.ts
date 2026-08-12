@@ -53,12 +53,13 @@ describe("API endpoints", () => {
     expect(JSON.parse(init?.body as string)).toEqual({ width: 80, height: 24, type: "vga", force: true });
   });
 
-  it("snapshot restore posts restore flag", async () => {
+  it("snapshot restore puts restore flag", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
     vi.stubGlobal("fetch", fetchMock);
     await instancesApi.restoreSnapshot("web1", "snap1");
     const [url, init] = fetchMock.mock.calls[0]!;
     expect(url).toBe("/1.0/instances/web1/snapshots/snap1?project=default");
+    expect(init?.method).toBe("PUT");
     expect(JSON.parse(init?.body as string)).toEqual({ restore: true });
   });
 

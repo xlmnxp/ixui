@@ -87,7 +87,7 @@ export class InstancesApi {
   }
 
   restoreSnapshot(name: string, snapName: string): Promise<AsyncResponse | null> {
-    return this.client.post(`/instances/${name}/snapshots/${snapName}${projectQueryFor(name)}`, { restore: true });
+    return this.client.put(`/instances/${name}/snapshots/${snapName}${projectQueryFor(name)}`, { restore: true });
   }
 
   deleteSnapshot(name: string, snapName: string): Promise<void> {
