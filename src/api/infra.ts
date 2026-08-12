@@ -46,6 +46,10 @@ export class InfraApi {
     return this.client.list<Network>("/networks", { project: currentProject() });
   }
 
+  getNetwork(name: string): Promise<Network> {
+    return this.client.get<Network>(`/networks/${name}${projectQuery()}`);
+  }
+
   createNetwork(body: { name: string; type: string; description?: string }): Promise<OpResponse> {
     return this.client.post(`/networks${projectQuery()}`, body);
   }
@@ -98,7 +102,7 @@ export class InfraApi {
     return this.client.put(`/projects/${name}`, body);
   }
 
-  updateNetworkConfig(name: string, body: { config?: Record<string, string> }): Promise<OpResponse> {
+  updateNetworkConfig(name: string, body: { description?: string; config?: Record<string, string> }): Promise<OpResponse> {
     return this.client.put(`/networks/${name}${projectQuery()}`, body);
   }
 

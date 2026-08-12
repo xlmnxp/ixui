@@ -14,6 +14,14 @@ export interface Forward {
   description: string;
 }
 
+export interface Lease {
+  address: string;
+  hostname: string;
+  hwaddr: string;
+  type: string;
+  expires_at: string;
+}
+
 export interface Zone {
   name: string;
   description: string;
@@ -62,6 +70,10 @@ export class NetworkExtrasApi {
 
   deleteForward(network: string, name: string): Promise<void> {
     return this.client.delete(`/networks/${network}/forwards/${name}${projectQuery()}`);
+  }
+
+  listLeases(network: string): Promise<Lease[]> {
+    return this.client.list<Lease>(`/networks/${network}/leases`, { project: currentProject() });
   }
 
   listZones(): Promise<Zone[]> {

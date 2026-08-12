@@ -87,6 +87,7 @@ export interface Network {
   managed: boolean;
   used_by: string[];
   status: string;
+  config?: Record<string, string>;
 }
 
 export interface StoragePool {
