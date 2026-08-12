@@ -1,5 +1,6 @@
 import { createStore } from "./store";
 import { instancesApi } from "../api";
+import { ALL_PROJECTS } from "../api/client";
 import type { Instance } from "../api/types";
 
 export const instancesStore = createStore<Record<string, Instance>>({});
@@ -37,6 +38,12 @@ export function applyInstanceLifecycle(
 
 export async function loadInstances(project: string): Promise<void> {
   const list = await instancesApi.list();
+  if (project === ALL_PROJECTS) {
+    const next: Record<string, Instance> = {};
+    for (const instance of list) next[`${instance.project}/${instance.name}`] = instance;
+    instancesStore.setState(next);
+    return;
+  }
   const scoped = list.filter((i) => i.project === project);
   instancesStore.setState((prev) => {
     const next = { ...prev };

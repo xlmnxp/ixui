@@ -1,17 +1,21 @@
 import { markAuthenticated } from "../auth/status";
 
+export const ALL_PROJECTS = "all";
+
 let projectProvider: () => string = () => "default";
 
 export function setProjectProvider(provider: () => string): void {
   projectProvider = provider;
 }
 
-export function currentProject(): string {
-  return projectProvider();
+export function currentProject(): string | undefined {
+  const project = projectProvider();
+  return project === ALL_PROJECTS ? undefined : project;
 }
 
 export function projectQuery(): string {
-  return `?project=${encodeURIComponent(currentProject())}`;
+  const project = currentProject();
+  return project === undefined ? "" : `?project=${encodeURIComponent(project)}`;
 }
 
 export class ApiError extends Error {

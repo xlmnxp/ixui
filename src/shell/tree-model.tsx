@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Folder, Server, Palette, Gauge, Plus, FolderCog } from "lucide-react";
 import type { ReactNode } from "react";
 import type { TreeNode } from "../components/tree";
+import { ALL_PROJECTS } from "../api/client";
 import type { ClusterMember, Instance } from "../api/types";
 import { InstanceIcon } from "./instance-icon";
 
@@ -76,7 +77,7 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
       label: (
         <span className="flex items-center gap-2">
           <Folder size={14} className="text-text-secondary" />
-          <Link to="/">{project}</Link>
+          <Link to="/">{project === ALL_PROJECTS ? "All projects" : project}</Link>
         </span>
       ),
       children: memberNodes,

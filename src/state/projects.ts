@@ -1,12 +1,13 @@
 import { createStore } from "./store";
 import { infraApi } from "../api";
+import { ALL_PROJECTS } from "../api/client";
 import type { Project } from "../api/types";
 
 function readStoredProject(): string {
   try {
-    return window.localStorage.getItem("ixui.project") ?? "default";
+    return window.localStorage.getItem("ixui.project") ?? ALL_PROJECTS;
   } catch {
-    return "default";
+    return ALL_PROJECTS;
   }
 }
 

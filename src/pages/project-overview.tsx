@@ -9,6 +9,7 @@ import type { BarState } from "../components/page-bar";
 import { CreateInstanceWizard } from "../components/create-instance-wizard";
 import { useStore } from "../state/store";
 import { currentProjectStore } from "../state/projects";
+import { ALL_PROJECTS } from "../api/client";
 import { InstancesPage } from "./instances";
 import { ImagesPage } from "./images";
 import { ProfilesPage } from "./profiles";
@@ -42,7 +43,7 @@ export function ProjectOverview() {
 
   return (
     <div className="flex h-full flex-col" data-testid="project-overview">
-      <PageBar title={`Project ${project}`} actions={tabBar?.actions} />
+      <PageBar title={project === ALL_PROJECTS ? "All projects" : `Project ${project}`} actions={tabBar?.actions} />
       <div className="min-h-0 flex-1">
         <SplitPane
           initial={20}

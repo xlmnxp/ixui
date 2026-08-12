@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { serverApi, infraApi } from "../api";
 import { useStore } from "../state/store";
 import { currentProjectStore } from "../state/projects";
+import { ALL_PROJECTS } from "../api/client";
 import { operationsStore } from "../state/operations";
 import { instancesStore } from "../state/instances";
 import { KeyValueTable } from "../components/key-value-table";
@@ -37,7 +38,7 @@ export function DashboardPage() {
     ).catch(() => {});
   }, []);
 
-  const scoped = Object.values(instances).filter((i) => i.project === project);
+  const scoped = Object.values(instances).filter((i) => project === ALL_PROJECTS || i.project === project);
   const stateCounts = instanceStateCounts(scoped);
 
   return (

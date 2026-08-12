@@ -58,8 +58,8 @@ describe("instances store", () => {
 describe("currentProjectStore", () => {
   beforeEach(() => localStorage.clear());
 
-  it("defaults to default project", () => {
-    expect(currentProjectStore.getState()).toBe("default");
+  it("defaults to all projects", () => {
+    expect(currentProjectStore.getState()).toBe("all");
   });
 
   it("persists selection", () => {

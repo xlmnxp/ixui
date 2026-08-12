@@ -4,6 +4,7 @@ import { instancesApi } from "../api";
 import { useStore } from "../state/store";
 import { currentProjectStore } from "../state/projects";
 import { instancesStore, loadInstances } from "../state/instances";
+import { ALL_PROJECTS } from "../api/client";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
 import { Badge } from "../components/badge";
@@ -32,7 +33,7 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
   const [copySource, setCopySource] = useState<Instance | null>(null);
 
   const scoped = useMemo(
-    () => Object.values(instances).filter((i) => i.project === project && (location === undefined || i.location === location)),
+    () => Object.values(instances).filter((i) => (project === ALL_PROJECTS || i.project === project) && (location === undefined || i.location === location)),
     [instances, project, location]
   );
 

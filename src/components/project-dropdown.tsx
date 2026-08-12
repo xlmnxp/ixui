@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { projectsStore, currentProjectStore, setCurrentProject } from "../state/projects";
+import { ALL_PROJECTS } from "../api/client";
 import { useStore } from "../state/store";
 
 export function ProjectDropdown() {
@@ -30,13 +31,24 @@ export function ProjectDropdown() {
       <button
         data-testid="project-selector"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-9 w-full items-center justify-between rounded border border-border bg-surface-700 px-2.5 text-[13px] text-text-primary hover:bg-surface-600"
+        className="flex h-10 w-full items-center justify-between rounded border border-border bg-surface-700 px-2.5 text-[13px] text-text-primary hover:bg-surface-600"
       >
-        <span className="truncate">{current}</span>
+        <span className="truncate">{current === ALL_PROJECTS ? "All projects" : current}</span>
         <ChevronsUpDown size={14} className="text-text-tertiary" />
       </button>
       {open && (
-        <div data-testid="project-menu" className="absolute left-2 right-2 z-40 mt-1 overflow-hidden rounded border border-border bg-surface-800 shadow-xl">
+        <div data-testid="project-menu" className="absolute left-2 right-2 top-10 z-40 mt-1 overflow-hidden rounded border border-border bg-surface-800 shadow-xl">
+          <button
+            data-testid="project-option-all"
+            onClick={() => {
+              setCurrentProject(ALL_PROJECTS);
+              setOpen(false);
+            }}
+            className={`flex w-full items-center justify-between px-2.5 py-1.5 text-left text-[13px] hover:bg-surface-700 ${current === ALL_PROJECTS ? "text-accent-400" : "text-text-primary"}`}
+          >
+            <span className="truncate">All projects</span>
+            {current === ALL_PROJECTS && <Check size={14} />}
+          </button>
           {projects.map((p) => (
             <button
               key={p.name}

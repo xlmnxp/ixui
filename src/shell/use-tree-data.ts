@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { clusterApi } from "../api";
+import { ALL_PROJECTS } from "../api/client";
 import { instancesStore, loadInstances } from "../state/instances";
 import { currentProjectStore } from "../state/projects";
 import { useStore } from "../state/store";
@@ -27,7 +28,7 @@ export function useTreeData(): TreeData {
   const byMember: Record<string, Instance[]> = {};
   const unassigned: Instance[] = [];
   for (const i of Object.values(instances)) {
-    if (i.project !== project) continue;
+    if (project !== ALL_PROJECTS && i.project !== project) continue;
     if (i.location && i.location !== "none") (byMember[i.location] ??= []).push(i);
     else unassigned.push(i);
   }
