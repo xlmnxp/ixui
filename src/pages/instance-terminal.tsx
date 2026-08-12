@@ -176,7 +176,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
 
   return (
     <div className="flex h-screen flex-col" data-testid="instance-terminal">
-      <div className="flex h-9 items-center gap-2 border-b border-border bg-surface-900 px-3">
+      <div className="flex h-10 items-center gap-2 border-b border-border bg-surface-900 px-3">
         <TerminalIcon size={14} className="text-text-secondary" />
         <span className="text-sm font-medium text-text-primary">{instanceName}</span>
         <div className="ml-auto flex items-center gap-1.5">

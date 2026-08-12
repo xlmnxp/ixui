@@ -32,7 +32,7 @@ export function Sidebar() {
 
   return (
     <aside className="flex h-full flex-col border-r border-border bg-sidebar" data-testid="sidebar">
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
+      <div className="flex h-10 items-center gap-2 border-b border-border px-3">
         <span className="h-3 w-3 rounded-sm bg-accent-600" data-testid="sidebar-mark" />
         <span className="text-sm font-semibold text-text-primary">Incus</span>
       </div>

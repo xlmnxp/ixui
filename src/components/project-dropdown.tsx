@@ -26,11 +26,11 @@ export function ProjectDropdown() {
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative px-2 pb-1">
+    <div ref={rootRef} className="relative flex h-10 items-center px-2">
       <button
         data-testid="project-selector"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-8 w-full items-center justify-between rounded border border-border bg-surface-700 px-2.5 text-[13px] text-text-primary hover:bg-surface-600"
+        className="flex h-9 w-full items-center justify-between rounded border border-border bg-surface-700 px-2.5 text-[13px] text-text-primary hover:bg-surface-600"
       >
         <span className="truncate">{current}</span>
         <ChevronsUpDown size={14} className="text-text-tertiary" />
