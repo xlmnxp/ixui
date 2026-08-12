@@ -79,6 +79,30 @@ describe("API endpoints", () => {
     expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/operations/op1/wait");
   });
 
+  it("server info returns the config from the sync metadata", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(200, {
+        type: "sync",
+        status: "Success",
+        status_code: 200,
+        metadata: { api_status: "Stable", config: { "core.https_address": "10.0.0.1:8443" } },
+      })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const info = await serverApi.info();
+    expect(info.config).toEqual({ "core.https_address": "10.0.0.1:8443" });
+  });
+
+  it("server updateConfig PUTs the config to /1.0", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
+    vi.stubGlobal("fetch", fetchMock);
+    await serverApi.updateConfig({ "core.https_address": "10.0.0.1:8443" });
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("/1.0");
+    expect(init?.method).toBe("PUT");
+    expect(JSON.parse(init?.body as string)).toEqual({ config: { "core.https_address": "10.0.0.1:8443" } });
+  });
+
   it("scopes requests to the current project", async () => {
     setProjectProvider(() => "prod");
     const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, [])));

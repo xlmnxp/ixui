@@ -7,6 +7,7 @@ export interface ServerInfo {
     server_version: string;
     project: string;
   };
+  config?: Record<string, string>;
 }
 
 export type InstanceStatus =
