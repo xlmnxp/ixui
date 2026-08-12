@@ -130,6 +130,16 @@ describe("API endpoints", () => {
   });
 
 
+  it("auth identity update PUTs groups", async () => {
+    const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
+    vi.stubGlobal("fetch", fetchMock);
+    await authApi.updateIdentity("certificate", "fpr-1234", { groups: ["admins"] });
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("/1.0/auth/identities/certificate/fpr-1234");
+    expect(init?.method).toBe("PUT");
+    expect(JSON.parse(init?.body as string)).toEqual({ groups: ["admins"] });
+  });
+
   it("certificates token posts type client with description and expiry", async () => {
     const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
     vi.stubGlobal("fetch", fetchMock);

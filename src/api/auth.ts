@@ -47,6 +47,10 @@ export class AuthApi {
     return this.client.delete(`/auth/groups/${encodeURIComponent(name)}`);
   }
 
+  updateIdentity(type: string, id: string, body: { groups: string[] }): Promise<AsyncResponse | SyncResponse | null> {
+    return this.client.put(`/auth/identities/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, body);
+  }
+
   listPermissions(): Promise<AuthPermission[]> {
     return this.client.get<AuthPermission[]>("/auth/permissions?recursion=1");
   }
