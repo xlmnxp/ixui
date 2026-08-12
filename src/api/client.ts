@@ -79,7 +79,9 @@ export class ApiClient {
 
   async list<T>(path: string, opts?: { project?: string }): Promise<T[]> {
     const project = opts?.project;
-    const qs = project !== undefined ? `?project=${encodeURIComponent(project)}&recursion=1` : "?recursion=1";
+    const qs = project !== undefined
+      ? `?project=${encodeURIComponent(project)}&recursion=1`
+      : "?all-projects=true&recursion=1";
     const items = await this.request<(string | T)[]>("GET", `${path}${qs}`);
     return (items ?? []).filter((item): item is T => typeof item !== "string");
   }

@@ -21,7 +21,14 @@ describe("ApiClient", () => {
     const client = new ApiClient("/1.0");
     const data = await client.list<{ name: string }>("/instances");
     expect(data).toEqual([{ name: "web1" }]);
-    expect(fetch).toHaveBeenCalledWith("/1.0/instances?recursion=1", expect.anything());
+    expect(fetch).toHaveBeenCalledWith("/1.0/instances?all-projects=true&recursion=1", expect.anything());
+  });
+
+  it("lists a specific project when project is given", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(200, [])));
+    const client = new ApiClient("/1.0");
+    await client.list("/instances", { project: "default" });
+    expect(fetch).toHaveBeenCalledWith("/1.0/instances?project=default&recursion=1", expect.anything());
   });
 
   it("unwraps the Incus sync envelope in GET responses", async () => {
