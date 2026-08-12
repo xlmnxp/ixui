@@ -94,13 +94,15 @@ describe("ApiClient", () => {
     await expect(client.get("/nope")).rejects.toMatchObject({ status: 404, code: 404, message: "Not found" });
   });
 
-  it("calls the forbidden handler on 403", async () => {
+  it("does not call the forbidden handler on 403 and throws ApiError", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(403, { error: "denied", error_code: 403 })));
     const client = new ApiClient("/1.0");
     const onForbidden = vi.fn();
     client.setForbiddenHandler(onForbidden);
-    await expect(client.get("/x")).rejects.toBeInstanceOf(ApiError);
-    expect(onForbidden).toHaveBeenCalledTimes(1);
+    const error = await client.get("/x").catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ status: 403 });
+    expect(onForbidden).not.toHaveBeenCalled();
   });
 
   it("calls the forbidden handler on 401", async () => {

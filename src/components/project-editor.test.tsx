@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ProjectEditor } from "./project-editor";
 import type { Project } from "../api/types";
+import { currentProjectStore } from "../state/projects";
 
 vi.mock("../api", () => ({
   infraApi: {
@@ -20,6 +21,10 @@ describe("ProjectEditor", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    currentProjectStore.setState("default");
   });
 
   it("checks a feature to set its key to true", async () => {
@@ -65,7 +70,8 @@ describe("ProjectEditor", () => {
     await waitFor(() => expect(infraApi.updateProject).toHaveBeenCalledWith("prod", { config: {} }));
   });
 
-  it("renders limits with usage bars and clamps percentages to 100", async () => {
+  it("renders limits with usage bars for the active project and clamps percentages to 100", async () => {
+    currentProjectStore.setState("prod");
     render(
       <ProjectEditor
         project={{
@@ -92,6 +98,40 @@ describe("ProjectEditor", () => {
       .map((b) => Number(b.getAttribute("aria-valuenow")))
       .sort((a, b) => a - b);
     expect(bars).toEqual([20, 50, 100]);
+    expect(screen.queryByText("Usage shown for the active project")).not.toBeInTheDocument();
+    expect(screen.queryAllByText("—")).toHaveLength(0);
+  });
+
+  it("shows a dash and a note instead of usage bars for a non-active project", async () => {
+    currentProjectStore.setState("default");
+    render(
+      <ProjectEditor
+        project={{ ...project, config: { "limits.instances": "5" } }}
+        usage={{ "limits.instances": 3 }}
+        onClose={onClose}
+        onSaved={onSaved}
+      />
+    );
+
+    await waitFor(() => expect(screen.getByTestId("project-limit-instances")).toHaveValue(5));
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(screen.getByText("Usage shown for the active project")).toBeInTheDocument();
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+  });
+
+  it("keeps the disk limit input but drops its usage bar", async () => {
+    currentProjectStore.setState("prod");
+    render(
+      <ProjectEditor
+        project={{ ...project, config: { "limits.disk": "10GB" } }}
+        usage={{ "limits.disk": 5 }}
+        onClose={onClose}
+        onSaved={onSaved}
+      />
+    );
+
+    await waitFor(() => expect(screen.getByTestId("project-limit-disk")).toHaveValue("10GB"));
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
   });
 
   it("renders restricted toggles with descriptions and flips keys", async () => {

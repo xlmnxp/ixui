@@ -9,6 +9,8 @@ import { Switch } from "./switch";
 import { Input } from "./input";
 import { Progress } from "./progress";
 import { toast } from "./toast";
+import { currentProjectStore } from "../state/projects";
+import { useStore } from "../state/store";
 
 export interface ProjectKeyMeta {
   label: string;
@@ -145,6 +147,8 @@ export interface ProjectEditorProps {
 }
 
 export function ProjectEditor({ project, usage = {}, onClose, onSaved }: ProjectEditorProps) {
+  const currentProject = useStore(currentProjectStore);
+  const activeProject = project.name === currentProject;
   const [config, setConfig] = useState<Record<string, string>>(() => ({ ...project.config }));
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -222,9 +226,11 @@ export function ProjectEditor({ project, usage = {}, onClose, onSaved }: Project
         </section>
         <section>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">Limits</h3>
+          {!activeProject && <p className="mb-2 text-xs text-text-tertiary">Usage shown for the active project</p>}
           <div className="space-y-3">
             {LIMIT_KEYS.map((key) => {
               const percent = usageFor(key);
+              const showBar = activeProject && key !== "limits.disk" && percent !== null;
               return (
                 <div key={key}>
                   <Input
@@ -236,10 +242,15 @@ export function ProjectEditor({ project, usage = {}, onClose, onSaved }: Project
                     onChange={(e) => setKey(key, e.target.value)}
                   />
                   <p className="text-xs text-text-tertiary">{descriptionFor(key)}</p>
-                  {percent !== null && (
+                  {showBar && (
                     <div className="mt-1.5 flex items-center gap-2">
                       <Progress value={percent} tone={percent >= 100 ? "danger" : "accent"} />
                       <span className="shrink-0 text-xs text-text-tertiary">{percent}%</span>
+                    </div>
+                  )}
+                  {!activeProject && key !== "limits.disk" && (
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <span className="shrink-0 text-xs text-text-tertiary">—</span>
                     </div>
                   )}
                 </div>

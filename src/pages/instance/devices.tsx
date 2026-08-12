@@ -5,6 +5,7 @@ import type { Instance } from "../../api/types";
 import { KeyValueEditor } from "../../components/key-value-editor";
 import { Button } from "../../components/button";
 import { Dialog } from "../../components/dialog";
+import { ConfirmDialog } from "../../components/confirm-dialog";
 import { Input } from "../../components/input";
 import { Select } from "../../components/select";
 import { EmptyState } from "../../components/empty-state";
@@ -32,6 +33,7 @@ export function DevicesTab({ instanceName }: DevicesTabProps) {
   const [draftProps, setDraftProps] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
     instancesApi.get(instanceName).then(setInstance).catch(() => {});
@@ -68,14 +70,17 @@ export function DevicesTab({ instanceName }: DevicesTabProps) {
       setError("Device name is required");
       return;
     }
-    const validation = validateDevice(draftType, draftProps);
+    const cleanProps = Object.fromEntries(
+      Object.entries(draftProps).filter(([key, value]) => key.trim() !== "" && value.trim() !== "")
+    );
+    const validation = validateDevice(draftType, cleanProps);
     if (validation) {
       setError(validation);
       return;
     }
     const next = { ...instance.devices };
     if (editingName && editingName !== name) delete next[editingName];
-    next[name] = { type: draftType, ...draftProps };
+    next[name] = { type: draftType, ...cleanProps };
     setBusy(true);
     try {
       await instancesApi.update(instanceName, { devices: next });
@@ -91,7 +96,7 @@ export function DevicesTab({ instanceName }: DevicesTabProps) {
 
   const updateProps = async (name: string, props: Record<string, string>) => {
     if (!instance) return;
-    const clean = Object.fromEntries(Object.entries(props).filter(([key, value]) => key !== "" || value !== ""));
+    const clean = Object.fromEntries(Object.entries(props).filter(([key, value]) => key.trim() !== "" && value.trim() !== ""));
     const next = { ...instance.devices, [name]: { ...instance.devices[name], ...clean } };
     setInstance({ ...instance, devices: next });
     try {
@@ -103,8 +108,10 @@ export function DevicesTab({ instanceName }: DevicesTabProps) {
     }
   };
 
-  const remove = async (name: string) => {
-    if (!instance) return;
+  const remove = async () => {
+    if (!instance || !removeTarget) return;
+    const name = removeTarget;
+    setRemoveTarget(null);
     const next = { ...instance.devices };
     delete next[name];
     setInstance({ ...instance, devices: next });
@@ -151,7 +158,7 @@ export function DevicesTab({ instanceName }: DevicesTabProps) {
                   <td className="px-2 py-2 align-top">
                     <div className="flex justify-end gap-1">
                       <Button size="sm" variant="ghost" data-testid={`device-edit-${name}`} aria-label={`Edit ${name}`} onClick={() => openEdit(name)}><Pencil size={14} /></Button>
-                      <Button size="sm" variant="ghost" data-testid={`device-remove-${name}`} aria-label={`Remove ${name}`} onClick={() => void remove(name)}><Trash2 size={14} /></Button>
+                      <Button size="sm" variant="ghost" data-testid={`device-remove-${name}`} aria-label={`Remove ${name}`} onClick={() => setRemoveTarget(name)}><Trash2 size={14} /></Button>
                     </div>
                   </td>
                 </tr>
@@ -183,6 +190,16 @@ export function DevicesTab({ instanceName }: DevicesTabProps) {
           {error && <p className="text-xs text-red-300" data-testid="device-error">{error}</p>}
         </div>
       </Dialog>
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        title={`Remove device ${removeTarget ?? ""}`}
+        body={`Remove the ${removeTarget ?? ""} device from this instance?`}
+        confirmLabel="Remove"
+        tone="danger"
+        onConfirm={() => void remove()}
+        onCancel={() => setRemoveTarget(null)}
+      />
     </div>
   );
 }

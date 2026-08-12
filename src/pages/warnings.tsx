@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCheck } from "lucide-react";
 import { warningsApi } from "../api";
+import { ApiError } from "../api/client";
 import type { Warning } from "../api/warnings";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
@@ -21,12 +22,15 @@ const severityTones: Record<string, BadgeTone> = {
 
 export function WarningsPage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [warnings, setWarnings] = useState<Warning[]>([]);
+  const [denied, setDenied] = useState(false);
 
   const refresh = useCallback(() => {
     void warningsApi
       .list()
       .then(setWarnings)
-      .catch(() => {});
+      .catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === 403) setDenied(true);
+      });
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -86,11 +90,19 @@ export function WarningsPage({ registerBar }: { registerBar?: (bar: BarState | n
 
   return (
     <div className="space-y-4" data-testid="warnings-page">
-      {!registerBar && <PageBar title="Warnings" />}
-      {warnings.length === 0 ? (
-        <EmptyState title="No warnings" />
+      {denied ? (
+        <div data-testid="permission-denied">
+          <EmptyState title="Permission denied" description="Your account does not have permission to view warnings." />
+        </div>
       ) : (
-        <Table columns={columns} rows={warnings} rowKey={(w) => w.uuid} />
+        <>
+          {!registerBar && <PageBar title="Warnings" />}
+          {warnings.length === 0 ? (
+            <EmptyState title="No warnings" />
+          ) : (
+            <Table columns={columns} rows={warnings} rowKey={(w) => w.uuid} />
+          )}
+        </>
       )}
     </div>
   );

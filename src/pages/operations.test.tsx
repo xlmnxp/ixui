@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { OperationsPage } from "./operations";
+import { ApiError } from "../api/client";
 
 vi.mock("../api", () => ({
   operationsApi: {
@@ -56,5 +57,13 @@ describe("OperationsPage", () => {
     render(<OperationsPage />);
     await screen.findByText("Delete instance old1");
     expect(screen.queryByTestId("operation-cancel-op2")).not.toBeInTheDocument();
+  });
+
+  it("shows permission denied instead of crashing on 403", async () => {
+    const { operationsApi } = await import("../api");
+    vi.mocked(operationsApi.list).mockRejectedValueOnce(new ApiError(403, 403, "denied"));
+    render(<OperationsPage />);
+    expect(await screen.findByTestId("permission-denied")).toBeInTheDocument();
+    expect(screen.getByText("Permission denied")).toBeInTheDocument();
   });
 });

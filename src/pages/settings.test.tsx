@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SettingsPage } from "./settings";
+import { ApiError } from "../api/client";
 
 vi.mock("../api", () => ({
   serverApi: {
@@ -62,5 +63,13 @@ describe("SettingsPage", () => {
     );
     await user.click(screen.getByTestId("settings-reset"));
     expect(screen.getByText("10.0.0.1:8443")).toBeInTheDocument();
+  });
+
+  it("shows permission denied instead of crashing on 403", async () => {
+    const { serverApi } = await import("../api");
+    vi.mocked(serverApi.info).mockRejectedValueOnce(new ApiError(403, 403, "denied"));
+    render(<SettingsPage />);
+    expect(await screen.findByTestId("permission-denied")).toBeInTheDocument();
+    expect(screen.getByText("Permission denied")).toBeInTheDocument();
   });
 });

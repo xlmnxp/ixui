@@ -1,6 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CertificatesPage } from "./certificates";
+import { ApiError } from "../api/client";
+import { authStore } from "../auth/status";
 
 vi.mock("../api", () => ({
   certificatesApi: {
@@ -14,6 +16,8 @@ vi.mock("../api", () => ({
 }));
 
 describe("CertificatesPage", () => {
+  afterEach(() => authStore.setState("unknown"));
+
   it("lists certificates", async () => {
     render(<CertificatesPage />);
     expect(await screen.findByText("fpr-abc")).toBeInTheDocument();
@@ -44,5 +48,34 @@ describe("CertificatesPage", () => {
     expect(await screen.findByTestId("token-value")).toHaveTextContent("tok-123");
     await user.click(screen.getByTestId("token-copy"));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("tok-123"));
+  });
+
+  it("shows the sign-out button when authenticated", async () => {
+    authStore.setState("authenticated");
+    render(<CertificatesPage />);
+    await screen.findByText("fpr-abc");
+    expect(screen.getByTestId("auth-logout")).toBeInTheDocument();
+  });
+
+  it("signs out via the oidc logout redirect", async () => {
+    const user = userEvent.setup();
+    const assign = vi.fn();
+    Object.defineProperty(window, "location", {
+      value: { assign },
+      writable: true,
+    });
+    authStore.setState("authenticated");
+    render(<CertificatesPage />);
+    await screen.findByText("fpr-abc");
+    await user.click(screen.getByTestId("auth-logout"));
+    expect(assign).toHaveBeenCalledWith("/oidc/logout");
+  });
+
+  it("shows permission denied instead of crashing on 403", async () => {
+    const { certificatesApi } = await import("../api");
+    vi.mocked(certificatesApi.list).mockRejectedValueOnce(new ApiError(403, 403, "denied"));
+    render(<CertificatesPage />);
+    expect(await screen.findByTestId("permission-denied")).toBeInTheDocument();
+    expect(screen.getByText("Permission denied")).toBeInTheDocument();
   });
 });

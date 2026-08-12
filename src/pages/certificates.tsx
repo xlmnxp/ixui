@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { Copy, KeyRound, X } from "lucide-react";
+import { Copy, KeyRound, LogOut, X } from "lucide-react";
 import { certificatesApi } from "../api";
+import { ApiError } from "../api/client";
 import type { Certificate } from "../api/certificates";
 import type { AsyncResponse, SyncResponse } from "../api/types";
+import { authStore } from "../auth/status";
+import { startOidcLogout } from "../auth/login";
+import { useStore } from "../state/store";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
 import { Button } from "../components/button";
@@ -29,6 +33,7 @@ function tokenFrom(result: AsyncResponse | SyncResponse | null): string | null {
 }
 
 export function CertificatesPage() {
+  const auth = useStore(authStore);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [issueOpen, setIssueOpen] = useState(false);
   const [description, setDescription] = useState("");
@@ -36,9 +41,15 @@ export function CertificatesPage() {
   const [busy, setBusy] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [denied, setDenied] = useState(false);
 
   const refresh = useCallback(() => {
-    void certificatesApi.list().then(setCertificates).catch(() => {});
+    void certificatesApi
+      .list()
+      .then(setCertificates)
+      .catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === 403) setDenied(true);
+      });
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -71,9 +82,13 @@ export function CertificatesPage() {
 
   const copy = async () => {
     if (!token) return;
-    await navigator.clipboard?.writeText(token);
-    setCopied(true);
-    toast("success", "Token copied to clipboard");
+    try {
+      await navigator.clipboard?.writeText(token);
+      setCopied(true);
+      toast("success", "Token copied to clipboard");
+    } catch {
+      toast("danger", "Copy failed");
+    }
   };
 
   const columns: Column<Certificate>[] = [
@@ -89,13 +104,24 @@ export function CertificatesPage() {
       <PageBar
         title="Certificates"
         actions={[
+          ...(auth === "authenticated"
+            ? [
+                <Button key="logout" size="sm" variant="ghost" data-testid="auth-logout" onClick={startOidcLogout}>
+                  <LogOut size={14} /> Sign out
+                </Button>,
+              ]
+            : []),
           <Button key="issue" size="sm" data-testid="certificate-issue-open" onClick={openIssue}>
             <KeyRound size={14} /> Issue token
           </Button>,
         ]}
       />
 
-      {certificates.length === 0 ? (
+      {denied ? (
+        <div data-testid="permission-denied">
+          <EmptyState title="Permission denied" description="Your account does not have permission to view certificates." />
+        </div>
+      ) : certificates.length === 0 ? (
         <EmptyState title="No certificates" />
       ) : (
         <Table columns={columns} rows={certificates} rowKey={(c) => c.fingerprint} emptyMessage="No certificates" />

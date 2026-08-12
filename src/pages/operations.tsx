@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { X } from "lucide-react";
 import { operationsApi } from "../api";
+import { ApiError } from "../api/client";
 import type { Operation, OperationStatus } from "../api/types";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
@@ -23,12 +24,15 @@ const statusTones: Record<OperationStatus, BadgeTone> = {
 
 export function OperationsPage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [operations, setOperations] = useState<Operation[]>([]);
+  const [denied, setDenied] = useState(false);
 
   const refresh = useCallback(() => {
     void operationsApi
       .list()
       .then(setOperations)
-      .catch(() => {});
+      .catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === 403) setDenied(true);
+      });
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -91,11 +95,19 @@ export function OperationsPage({ registerBar }: { registerBar?: (bar: BarState |
 
   return (
     <div className="space-y-4" data-testid="operations-page">
-      {!registerBar && <PageBar title="Operations" actions={barActions} />}
-      {operations.length === 0 ? (
-        <EmptyState title="No operations" />
+      {denied ? (
+        <div data-testid="permission-denied">
+          <EmptyState title="Permission denied" description="Your account does not have permission to view operations." />
+        </div>
       ) : (
-        <Table columns={columns} rows={operations} rowKey={(o) => o.id} />
+        <>
+          {!registerBar && <PageBar title="Operations" actions={barActions} />}
+          {operations.length === 0 ? (
+            <EmptyState title="No operations" />
+          ) : (
+            <Table columns={columns} rows={operations} rowKey={(o) => o.id} />
+          )}
+        </>
       )}
     </div>
   );

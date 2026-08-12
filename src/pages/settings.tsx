@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RotateCcw, Save } from "lucide-react";
 import { serverApi } from "../api";
+import { ApiError } from "../api/client";
 import { KeyValueEditor } from "../components/key-value-editor";
 import { Button } from "../components/button";
 import { EmptyState } from "../components/empty-state";
@@ -24,6 +25,7 @@ export function SettingsPage({ registerBar }: { registerBar?: (bar: BarState | n
   const [original, setOriginal] = useState<Record<string, string>>({});
   const [config, setConfig] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [denied, setDenied] = useState(false);
 
   const refresh = useCallback(() => {
     void serverApi
@@ -33,7 +35,9 @@ export function SettingsPage({ registerBar }: { registerBar?: (bar: BarState | n
         setOriginal(next);
         setConfig(maskConfig(next));
       })
-      .catch(() => {});
+      .catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === 403) setDenied(true);
+      });
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -76,11 +80,19 @@ export function SettingsPage({ registerBar }: { registerBar?: (bar: BarState | n
 
   return (
     <div className="space-y-4" data-testid="settings-page">
-      {!registerBar && <PageBar title="Server settings" actions={barActions} />}
-      {Object.keys(original).length === 0 ? (
-        <EmptyState title="—" description="No server config available" />
+      {denied ? (
+        <div data-testid="permission-denied">
+          <EmptyState title="Permission denied" description="Your account does not have permission to view server settings." />
+        </div>
       ) : (
-        <KeyValueEditor values={config} onChange={setConfig} dataTestId="settings-editor" />
+        <>
+          {!registerBar && <PageBar title="Server settings" actions={barActions} />}
+          {Object.keys(original).length === 0 ? (
+            <EmptyState title="—" description="No server config available" />
+          ) : (
+            <KeyValueEditor values={config} onChange={setConfig} dataTestId="settings-editor" />
+          )}
+        </>
       )}
     </div>
   );

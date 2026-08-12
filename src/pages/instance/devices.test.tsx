@@ -130,13 +130,63 @@ describe("DevicesTab", () => {
     );
   });
 
-  it("removes a device and saves via update", async () => {
+  it("removes a device after confirmation", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../../api");
+    vi.mocked(instancesApi.update).mockClear();
+    render(<DevicesTab instanceName="web1" />);
+    await screen.findByTestId("device-row-eth0");
+    await user.click(screen.getByTestId("device-remove-eth0"));
+    expect(instancesApi.update).not.toHaveBeenCalled();
+    await user.click(screen.getByTestId("confirm-confirm"));
+    await waitFor(() => expect(instancesApi.update).toHaveBeenCalledWith("web1", { devices: {} }));
+    await waitFor(() => expect(screen.queryByTestId("device-row-eth0")).not.toBeInTheDocument());
+  });
+
+  it("cancels device removal without saving", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../../api");
+    vi.mocked(instancesApi.update).mockClear();
+    render(<DevicesTab instanceName="web1" />);
+    await screen.findByTestId("device-row-eth0");
+    await user.click(screen.getByTestId("device-remove-eth0"));
+    await user.click(screen.getByTestId("confirm-cancel"));
+    expect(instancesApi.update).not.toHaveBeenCalled();
+    expect(await screen.findByTestId("device-row-eth0")).toBeInTheDocument();
+  });
+
+  it("filters out empty value rows before saving device props", async () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../../api");
     render(<DevicesTab instanceName="web1" />);
     await screen.findByTestId("device-row-eth0");
-    await user.click(screen.getByTestId("device-remove-eth0"));
-    await waitFor(() => expect(instancesApi.update).toHaveBeenCalledWith("web1", { devices: {} }));
-    await waitFor(() => expect(screen.queryByTestId("device-row-eth0")).not.toBeInTheDocument());
+    await user.click(screen.getByTestId("device-add"));
+    const dialog = within(screen.getByTestId("dialog"));
+    await user.type(dialog.getByTestId("device-name"), "disk1");
+    await user.selectOptions(dialog.getByTestId("device-type"), "disk");
+    await user.click(dialog.getByTestId("kv-add-row"));
+    await user.type(dialog.getByTestId("kv-key-edit-"), "pool");
+    await user.keyboard("{Enter}");
+    await user.dblClick(dialog.getByTestId("kv-value-pool"));
+    await user.type(dialog.getByTestId("kv-value-edit-pool"), "default");
+    await user.keyboard("{Enter}");
+    await user.click(dialog.getByTestId("kv-add-row"));
+    await user.type(dialog.getByTestId("kv-key-edit-"), "path");
+    await user.keyboard("{Enter}");
+    await user.dblClick(dialog.getByTestId("kv-value-path"));
+    await user.type(dialog.getByTestId("kv-value-edit-path"), "/data");
+    await user.keyboard("{Enter}");
+    await user.click(dialog.getByTestId("kv-add-row"));
+    await user.type(dialog.getByTestId("kv-key-edit-"), "empty");
+    await user.keyboard("{Enter}");
+    await user.click(screen.getByTestId("device-save"));
+    await waitFor(() =>
+      expect(instancesApi.update).toHaveBeenCalledWith("web1", {
+        devices: {
+          eth0: { type: "nic", nictype: "bridged", parent: "br0" },
+          disk1: { type: "disk", pool: "default", path: "/data" },
+        },
+      })
+    );
   });
 });

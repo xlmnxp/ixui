@@ -81,6 +81,7 @@ describe("ProjectsPage", () => {
 
   it("shows usage bars from live resource counts", async () => {
     const user = userEvent.setup();
+    currentProjectStore.setState("prod");
     render(<ProjectsPage />);
     await screen.findByText("prod");
     await user.click(screen.getByTestId("project-edit-prod"));

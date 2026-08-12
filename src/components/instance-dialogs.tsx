@@ -38,6 +38,7 @@ export function RenameInstanceDialog({ open, onClose, name, onRenamed }: RenameI
     try {
       await instancesApi.rename(name, newName.trim());
       toast("success", `Renamed ${name} to ${newName.trim()}`);
+      void loadInstances(currentProjectStore.getState()).catch(() => {});
       onRenamed?.(newName.trim());
       onClose();
     } catch (err) {
@@ -174,6 +175,7 @@ export function MoveInstanceDialog({ open, onClose, name, onMoved }: MoveInstanc
       if (member) body.target = member;
       await instancesApi.move(name, body);
       toast("success", `Move of ${name} requested`);
+      void loadInstances(currentProjectStore.getState()).catch(() => {});
       onMoved?.(project);
       onClose();
     } catch (err) {

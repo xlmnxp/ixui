@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Camera, Check, Copy as CopyIcon, Cpu, Download, FileText, Gauge, MoreHorizontal, MoveRight, Pencil, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
-import { backupsApi, instancesApi } from "../api";
+import { backupsApi, instancesApi, operationsApi } from "../api";
 import type { Instance } from "../api/types";
+import { loadInstances } from "../state/instances";
+import { currentProjectStore } from "../state/projects";
 import { VerticalTabs } from "../components/vertical-tabs";
 import { SplitPane } from "../components/split-pane";
 import { Button } from "../components/button";
@@ -81,9 +83,24 @@ export function InstanceDetailPage() {
     setMoreOpen(false);
     setExporting(true);
     try {
-      await backupsApi.create(name, "export");
-      window.open(backupsApi.exportUrl(name, "export"));
-      toast("success", `Export of ${name} started`);
+      const backupName = `export-${Date.now()}`;
+      const result = await backupsApi.create(name, backupName);
+      if (result && "type" in result && result.type === "async") {
+        const op = await operationsApi.wait(result.operation);
+        if (op.status !== "Success") throw new Error(op.err ?? "Export failed");
+      }
+      const res = await fetch(backupsApi.exportUrl(name, backupName), { credentials: "include" });
+      if (!res.ok) throw new Error(`Export failed (${res.status})`);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `${name}.tar.gz`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+      toast("success", `Export of ${name} downloaded`);
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Export failed");
     } finally {
@@ -182,6 +199,7 @@ export function InstanceDetailPage() {
         onClose={() => setMoveOpen(false)}
         name={name}
         onMoved={(project) => {
+          void loadInstances(currentProjectStore.getState()).catch(() => {});
           if (project && project !== instance.project) navigate("/instances");
           else refresh();
         }}

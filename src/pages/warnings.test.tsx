@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { WarningsPage } from "./warnings";
+import { ApiError } from "../api/client";
 
 vi.mock("../api", () => ({
   warningsApi: {
@@ -60,5 +61,13 @@ describe("WarningsPage", () => {
     await user.click(screen.getByTestId("warning-ack-w1"));
     await waitFor(() => expect(warningsApi.ack).toHaveBeenCalledWith("w1"));
     await waitFor(() => expect(warningsApi.list).toHaveBeenCalledTimes(2));
+  });
+
+  it("shows permission denied instead of crashing on 403", async () => {
+    const { warningsApi } = await import("../api");
+    vi.mocked(warningsApi.list).mockRejectedValueOnce(new ApiError(403, 403, "denied"));
+    render(<WarningsPage />);
+    expect(await screen.findByTestId("permission-denied")).toBeInTheDocument();
+    expect(screen.getByText("Permission denied")).toBeInTheDocument();
   });
 });

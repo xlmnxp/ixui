@@ -29,7 +29,13 @@ vi.mock("../api", () => ({
   },
   infraApi: { listImages: vi.fn().mockResolvedValue([]), listProfiles: vi.fn().mockResolvedValue([]), listNetworks: vi.fn().mockResolvedValue([]), listPools: vi.fn().mockResolvedValue([{ name: "default", description: "", driver: "dir", status: "", used_by: [] }]), listProjects: vi.fn().mockResolvedValue([{ name: "default", description: "", config: {} }, { name: "prod", description: "", config: {} }]) },
   clusterApi: { listMembers: vi.fn().mockResolvedValue([{ server_name: "incus-1", url: "https://incus-1:8443", database: true, status: "Online", message: "", architecture: "x86_64" }]) },
-  backupsApi: { create: vi.fn().mockResolvedValue(null), exportUrl: (i: string, n: string) => `/instances/${i}/backups/${n}/export` },
+  backupsApi: {
+    create: vi.fn().mockResolvedValue({ type: "async", status: "Running", status_code: 100, operation: "op-export", metadata: null }),
+    exportUrl: (i: string, n: string) => `/1.0/instances/${i}/backups/${n}/export?project=default`,
+  },
+  operationsApi: {
+    wait: vi.fn().mockResolvedValue({ id: "op-export", class: "task", description: "Backing up instance", status: "Success", status_code: 200, created_at: "t", updated_at: "t", may_cancel: false }),
+  },
   serverApi: { metadata: vi.fn().mockResolvedValue({ configs: [] }) },
   api: { get: vi.fn() },
 }));
@@ -222,18 +228,32 @@ describe("InstanceDetailPage", () => {
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/instances"));
   });
 
-  it("creates an export backup and opens the download URL", async () => {
+  it("exports a backup via blob download through the authenticated client", async () => {
     const user = userEvent.setup();
-    const { backupsApi } = await import("../api");
-    const openSpy = vi.fn();
+    const { backupsApi, operationsApi } = await import("../api");
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, blob: vi.fn().mockResolvedValue(new Blob(["tar"])) });
+    vi.stubGlobal("fetch", fetchMock);
+    const createObjectUrl = vi.fn().mockReturnValue("blob:mock");
+    const revokeObjectUrl = vi.fn();
+    URL.createObjectURL = createObjectUrl;
+    URL.revokeObjectURL = revokeObjectUrl;
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     const restore = () => vi.unstubAllGlobals();
-    vi.stubGlobal("open", openSpy);
     renderPage();
     await screen.findByText("web1");
     await user.click(screen.getByTestId("detail-more"));
     await user.click(screen.getByTestId("detail-more-export"));
-    await waitFor(() => expect(backupsApi.create).toHaveBeenCalledWith("web1", "export"));
-    expect(openSpy).toHaveBeenCalledWith("/instances/web1/backups/export/export");
+    await waitFor(() => expect(backupsApi.create).toHaveBeenCalledWith("web1", expect.stringMatching(/^export-\d+$/)));
+    await waitFor(() => expect(operationsApi.wait).toHaveBeenCalledWith("op-export"));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringMatching(/^\/1\.0\/instances\/web1\/backups\/export-\d+\/export\?project=default$/),
+        { credentials: "include" }
+      )
+    );
+    expect(createObjectUrl).toHaveBeenCalledWith(expect.any(Blob));
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    expect(revokeObjectUrl).toHaveBeenCalledWith("blob:mock");
     restore();
   });
 });
