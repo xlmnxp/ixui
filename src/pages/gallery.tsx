@@ -42,6 +42,8 @@ export function Gallery() {
   const [tab, setTab] = useState("a");
   const [windowOpen, setWindowOpen] = useState(false);
   const [vtab, setVtab] = useState("a");
+  const [kvValues, setKvValues] = useState<Record<string, string>>({ "limits.memory": "512MiB", "server.name": "ix" });
+  const [kvSelected, setKvSelected] = useState<string[]>([]);
 
   return (
     <div className="space-y-4 p-6" data-testid="gallery">
@@ -174,7 +176,12 @@ export function Gallery() {
 
       <Section title="KeyValueEditor">
         <div className="w-full">
-          <KeyValueEditor values={{ "limits.memory": "512MiB", "server.name": "ix" }} onChange={() => {}} />
+          <KeyValueEditor
+            values={kvValues}
+            onChange={setKvValues}
+            selectedKeys={kvSelected}
+            onSelectionChange={setKvSelected}
+          />
         </div>
       </Section>
 

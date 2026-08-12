@@ -21,6 +21,7 @@ export function Checkbox({ label, className = "", ...rest }: CheckboxProps) {
       <span
         className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-border bg-surface-600 text-transparent transition-colors peer-checked:border-accent-500 peer-checked:bg-accent-600 peer-checked:text-white peer-hover:border-accent-500 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent-400"
         onClick={(e) => {
+          e.preventDefault();
           e.stopPropagation();
           inputRef.current?.click();
         }}
