@@ -14,13 +14,14 @@ export interface TreeProps {
   nodes: TreeNode[];
   selectedId?: string | null;
   onSelect?: (id: string) => void;
+  initialExpanded?: boolean;
 }
 
-export function Tree({ nodes, selectedId, onSelect }: TreeProps) {
+export function Tree({ nodes, selectedId, onSelect, initialExpanded = false }: TreeProps) {
   return (
     <ul role="tree" data-testid="tree" className="space-y-0.5">
       {nodes.map((node) => (
-        <TreeNodeItem key={node.id} node={node} selectedId={selectedId} onSelect={onSelect} depth={0} />
+        <TreeNodeItem key={node.id} node={node} selectedId={selectedId} onSelect={onSelect} depth={0} initialExpanded={initialExpanded} />
       ))}
     </ul>
   );
@@ -31,13 +32,15 @@ function TreeNodeItem({
   selectedId,
   onSelect,
   depth,
+  initialExpanded,
 }: {
   node: TreeNode;
   selectedId?: string | null;
   onSelect?: (id: string) => void;
   depth: number;
+  initialExpanded: boolean;
 }) {
-  const [expanded, setExpanded] = useState(depth === 0);
+  const [expanded, setExpanded] = useState(initialExpanded || depth === 0);
   const hasChildren = (node.children?.length ?? 0) > 0;
 
   const handleClick = () => {
@@ -71,7 +74,7 @@ function TreeNodeItem({
       {hasChildren && expanded && (
         <ul role="group">
           {node.children!.map((child) => (
-            <TreeNodeItem key={child.id} node={child} selectedId={selectedId} onSelect={onSelect} depth={depth + 1} />
+            <TreeNodeItem key={child.id} node={child} selectedId={selectedId} onSelect={onSelect} depth={depth + 1} initialExpanded={initialExpanded} />
           ))}
         </ul>
       )}

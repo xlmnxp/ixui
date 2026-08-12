@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Tree } from "../components/tree";
+import { ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { ProjectDropdown } from "../components/project-dropdown";
 import { buildTree } from "./tree-model";
 import { useTreeData } from "./use-tree-data";
@@ -15,6 +16,8 @@ export function Sidebar() {
   const { members, instancesByMember, unassigned } = useTreeData();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardTarget, setWizardTarget] = useState<string | undefined>(undefined);
+  const [treeEpoch, setTreeEpoch] = useState(0);
+  const [treeExpanded, setTreeExpanded] = useState(false);
 
   const nodes = buildTree({ project, members, instancesByMember, unassigned, onCreate: (target) => { setWizardTarget(target); setWizardOpen(true); } });
 
@@ -52,8 +55,26 @@ export function Sidebar() {
         <span className="text-sm font-semibold text-text-primary">Incus</span>
       </div>
       <ProjectDropdown />
+      <div className="flex items-center justify-end gap-1 px-2">
+        <button
+          type="button"
+          data-testid="tree-expand-all"
+          onClick={() => { setTreeExpanded(true); setTreeEpoch((e) => e + 1); }}
+          className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
+        >
+          <ChevronsUpDown size={12} /> Expand all
+        </button>
+        <button
+          type="button"
+          data-testid="tree-collapse-all"
+          onClick={() => { setTreeExpanded(false); setTreeEpoch((e) => e + 1); }}
+          className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
+        >
+          <ChevronsDownUp size={12} /> Collapse all
+        </button>
+      </div>
       <div className="flex-1 overflow-y-auto py-2">
-        <Tree nodes={nodes} selectedId={selectedId} onSelect={(id) => navigate(routeFor(id))} />
+        <Tree key={treeEpoch} nodes={nodes} selectedId={selectedId} onSelect={(id) => navigate(routeFor(id))} initialExpanded={treeExpanded} />
       </div>
       <CreateInstanceWizard open={wizardOpen} onClose={() => setWizardOpen(false)} targetMember={wizardTarget} />
     </aside>
