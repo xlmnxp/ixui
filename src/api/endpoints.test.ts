@@ -399,6 +399,28 @@ describe("API endpoints", () => {
       expect(fetchMock.mock.calls[2]![0]).toBe("/1.0/storage-pools/default/volumes/custom/vol1/snapshots/snap1?project=default");
     });
 
+    it("volume snapshot restore puts restore key", async () => {
+      const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
+      vi.stubGlobal("fetch", fetchMock);
+      await volumesApi.restoreSnapshot("default", "custom", "vol1", "snap1");
+      const [url, init] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("/1.0/storage-pools/default/volumes/custom/vol1/snapshots/snap1?project=default");
+      expect(init?.method).toBe("PUT");
+      expect(JSON.parse(init?.body as string)).toEqual({ restore: "snap1" });
+    });
+
+    it("iso upload posts the file body", async () => {
+      const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
+      vi.stubGlobal("fetch", fetchMock);
+      const file = new Blob(["iso-bytes"], { type: "application/octet-stream" });
+      await volumesApi.uploadIso("default", "myiso", file);
+      const [url, init] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("/1.0/storage-pools/default/volumes/custom/myiso?project=default");
+      expect(init?.method).toBe("POST");
+      expect(init?.headers).toEqual({ "Content-Type": "application/octet-stream" });
+      expect(init?.body).toBe(file);
+    });
+
     it("bucket list, create, and delete", async () => {
       const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, [{ name: "bkt1" }])));
       vi.stubGlobal("fetch", fetchMock);
