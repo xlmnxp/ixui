@@ -17,8 +17,7 @@ describe("buildTree dot tones", () => {
     const tree = buildTree({
       project: "default",
       members: [member("incus-1", "Online"), member("incus-2", "Evacuated")],
-      instancesByMember: {},
-      unassigned: [],
+      groups: [{ name: "default", byMember: {}, unassigned: [] }],
     });
     render(
       <MemoryRouter>
@@ -33,8 +32,7 @@ describe("buildTree dot tones", () => {
     const tree = buildTree({
       project: "default",
       members: [member("incus-1", "Offline")],
-      instancesByMember: {},
-      unassigned: [],
+      groups: [{ name: "default", byMember: {}, unassigned: [] }],
     });
     render(
       <MemoryRouter>

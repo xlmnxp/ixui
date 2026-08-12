@@ -10,7 +10,7 @@ const instance = (name: string, location?: string): Instance => ({
 describe("buildTree", () => {
   it("adds hover create actions to project and member nodes", () => {
     const onCreate = vi.fn();
-    const tree = buildTree({ project: "default", members: [member("incus-1")], instancesByMember: { "incus-1": [] }, unassigned: [], onCreate });
+    const tree = buildTree({ project: "default", members: [member("incus-1")], groups: [{ name: "default", byMember: { "incus-1": [] }, unassigned: [] }], onCreate });
     const projectNode = tree[1]!;
     expect(projectNode.action).toBeDefined();
     const memberNode = projectNode.children![0]!;
@@ -23,8 +23,7 @@ describe("buildTree", () => {
     const tree = buildTree({
       project: "default",
       members: [member("incus-2"), member("incus-1")],
-      instancesByMember: { "incus-1": [instance("web1", "incus-1")], "incus-2": [] },
-      unassigned: [],
+      groups: [{ name: "default", byMember: { "incus-1": [instance("web1", "incus-1")], "incus-2": [] }, unassigned: [] }],
     });
     expect(tree[1]?.id).toBe("project-default");
     const memberChildren = tree[1]?.children ?? [];
@@ -36,15 +35,30 @@ describe("buildTree", () => {
     const tree = buildTree({
       project: "default",
       members: [member("incus-1")],
-      instancesByMember: { "incus-1": [instance("z1", "incus-1"), instance("a1", "incus-1")] },
-      unassigned: [],
+      groups: [{ name: "default", byMember: { "incus-1": [instance("z1", "incus-1"), instance("a1", "incus-1")] }, unassigned: [] }],
     });
     const children = tree[1]?.children?.[0]?.children ?? [];
     expect(children.map((i) => i.id)).toEqual(["instance-a1", "instance-z1"]);
   });
 
   it("adds an unassigned bucket", () => {
-    const tree = buildTree({ project: "default", members: [member("incus-1")], instancesByMember: {}, unassigned: [instance("drift")] });
-    expect(tree[1]?.children?.some((m) => m.id === "unassigned")).toBe(true);
+    const tree = buildTree({ project: "default", members: [member("incus-1")], groups: [{ name: "default", byMember: {}, unassigned: [instance("drift")] }] });
+    expect(tree[1]?.children?.some((m) => m.id === "unassigned-default")).toBe(true);
+  });
+
+  it("groups instances by project in all-projects mode", () => {
+    const tree = buildTree({
+      project: "all",
+      members: [member("incus-1")],
+      groups: [
+        { name: "default", byMember: { "incus-1": [instance("web1", "incus-1")] }, unassigned: [] },
+        { name: "prod", byMember: {}, unassigned: [instance("db1")] },
+      ],
+    });
+    expect(tree[1]?.id).toBe("project-all");
+    const groups = tree[1]?.children ?? [];
+    expect(groups.map((g) => g.id)).toEqual(["all-project-default", "all-project-prod"]);
+    expect(groups[0]?.children?.map((m) => m.id)).toEqual(["all-member-incus-1"]);
+    expect(groups[1]?.children?.map((m) => m.id)).toEqual(["all-unassigned-prod"]);
   });
 });

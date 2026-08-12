@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { Shell } from "./layout";
 import { operationsStore } from "../state/operations";
 import { authStore } from "../auth/status";
+import { currentProjectStore } from "../state/projects";
 
 vi.mock("../api", () => ({
   api: { setForbiddenHandler: vi.fn(), get: vi.fn().mockResolvedValue({ cpu: { total: 8 }, memory: { total: 17179869184, used: 0 } }) },
@@ -55,6 +56,7 @@ describe("Shell", () => {
 
   it("navigates to instance detail when an instance label is clicked", async () => {
     const user = userEvent.setup();
+    currentProjectStore.setState("default");
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
