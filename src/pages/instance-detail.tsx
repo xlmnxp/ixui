@@ -81,6 +81,8 @@ export function InstanceDetailPage() {
     try {
       await instancesApi.setState(name, action);
       toast("info", `Requested ${action} for ${name}`);
+      refresh();
+      void loadInstances(currentProjectStore.getState()).catch(() => {});
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : `${action} failed`);
     }
