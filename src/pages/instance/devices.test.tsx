@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DevicesTab } from "./devices";
 
@@ -21,12 +21,19 @@ vi.mock("../../api", () => ({
 }));
 
 describe("DevicesTab", () => {
+  let actions: { add: () => void } | null = null;
+
+  function renderTab() {
+    actions = null;
+    render(<DevicesTab instanceName="web1" registerActions={(a) => { actions = a; }} />);
+  }
+
   afterEach(() => {
     devices = { eth0: { type: "nic", nictype: "bridged", parent: "br0" } };
   });
 
   it("renders devices with name, type and inline properties", async () => {
-    render(<DevicesTab instanceName="web1" />);
+    renderTab();
     expect(await screen.findByTestId("device-row-eth0")).toBeInTheDocument();
     expect(screen.getByTestId("device-name-eth0")).toHaveTextContent("eth0");
     expect(screen.getByTestId("device-type-eth0")).toHaveTextContent("nic");
@@ -37,9 +44,9 @@ describe("DevicesTab", () => {
   it("shows a validation error for a nic without nictype", async () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../../api");
-    render(<DevicesTab instanceName="web1" />);
+    renderTab();
     await screen.findByTestId("device-row-eth0");
-    await user.click(screen.getByTestId("device-add"));
+    act(() => actions!.add());
     await user.type(screen.getByTestId("device-name"), "net1");
     await user.click(screen.getByTestId("device-save"));
     expect(screen.getByTestId("device-error")).toHaveTextContent(/nictype/);
@@ -49,9 +56,9 @@ describe("DevicesTab", () => {
   it("validates that disk devices require pool and path", async () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../../api");
-    render(<DevicesTab instanceName="web1" />);
+    renderTab();
     await screen.findByTestId("device-row-eth0");
-    await user.click(screen.getByTestId("device-add"));
+    act(() => actions!.add());
     await user.type(screen.getByTestId("device-name"), "disk1");
     await user.selectOptions(screen.getByTestId("device-type"), "disk");
     await user.click(screen.getByTestId("device-save"));
@@ -62,9 +69,9 @@ describe("DevicesTab", () => {
   it("adds a disk device and saves it via update", async () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../../api");
-    render(<DevicesTab instanceName="web1" />);
+    renderTab();
     await screen.findByTestId("device-row-eth0");
-    await user.click(screen.getByTestId("device-add"));
+    act(() => actions!.add());
     const dialog = within(screen.getByTestId("dialog"));
     await user.type(dialog.getByTestId("device-name"), "disk1");
     await user.selectOptions(dialog.getByTestId("device-type"), "disk");
@@ -96,7 +103,7 @@ describe("DevicesTab", () => {
   it("edits an existing device through the dialog", async () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../../api");
-    render(<DevicesTab instanceName="web1" />);
+    renderTab();
     await screen.findByTestId("device-row-eth0");
     await user.click(screen.getByTestId("device-edit-eth0"));
     const dialog = within(screen.getByTestId("dialog"));
@@ -117,7 +124,7 @@ describe("DevicesTab", () => {
   it("edits device properties inline and saves via update", async () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../../api");
-    render(<DevicesTab instanceName="web1" />);
+    renderTab();
     await screen.findByTestId("kv-value-parent");
     await user.dblClick(screen.getByTestId("kv-value-parent"));
     await user.clear(screen.getByTestId("kv-value-edit-parent"));
@@ -134,7 +141,7 @@ describe("DevicesTab", () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../../api");
     vi.mocked(instancesApi.update).mockClear();
-    render(<DevicesTab instanceName="web1" />);
+    renderTab();
     await screen.findByTestId("device-row-eth0");
     await user.click(screen.getByTestId("device-remove-eth0"));
     expect(instancesApi.update).not.toHaveBeenCalled();
@@ -147,7 +154,7 @@ describe("DevicesTab", () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../../api");
     vi.mocked(instancesApi.update).mockClear();
-    render(<DevicesTab instanceName="web1" />);
+    renderTab();
     await screen.findByTestId("device-row-eth0");
     await user.click(screen.getByTestId("device-remove-eth0"));
     await user.click(screen.getByTestId("confirm-cancel"));
@@ -158,9 +165,9 @@ describe("DevicesTab", () => {
   it("filters out empty value rows before saving device props", async () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../../api");
-    render(<DevicesTab instanceName="web1" />);
+    renderTab();
     await screen.findByTestId("device-row-eth0");
-    await user.click(screen.getByTestId("device-add"));
+    act(() => actions!.add());
     const dialog = within(screen.getByTestId("dialog"));
     await user.type(dialog.getByTestId("device-name"), "disk1");
     await user.selectOptions(dialog.getByTestId("device-type"), "disk");

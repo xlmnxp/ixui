@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, Pencil, Trash2, X } from "lucide-react";
 import { instancesApi } from "../../api";
 import type { Instance } from "../../api/types";
 import { KeyValueEditor } from "../../components/key-value-editor";
@@ -24,7 +24,11 @@ function validateDevice(type: string, props: Record<string, string>): string | n
   return null;
 }
 
-export function DevicesTab({ instanceName }: DevicesTabProps) {
+export interface DeviceActions {
+  add: () => void;
+}
+
+export function DevicesTab({ instanceName, registerActions }: DevicesTabProps & { registerActions?: (actions: DeviceActions | null) => void }) {
   const [instance, setInstance] = useState<Instance | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingName, setEditingName] = useState<string | null>(null);
@@ -41,14 +45,19 @@ export function DevicesTab({ instanceName }: DevicesTabProps) {
 
   useEffect(refresh, [refresh]);
 
-  const openAdd = () => {
+  const openAdd = useCallback(() => {
     setEditingName(null);
     setDraftName("");
     setDraftType("nic");
     setDraftProps({});
     setError("");
     setDialogOpen(true);
-  };
+  }, []);
+
+  useEffect(() => {
+    registerActions?.({ add: openAdd });
+    return () => registerActions?.(null);
+  }, [registerActions, openAdd]);
 
   const openEdit = (name: string) => {
     if (!instance) return;
@@ -130,9 +139,6 @@ export function DevicesTab({ instanceName }: DevicesTabProps) {
 
   return (
     <div className="space-y-4" data-testid="devices-tab">
-      <div className="flex justify-end px-3 pt-3">
-        <Button size="sm" data-testid="device-add" onClick={openAdd}><Plus size={14} /> Add device</Button>
-      </div>
       {entries.length === 0 ? (
         <EmptyState title="No devices" description="Devices attach storage, networking, and hardware to this instance." />
       ) : (

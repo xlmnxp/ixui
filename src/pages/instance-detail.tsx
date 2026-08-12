@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Camera, Check, Copy as CopyIcon, Cpu, Download, FileText, Gauge, MoreHorizontal, MoveRight, Pencil, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
+import { Camera, Check, Copy as CopyIcon, Cpu, Download, FileText, Gauge, MoreHorizontal, Plus, MoveRight, Pencil, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
 import { backupsApi, instancesApi, operationsApi } from "../api";
 import type { Instance } from "../api/types";
 import { loadInstances } from "../state/instances";
@@ -16,6 +16,7 @@ import { InstanceStatusIcon } from "../shell/instance-icon";
 import { OverviewTab } from "./instance-overview";
 import { SnapshotsTab } from "./instance/snapshots";
 import { DevicesTab } from "./instance/devices";
+import type { DeviceActions } from "./instance/devices";
 import { ConfigTab } from "./instance/config";
 import type { ConfigActions } from "./instance/config";
 import { LogsTab } from "./instance/logs";
@@ -28,6 +29,7 @@ export function InstanceDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [configActions, setConfigActions] = useState<ConfigActions | null>(null);
+  const [deviceActions, setDeviceActions] = useState<DeviceActions | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
@@ -145,6 +147,12 @@ export function InstanceDetailPage() {
                 <span key="divider" className="mx-1 h-5 w-px bg-border" />,
               ]
             : []),
+          ...(activeTab === "devices" && deviceActions
+            ? [
+                <Button key="device-add" size="sm" variant="secondary" data-testid="device-add" onClick={deviceActions.add}><Plus size={14} /> Add device</Button>,
+                <span key="divider" className="mx-1 h-5 w-px bg-border" />,
+              ]
+            : []),
           <Button key="start" size="sm" variant="ghost" data-testid="detail-action-start" disabled={instance.status === "Started" || instance.status === "Running"} onClick={() => setState("start")}><Play size={14} /> Start</Button>,
           <Button key="stop" size="sm" variant="ghost" data-testid="detail-action-stop" disabled={instance.status === "Stopped" || instance.status === "Error" || instance.status === "Stopping" || instance.status === "Freezing"} onClick={() => setState("stop")}><Square size={14} /> Stop</Button>,
           <Button key="restart" size="sm" variant="ghost" data-testid="detail-action-restart" disabled={instance.status !== "Started" && instance.status !== "Running"} onClick={() => setState("restart")}><RotateCw size={14} /> Restart</Button>,
@@ -174,7 +182,7 @@ export function InstanceDetailPage() {
               {activeTab === "overview" && <OverviewTab instance={instance} />}
               {activeTab === "snapshots" && <SnapshotsTab instanceName={name} />}
               {activeTab === "config" && <ConfigTab instanceName={name} registerActions={setConfigActions} />}
-              {activeTab === "devices" && <DevicesTab instanceName={name} />}
+              {activeTab === "devices" && <DevicesTab instanceName={name} registerActions={setDeviceActions} />}
               {activeTab === "logs" && <LogsTab instanceName={name} />}
             </div>
           }
