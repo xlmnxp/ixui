@@ -11,4 +11,8 @@ export class ServerApi {
   metadata(): Promise<{ configs: { key: string; description: string }[] }> {
     return this.client.get<{ configs: { key: string; description: string }[] }>("/metadata");
   }
+
+  updateConfig(config: Record<string, string>): Promise<void> {
+    return this.client.put("", { config });
+  }
 }
