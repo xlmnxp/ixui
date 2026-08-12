@@ -47,6 +47,20 @@ export interface ClusterMember {
   architecture: string;
 }
 
+export interface ClusterGroup {
+  name: string;
+  description: string;
+  nodes: string[];
+}
+
+export interface InstanceBackup {
+  name: string;
+  created_at: string;
+  expires_at?: string;
+  instance_only: boolean;
+  optimized_storage: boolean;
+}
+
 export interface Image {
   fingerprint: string;
   filename: string;
@@ -86,6 +100,12 @@ export interface StorageVolume {
   name: string;
   type: string;
   content_type: string;
+  used_by?: string[];
+}
+
+export interface StorageVolumeDetail extends StorageVolume {
+  config: Record<string, string>;
+  created_at: string;
   used_by?: string[];
 }
 

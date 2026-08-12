@@ -38,7 +38,7 @@ export function ProjectOverview() {
     setSearchParams({ tab: key }, { replace: false });
   };
 
-  const openWizard = useCallback(() => setWizardOpen(true), []);
+  const openCreate = useCallback(() => setWizardOpen(true), []);
 
   return (
     <div className="flex h-full flex-col" data-testid="project-overview">
@@ -50,7 +50,7 @@ export function ProjectOverview() {
           left={<VerticalTabs tabs={TABS} active={tab} onChange={setTab} />}
           right={
             <div className="h-full overflow-auto">
-              {tab === "instances" && <InstancesPage onCreate={openWizard} registerBar={setTabBar} />}
+              {tab === "instances" && <InstancesPage onCreate={openCreate} registerBar={setTabBar} />}
               {tab === "images" && <ImagesPage registerBar={setTabBar} />}
               {tab === "profiles" && <ProfilesPage registerBar={setTabBar} />}
               {tab === "networks" && <NetworksPage registerBar={setTabBar} />}

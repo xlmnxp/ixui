@@ -11,6 +11,8 @@ import { BackupsApi } from "./backups";
 import { FilesApi } from "./files";
 import { ResourcesApi } from "./resources";
 import { WarningsApi } from "./warnings";
+import { NetworkExtrasApi } from "./network-extras";
+import { VolumesApi } from "./volumes";
 
 export const api = new ApiClient("/1.0");
 export const instancesApi = new InstancesApi(api);
@@ -24,6 +26,8 @@ export const backupsApi = new BackupsApi(api);
 export const filesApi = new FilesApi(api);
 export const resourcesApi = new ResourcesApi(api);
 export const warningsApi = new WarningsApi(api);
+export const networkExtrasApi = new NetworkExtrasApi(api);
+export const volumesApi = new VolumesApi(api);
 
 export function eventsUrl(): string {
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
