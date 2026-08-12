@@ -313,6 +313,13 @@ describe("API endpoints", () => {
       expect(JSON.parse(fetchMock.mock.calls[1]![1]!.body as string)).toEqual({ name: "set1", addresses: ["10.0.0.0/24"] });
       expect(fetchMock.mock.calls[2]![0]).toBe("/1.0/network-address-sets/set1?project=default");
     });
+
+    it("leases list hits recursion=1", async () => {
+      const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, [{ address: "10.0.0.5" }])));
+      vi.stubGlobal("fetch", fetchMock);
+      await networkExtrasApi.listLeases("net1");
+      expect(fetchMock).toHaveBeenCalledWith("/1.0/networks/net1/leases?project=default&recursion=1", expect.anything());
+    });
   });
 
   describe("volumes", () => {
@@ -456,6 +463,13 @@ describe("API endpoints", () => {
       expect(url).toBe("/1.0/networks/net1?project=default");
       expect(init?.method).toBe("PUT");
       expect(JSON.parse(init?.body as string)).toEqual({ config: { "ipv4.address": "10.0.0.1/24" } });
+    });
+
+    it("network get hits the network URL", async () => {
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { name: "net1", config: {} }));
+      vi.stubGlobal("fetch", fetchMock);
+      await infraApi.getNetwork("net1");
+      expect(fetchMock).toHaveBeenCalledWith("/1.0/networks/net1?project=default", expect.anything());
     });
 
     it("pool config update is PUT", async () => {
