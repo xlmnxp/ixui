@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Check, Plus, RotateCcw, Trash2, X } from "lucide-react";
+import { Check, RotateCcw, Trash2, X } from "lucide-react";
 import { instancesApi } from "../../api";
 import type { Instance } from "../../api/types";
 import { Table } from "../../components/table";
@@ -14,15 +14,25 @@ import { toast } from "../../components/toast";
 
 export interface SnapshotsTabProps {
   instanceName: string;
+  registerActions?: (actions: SnapshotsActions | null) => void;
 }
 
-export function SnapshotsTab({ instanceName }: SnapshotsTabProps) {
+export interface SnapshotsActions {
+  create: () => void;
+}
+
+export function SnapshotsTab({ instanceName, registerActions }: SnapshotsTabProps) {
   const [snapshots, setSnapshots] = useState<Instance[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [restoreName, setRestoreName] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [stateful, setStateful] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    registerActions?.({ create: () => setCreateOpen(true) });
+    return () => registerActions?.(null);
+  }, [registerActions]);
 
   const refresh = useCallback(() => {
     void instancesApi.listSnapshots(instanceName).then(setSnapshots).catch(() => {});
@@ -86,9 +96,6 @@ export function SnapshotsTab({ instanceName }: SnapshotsTabProps) {
 
   return (
     <div className="space-y-4" data-testid="snapshots-tab">
-      <div className="flex justify-end">
-        <Button size="sm" data-testid="snap-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create snapshot</Button>
-      </div>
       {snapshots.length === 0 ? (
         <EmptyState title="No snapshots" description="Snapshots let you roll back to a previous state." />
       ) : (

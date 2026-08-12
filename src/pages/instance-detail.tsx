@@ -15,6 +15,7 @@ import { toast } from "../components/toast";
 import { InstanceStatusIcon } from "../shell/instance-icon";
 import { OverviewTab } from "./instance-overview";
 import { SnapshotsTab } from "./instance/snapshots";
+import type { SnapshotsActions } from "./instance/snapshots";
 import { DevicesTab } from "./instance/devices";
 import type { DeviceActions } from "./instance/devices";
 import { ConfigTab } from "./instance/config";
@@ -30,6 +31,7 @@ export function InstanceDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [configActions, setConfigActions] = useState<ConfigActions | null>(null);
   const [deviceActions, setDeviceActions] = useState<DeviceActions | null>(null);
+  const [snapshotsActions, setSnapshotsActions] = useState<SnapshotsActions | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
@@ -147,6 +149,12 @@ export function InstanceDetailPage() {
                 <span key="divider" className="mx-1 h-5 w-px bg-border" />,
               ]
             : []),
+          ...(activeTab === "snapshots" && snapshotsActions
+            ? [
+                <Button key="snap-create" size="sm" variant="secondary" data-testid="snap-create-open" onClick={snapshotsActions.create}><Plus size={14} /> Create snapshot</Button>,
+                <span key="divider" className="mx-1 h-5 w-px bg-border" />,
+              ]
+            : []),
           ...(activeTab === "devices" && deviceActions
             ? [
                 <Button key="device-add" size="sm" variant="secondary" data-testid="device-add" onClick={deviceActions.add}><Plus size={14} /> Add device</Button>,
@@ -180,7 +188,7 @@ export function InstanceDetailPage() {
           right={
             <div className="h-full overflow-auto">
               {activeTab === "overview" && <OverviewTab instance={instance} />}
-              {activeTab === "snapshots" && <SnapshotsTab instanceName={name} />}
+              {activeTab === "snapshots" && <SnapshotsTab instanceName={name} registerActions={setSnapshotsActions} />}
               {activeTab === "config" && <ConfigTab instanceName={name} registerActions={setConfigActions} />}
               {activeTab === "devices" && <DevicesTab instanceName={name} registerActions={setDeviceActions} />}
               {activeTab === "logs" && <LogsTab instanceName={name} />}
