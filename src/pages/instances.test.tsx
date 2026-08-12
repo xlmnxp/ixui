@@ -2,12 +2,13 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { InstancesPage } from "./instances";
+import type { Instance } from "../api/types";
 
-function instance(name: string, status: string, type = "container") {
+function instance(name: string, status: string, type = "container"): Instance {
   return {
     name, status, type, description: "", created_at: "t", last_used_at: "t",
     config: {}, devices: {}, profiles: ["default"], project: "default", ephemeral: false,
-  };
+  } as Instance;
 }
 
 vi.mock("../api", () => ({
@@ -36,6 +37,22 @@ describe("InstancesPage", () => {
     );
     expect(await screen.findByText("web1")).toBeInTheDocument();
     expect(screen.getByText("db1")).toBeInTheDocument();
+  });
+
+  it("shows the project column in all-projects mode", async () => {
+    const { instancesApi } = await import("../api");
+    vi.mocked(instancesApi.list).mockResolvedValueOnce([
+      instance("web1", "Started"),
+      { ...instance("db1", "Stopped"), project: "prod" },
+    ]);
+    render(
+      <MemoryRouter>
+        <InstancesPage />
+      </MemoryRouter>
+    );
+    expect(await screen.findByText("web1")).toBeInTheDocument();
+    expect(screen.getByText("prod")).toBeInTheDocument();
+    expect(screen.getAllByText("default").length).toBeGreaterThan(0);
   });
 
   it("starts selected instances", async () => {

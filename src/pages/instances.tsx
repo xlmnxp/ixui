@@ -67,6 +67,9 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
   };
 
   const columns: Column<Instance>[] = [
+    ...(project === ALL_PROJECTS
+      ? [{ key: "project", header: "Project", sortValue: (i: Instance) => i.project, render: (i: Instance) => <span className="text-text-secondary">{i.project}</span> }]
+      : []),
     {
       key: "name", header: "Name", sortValue: (i) => i.name,
       render: (i) => <span className="font-medium">{i.name}</span>,
