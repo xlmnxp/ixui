@@ -19,6 +19,8 @@ import { Progress } from "../components/progress";
 import { Tree } from "../components/tree";
 import { EmptyState } from "../components/empty-state";
 import { SplitPane } from "../components/split-pane";
+import { PageBar } from "../components/page-bar";
+import { KeyValueEditor } from "../components/key-value-editor";
 import { toast } from "../components/toast";
 import { Window } from "../components/window";
 import { VerticalTabs } from "../components/vertical-tabs";
@@ -144,6 +146,19 @@ export function Gallery() {
         />
       </Section>
 
+      <Section title="PageBar">
+        <div className="w-full">
+          <PageBar
+            title="Instance action bar"
+            actions={[
+              <Button key="a" size="sm" variant="secondary"><Plus size={14} /> Add</Button>,
+              <Button key="b" size="sm" variant="secondary">Save</Button>,
+              <Button key="c" size="sm" variant="ghost">Cancel</Button>,
+            ]}
+          />
+        </div>
+      </Section>
+
       <Section title="EmptyState">
         <EmptyState title="No instances" description="Create your first instance." action={<Button size="sm"><Plus size={14} /> Create instance</Button>} />
       </Section>
@@ -151,6 +166,15 @@ export function Gallery() {
       <Section title="SplitPane">
         <div className="h-40 w-full">
           <SplitPane left={<div className="p-2">left</div>} right={<div className="p-2">right</div>} />
+        </div>
+        <div className="h-40 w-full">
+          <SplitPane vertical left={<div className="p-2">top</div>} right={<div className="p-2">bottom</div>} />
+        </div>
+      </Section>
+
+      <Section title="KeyValueEditor">
+        <div className="w-full">
+          <KeyValueEditor values={{ "limits.memory": "512MiB", "server.name": "ix" }} onChange={() => {}} />
         </div>
       </Section>
 
