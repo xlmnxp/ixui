@@ -251,6 +251,15 @@ describe("API endpoints", () => {
     expect(init?.method).toBe("DELETE");
   });
 
+  it("waits on an operation given its full response path", async () => {
+    const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, {})));
+    vi.stubGlobal("fetch", fetchMock);
+    await operationsApi.wait("/1.0/operations/abc123");
+    expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/operations/abc123/wait");
+    await operationsApi.wait("abc123");
+    expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/operations/abc123/wait");
+  });
+
   it("backups exportUrl returns the base-qualified download path", () => {
     expect(backupsApi.exportUrl("web1", "backup-1")).toBe("/1.0/instances/web1/backups/backup-1/export?project=default");
   });
