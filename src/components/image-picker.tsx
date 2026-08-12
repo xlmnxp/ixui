@@ -44,8 +44,8 @@ interface PickerRow {
   types: ("container" | "virtual-machine")[];
 }
 
-const VM_ITEM_KEYS = ["qcow2", "disk-kvm.img", "disk-uefi.img", "rootfs.disk"];
-const CONTAINER_ITEM_KEYS = ["squashfs", "root.tar.xz", "tar.xz", "rootfs.tar.xz"];
+const VM_ITEM_KEYS = ["qcow2", "disk.qcow2", "disk-kvm.img", "disk-uefi.img", "rootfs.disk"];
+const CONTAINER_ITEM_KEYS = ["squashfs", "root.squashfs", "root.tar.xz", "tar.xz", "rootfs.tar.xz"];
 
 function productTypes(itemTypes: string[]): ("container" | "virtual-machine")[] {
   const types: ("container" | "virtual-machine")[] = [];

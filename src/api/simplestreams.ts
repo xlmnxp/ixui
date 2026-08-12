@@ -29,7 +29,7 @@ interface SimplestreamsProductRaw {
   variant?: string;
   arch?: string;
   variants?: Record<string, { items?: Record<string, SimplestreamsItem> }>;
-  versions?: Record<string, SimplestreamsItem>;
+  versions?: Record<string, { items?: Record<string, SimplestreamsItem> } | SimplestreamsItem>;
 }
 
 interface SimplestreamsImagesJson {
@@ -52,7 +52,10 @@ function parseProduct(key: string, raw: SimplestreamsProductRaw): SimplestreamsP
   const variantNames = Object.keys(raw.variants ?? {});
   const variant = raw.variant ?? variantNames[0] ?? keyFallback.variant;
   const legacyItems = variant ? (raw.variants?.[variant]?.items ?? {}) : {};
-  const items = Object.keys(raw.versions ?? {}).length > 0 ? raw.versions! : legacyItems;
+  const versionEntries = Object.values(raw.versions ?? {});
+  const firstVersion = versionEntries[0] as { items?: Record<string, SimplestreamsItem> } | undefined;
+  const versionItems = firstVersion?.items ?? {};
+  const items = Object.keys(versionItems).length > 0 ? versionItems : legacyItems;
   const itemKeys = Object.keys(items);
   const firstItem = itemKeys[0] ? items[itemKeys[0]] : undefined;
   const fingerprints = itemKeys
