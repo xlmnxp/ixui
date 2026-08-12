@@ -39,6 +39,16 @@ export interface Instance {
   ephemeral: boolean;
 }
 
+export interface ExpandedValue {
+  value?: unknown;
+  source?: string;
+}
+
+export type ExpandedInstance = Instance & {
+  expanded_config?: Record<string, ExpandedValue>;
+  expanded_devices?: Record<string, Record<string, ExpandedValue>>;
+};
+
 export interface ClusterMember {
   server_name: string;
   url: string;

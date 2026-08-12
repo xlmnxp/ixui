@@ -56,6 +56,20 @@ describe("InstanceDetailPage", () => {
     expect(screen.getByTestId("config-tab")).toBeInTheDocument();
   });
 
+  it("renders the devices tab", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/instances/web1"]}>
+        <Routes>
+          <Route path="/instances/:name/:tab?" element={<InstanceDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByText("web1");
+    await user.click(screen.getByTestId("vtab-devices"));
+    expect(await screen.findByTestId("devices-tab")).toBeInTheDocument();
+  });
+
   it("falls back to Overview for stale console deep links", async () => {
     render(
       <MemoryRouter initialEntries={["/instances/web1/console"]}>

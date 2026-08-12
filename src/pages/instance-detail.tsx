@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Camera, Check, FileText, Gauge, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
+import { Camera, Check, Cpu, FileText, Gauge, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
 import { instancesApi } from "../api";
 import type { Instance } from "../api/types";
 import { VerticalTabs } from "../components/vertical-tabs";
@@ -12,6 +12,7 @@ import { toast } from "../components/toast";
 import { InstanceStatusIcon } from "../shell/instance-icon";
 import { OverviewTab } from "./instance-overview";
 import { SnapshotsTab } from "./instance/snapshots";
+import { DevicesTab } from "./instance/devices";
 import { ConfigTab } from "./instance/config";
 import type { ConfigActions } from "./instance/config";
 import { LogsTab } from "./instance/logs";
@@ -66,6 +67,7 @@ export function InstanceDetailPage() {
     { key: "overview", label: "Overview", icon: <Gauge size={14} /> },
     { key: "snapshots", label: "Snapshots", icon: <Camera size={14} /> },
     { key: "config", label: "Config", icon: <Settings size={14} /> },
+    { key: "devices", label: "Devices", icon: <Cpu size={14} /> },
     { key: "logs", label: "Logs", icon: <FileText size={14} /> },
   ];
   const activeTab = tabs.some((t) => t.key === tab) ? tab : "overview";
@@ -107,6 +109,7 @@ export function InstanceDetailPage() {
               {activeTab === "overview" && <OverviewTab instance={instance} />}
               {activeTab === "snapshots" && <SnapshotsTab instanceName={name} />}
               {activeTab === "config" && <ConfigTab instanceName={name} registerActions={setConfigActions} />}
+              {activeTab === "devices" && <DevicesTab instanceName={name} />}
               {activeTab === "logs" && <LogsTab instanceName={name} />}
             </div>
           }

@@ -16,6 +16,23 @@ describe("API endpoints", () => {
     expect(fetchMock).toHaveBeenCalledWith("/1.0/instances?project=default&recursion=1", expect.anything());
   });
 
+  it("instance getExpanded hits expansion=true", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { name: "web1", expanded_config: {} }));
+    vi.stubGlobal("fetch", fetchMock);
+    await instancesApi.getExpanded("web1");
+    expect(fetchMock).toHaveBeenCalledWith("/1.0/instances/web1?project=default&expansion=true", expect.anything());
+  });
+
+  it("instance update body includes devices", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
+    vi.stubGlobal("fetch", fetchMock);
+    await instancesApi.update("web1", { devices: { eth0: { nictype: "bridged", parent: "br0" } } });
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("/1.0/instances/web1?project=default");
+    expect(init?.method).toBe("PUT");
+    expect(JSON.parse(init?.body as string)).toEqual({ devices: { eth0: { nictype: "bridged", parent: "br0" } } });
+  });
+
   it("instance setState posts action", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
     vi.stubGlobal("fetch", fetchMock);

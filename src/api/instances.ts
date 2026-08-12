@@ -1,5 +1,5 @@
 import { currentProject, projectQuery, type ApiClient } from "./client";
-import type { Instance, InstanceStateInfo, InstanceBackup, AsyncResponse, SyncResponse } from "./types";
+import type { Instance, ExpandedInstance, InstanceStateInfo, InstanceBackup, AsyncResponse, SyncResponse } from "./types";
 
 export interface CreateInstanceBody {
   name: string;
@@ -21,6 +21,10 @@ export class InstancesApi {
 
   get(name: string): Promise<Instance> {
     return this.client.get<Instance>(`/instances/${name}${projectQuery()}`);
+  }
+
+  getExpanded(name: string): Promise<ExpandedInstance> {
+    return this.client.get<ExpandedInstance>(`/instances/${name}${projectQuery()}&expansion=true`);
   }
 
   create(body: CreateInstanceBody, target?: string): Promise<AsyncResponse | SyncResponse | null> {

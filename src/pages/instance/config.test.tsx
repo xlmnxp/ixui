@@ -3,9 +3,22 @@ import userEvent from "@testing-library/user-event";
 import { ConfigTab } from "./config";
 import type { ConfigActions } from "./config";
 
+function expandedInstance() {
+  return {
+    name: "web1", status: "Stopped", type: "container", description: "old", created_at: "t", last_used_at: "t",
+    config: { "limits.memory": "512MiB" }, devices: {}, profiles: ["default"], project: "default", ephemeral: false,
+    expanded_config: {
+      "limits.memory": { value: "1GiB", source: "default" },
+      "limits.cpu": { value: "2", source: "local" },
+      "security.nesting": { value: "true", source: "default" },
+    },
+  };
+}
+
 vi.mock("../../api", () => ({
   instancesApi: {
-    get: vi.fn().mockResolvedValue({ name: "web1", status: "Stopped", type: "container", description: "old", created_at: "t", last_used_at: "t", config: { "limits.memory": "512MiB" }, devices: {}, profiles: [], project: "default", ephemeral: false }),
+    get: vi.fn().mockResolvedValue({ name: "web1", status: "Stopped", type: "container", description: "old", created_at: "t", last_used_at: "t", config: { "limits.memory": "512MiB" }, devices: {}, profiles: ["default"], project: "default", ephemeral: false }),
+    getExpanded: vi.fn().mockResolvedValue(expandedInstance()),
     update: vi.fn().mockResolvedValue(null),
   },
   serverApi: {
@@ -75,5 +88,34 @@ describe("ConfigTab", () => {
     expect(getActions()?.selectedCount).toBe(1);
     act(() => { getActions()?.removeSelected(); });
     expect(screen.queryByTestId("kv-row-limits.memory")).not.toBeInTheDocument();
+  });
+
+  it("effective toggle shows provenance values with source badges", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../../api");
+    renderTab();
+    await screen.findByTestId("kv-key-limits.memory");
+    await user.click(screen.getByTestId("effective-toggle"));
+    expect(await screen.findByTestId("provenance-table")).toBeInTheDocument();
+    await waitFor(() => expect(instancesApi.getExpanded).toHaveBeenCalledWith("web1"));
+    expect(screen.getByTestId("provenance-key-limits.memory")).toHaveTextContent("limits.memory");
+    expect(screen.getByTestId("provenance-value-limits.memory")).toHaveTextContent("1GiB");
+    expect(screen.getByTestId("provenance-source-limits.memory")).toHaveTextContent("default");
+    expect(screen.getByTestId("provenance-source-limits.cpu")).toHaveTextContent("local");
+    expect(screen.queryByTestId("kv-key-limits.memory")).not.toBeInTheDocument();
+  });
+
+  it("override writes a profile-sourced key into the local editor", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../../api");
+    const { getActions } = renderTab();
+    await screen.findByTestId("kv-key-limits.memory");
+    await user.click(screen.getByTestId("effective-toggle"));
+    await screen.findByTestId("provenance-table");
+    await user.click(screen.getByTestId("override-limits.memory"));
+    expect(screen.getByTestId("kv-value-limits.memory")).toHaveTextContent("1GiB");
+    expect(getActions()?.dirty).toBe(true);
+    await act(async () => { await getActions()?.save(); });
+    await waitFor(() => expect(instancesApi.update).toHaveBeenCalledWith("web1", expect.objectContaining({ config: expect.objectContaining({ "limits.memory": "1GiB" }) })));
   });
 });
