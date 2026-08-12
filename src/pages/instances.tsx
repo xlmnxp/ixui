@@ -45,13 +45,12 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
     setBusy(() => Object.fromEntries(names.map((n) => [n, true])));
     try {
       await Promise.all(names.map((n) => instancesApi.setState(n, action)));
-      void loadInstances(project).catch(() => {});
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Action failed");
     } finally {
       setBusy(() => Object.fromEntries(names.map((n) => [n, false])));
     }
-  }, [project]);
+  }, []);
 
   const confirmDelete = async () => {
     setDeleting(true);
@@ -59,7 +58,6 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
       await Promise.all(selectedKeys.map((n) => instancesApi.delete(n)));
       toast("success", `Deleted ${selectedKeys.length} instance(s)`);
       setSelectedKeys([]);
-      void loadInstances(project).catch(() => {});
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Delete failed");
     } finally {

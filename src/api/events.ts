@@ -23,12 +23,15 @@ export class EventStream {
     const ws = new WebSocket(this.url);
     this.ws = ws;
     ws.onmessage = (msg) => {
-      try {
-        const event = JSON.parse(String(msg.data)) as StreamEvent;
-        this.listeners.forEach((fn) => fn(event));
-      } catch {
-        // ignore malformed frames
-      }
+      void (async () => {
+        try {
+          const raw = msg.data instanceof Blob ? await msg.data.text() : String(msg.data);
+          const event = JSON.parse(raw) as StreamEvent;
+          this.listeners.forEach((fn) => fn(event));
+        } catch {
+          // ignore malformed frames
+        }
+      })();
     };
     ws.onclose = () => {
       if (this.closed) return;

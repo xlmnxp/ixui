@@ -20,7 +20,15 @@ export function initRealtime(stream: EventStream): () => void {
             .then((fresh) => {
               instancesStore.setState((prev) => ({ ...prev, [`${fresh.project}/${fresh.name}`]: fresh }));
             })
-            .catch(() => {});
+            .catch(() => {
+              instancesStore.setState((prev) => {
+                const next = { ...prev };
+                for (const [key, instance] of Object.entries(next)) {
+                  if (instance.name === instanceName) delete next[key];
+                }
+                return next;
+              });
+            });
         }
       }
     } else if (event.type === "lifecycle") {
