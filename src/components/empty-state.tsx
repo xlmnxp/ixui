@@ -12,7 +12,7 @@ export function EmptyState({ title, description, action, icon, className }: Empt
   return (
     <div
       data-testid="empty-state"
-      className={`flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-6 py-12 text-center ${className ?? ""}`}
+      className={`m-3 flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-6 py-12 text-center ${className ?? ""}`}
     >
       {icon && <div className="text-3xl">{icon}</div>}
       <div className="text-sm font-medium text-text-primary">{title}</div>

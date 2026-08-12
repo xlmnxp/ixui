@@ -126,7 +126,6 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
 
       {scoped.length === 0 ? (
         <EmptyState
-          className="m-3"
           title="No instances"
           description="Create your first instance to get started."
           action={onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create-empty"><Plus size={14} /> Create instance</Button>}
