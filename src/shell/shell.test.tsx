@@ -87,6 +87,7 @@ describe("Shell", () => {
         </Routes>
       </MemoryRouter>
     );
+    fireEvent.click(screen.getByTestId("tasklog-toggle"));
     expect(screen.getByText("Starting web1")).toBeInTheDocument();
     await act(async () => {});
   });
@@ -105,6 +106,7 @@ describe("Shell", () => {
         </Routes>
       </MemoryRouter>
     );
+    fireEvent.click(screen.getByTestId("tasklog-toggle"));
     fireEvent.click(screen.getByTestId("tasklog-clear"));
     expect(screen.queryByText("done")).not.toBeInTheDocument();
     expect(screen.getByText("busy")).toBeInTheDocument();
