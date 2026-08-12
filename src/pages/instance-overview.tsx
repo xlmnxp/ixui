@@ -3,7 +3,7 @@ import { instancesApi } from "../api";
 import type { Instance, InstanceStateInfo } from "../api/types";
 import { Badge } from "../components/badge";
 import { KeyValueTable } from "../components/key-value-table";
-import { instanceStatusTone } from "../lib/instance-status";
+import { instanceStatusTone, instanceIps } from "../lib/instance-status";
 
 export interface OverviewTabProps {
   instance: Instance;
@@ -16,9 +16,7 @@ export function OverviewTab({ instance }: OverviewTabProps) {
     void instancesApi.state(instance.name).then(setState).catch(() => setState(null));
   }, [instance.name]);
 
-  const ips = state?.network
-    ? Object.values(state.network).flatMap((iface) => iface.addresses.filter((a) => a.family === "inet" || a.family === "inet6").map((a) => a.address))
-    : [];
+  const ips = instanceIps(state);
 
   const rows = [
     { key: "Status", value: <Badge tone={instanceStatusTone(instance.status)}>{instance.status}</Badge> },

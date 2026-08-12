@@ -1,19 +1,35 @@
-import { instanceStatusTone } from "./instance-status";
+import { instanceIps, ipSummary } from "./instance-status";
+import type { InstanceStateInfo } from "../api/types";
 
-describe("instanceStatusTone", () => {
-  it("maps Started to success", () => {
-    expect(instanceStatusTone("Started")).toBe("success");
+const state = (addresses: string[]): InstanceStateInfo => ({
+  status: "Running",
+  cpu: { usage: 0 },
+  memory: { usage: 0 },
+  network: {
+    eth0: { addresses: addresses.map((address) => ({ family: address.includes(".") ? "inet" : "inet6", address, netmask: "" })) },
+  },
+});
+
+describe("instanceIps", () => {
+  it("flattens all ipv4 and ipv6 addresses", () => {
+    expect(instanceIps(state(["10.0.0.1", "fe80::1", "10.0.0.2"]))).toEqual(["10.0.0.1", "fe80::1", "10.0.0.2"]);
   });
-  it("maps Running to success", () => {
-    expect(instanceStatusTone("Running")).toBe("success");
+
+  it("returns an empty list without network info", () => {
+    expect(instanceIps(null)).toEqual([]);
   });
-  it("maps Paused to info", () => {
-    expect(instanceStatusTone("Paused")).toBe("info");
+});
+
+describe("ipSummary", () => {
+  it("shows one ipv4 and one ipv6 with the extra count", () => {
+    expect(ipSummary(state(["10.0.0.1", "fe80::1", "10.0.0.2", "fe80::2", "10.0.0.3"]))).toEqual({
+      ipv4: "10.0.0.1",
+      ipv6: "fe80::1",
+      extra: 3,
+    });
   });
-  it("maps Error to danger", () => {
-    expect(instanceStatusTone("Error")).toBe("danger");
-  });
-  it("maps unknown to neutral", () => {
-    expect(instanceStatusTone("WeirdState")).toBe("neutral");
+
+  it("shows only ipv4 when no ipv6 exists", () => {
+    expect(ipSummary(state(["10.0.0.1", "10.0.0.2"]))).toEqual({ ipv4: "10.0.0.1", ipv6: undefined, extra: 1 });
   });
 });

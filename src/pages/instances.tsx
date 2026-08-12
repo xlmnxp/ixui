@@ -17,7 +17,8 @@ import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
 import { Copy as CopyIcon, Play, Square, RotateCw, Snowflake, Trash2, Plus, Eye } from "lucide-react";
-import type { Instance } from "../api/types";
+import type { Instance, InstanceStateInfo } from "../api/types";
+import { ipSummary } from "../lib/instance-status";
 import { CopyInstanceDialog } from "../components/instance-dialogs";
 
 type Action = "start" | "stop" | "restart" | "freeze" | "unfreeze";
@@ -31,6 +32,7 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [copySource, setCopySource] = useState<Instance | null>(null);
+  const [ipMap, setIpMap] = useState<Record<string, string>>({});
 
   const scoped = useMemo(
     () => Object.values(instances).filter((i) => (project === ALL_PROJECTS || i.project === project) && (location === undefined || i.location === location)),
@@ -40,6 +42,32 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
   useEffect(() => {
     void loadInstances(project);
   }, [project]);
+
+  const instanceNames = useMemo(() => scoped.map((i) => i.name).sort().join(","), [scoped]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const names = scoped.map((i) => i.name);
+    void Promise.all(
+      names.map(async (n) => {
+        try {
+          const state = await instancesApi.state(n);
+          const { ipv4, ipv6, extra } = ipSummary(state as InstanceStateInfo | null);
+          const parts = [ipv4, ipv6].filter((ip): ip is string => ip !== undefined);
+          const label = parts.length > 0 ? parts.join(", ") + (extra > 0 ? ` +${extra} more` : "") : "—";
+          return [n, label] as const;
+        } catch {
+          return null;
+        }
+      })
+    ).then((entries) => {
+      if (cancelled) return;
+      const next: Record<string, string> = {};
+      for (const e of entries) if (e) next[e[0]] = e[1];
+      setIpMap(next);
+    });
+    return () => { cancelled = true; };
+  }, [instanceNames]);
 
   const runAction = useCallback(async (action: Action, names: string[]) => {
     setBusy(() => Object.fromEntries(names.map((n) => [n, true])));
@@ -86,7 +114,7 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
     { key: "type", header: "Type", render: (i) => (i.type === "container" ? "Container" : "VM") },
     {
       key: "ip", header: "IP addresses",
-      render: (i) => <span className="text-xs text-text-secondary">{i.status === "Started" || i.status === "Running" ? (i.devices.eth0?.["ipv4.address"] ?? i.devices.eth0?.["ipv4"] ?? "—") : "—"}</span>,
+      render: (i) => <span className="text-xs text-text-secondary">{i.status === "Started" || i.status === "Running" ? (ipMap[i.name] ?? "—") : "—"}</span>,
     },
     {
       key: "actions", header: "", align: "right",
