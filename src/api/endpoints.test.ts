@@ -493,6 +493,15 @@ describe("API endpoints", () => {
       expect(JSON.parse(init?.body as string)).toEqual({ migration: true, live: true });
     });
 
+    it("move uses the destination project as the query project and drops it from the body", async () => {
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
+      vi.stubGlobal("fetch", fetchMock);
+      await instancesApi.move("web1", { project: "prod", target: "incus-2" });
+      const [url, init] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("/1.0/instances/web1?project=prod&target=incus-2");
+      expect(JSON.parse(init?.body as string)).toEqual({ migration: true });
+    });
+
     it("rebuild posts image source to rebuild URL", async () => {
       const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
       vi.stubGlobal("fetch", fetchMock);

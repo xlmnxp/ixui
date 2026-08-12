@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ClusterGroupsPage } from "./cluster-groups";
 import { clusterApi } from "../api";
+import { ApiError } from "../api/client";
 
 const groups = [
   { name: "g1", description: "web group", members: ["incus-1", "incus-2"] },
@@ -55,6 +56,13 @@ describe("ClusterGroupsPage", () => {
     await user.type(desc, "web servers");
     await user.click(within(dialog).getByTestId("group-save"));
     expect(clusterApi.updateGroup).toHaveBeenCalledWith("g1", { description: "web servers" });
+  });
+
+  it("shows permission denied instead of crashing on 403", async () => {
+    vi.mocked(clusterApi.listGroups).mockRejectedValueOnce(new ApiError(403, 403, "denied"));
+    render(<ClusterGroupsPage />);
+    expect(await screen.findByTestId("permission-denied")).toBeInTheDocument();
+    expect(screen.getByText("Permission denied")).toBeInTheDocument();
   });
 
   it("deletes a group after confirmation", async () => {

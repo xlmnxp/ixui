@@ -123,9 +123,10 @@ export class InstancesApi {
   }
 
   move(name: string, body: { live?: boolean; pool?: string; project?: string; target?: string }): Promise<AsyncResponse | SyncResponse | null> {
-    const { target, ...rest } = body;
+    const { target, project, ...rest } = body;
+    const projectQueryString = project ? `?project=${encodeURIComponent(project)}` : projectQuery();
     const targetQuery = target ? `&target=${encodeURIComponent(target)}` : "";
-    return this.client.post(`/instances/${name}${projectQuery()}${targetQuery}`, { migration: true, ...rest });
+    return this.client.post(`/instances/${name}${projectQueryString}${targetQuery}`, { migration: true, ...rest });
   }
 
   rebuild(name: string, body: { source: InstanceImageSource }): Promise<AsyncResponse | SyncResponse | null> {

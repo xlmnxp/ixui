@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { Boxes, Copy, Gauge, KeyRound, Power, RotateCcw, Server } from "lucide-react";
 import { clusterApi, resourcesApi } from "../api";
+import { ApiError } from "../api/client";
 import type { ClusterMember, ClusterGroup } from "../api/types";
 import type { HostResources } from "../api/resources";
 import { Badge } from "../components/badge";
@@ -9,6 +10,7 @@ import { Button } from "../components/button";
 import { Checkbox } from "../components/checkbox";
 import { Dialog } from "../components/dialog";
 import { ConfirmDialog } from "../components/confirm-dialog";
+import { EmptyState } from "../components/empty-state";
 import { Input } from "../components/input";
 import { KeyValueTable } from "../components/key-value-table";
 import { VerticalTabs } from "../components/vertical-tabs";
@@ -45,12 +47,14 @@ export function MemberView() {
   const [token, setToken] = useState("");
   const [tokenBusy, setTokenBusy] = useState(false);
   const [capacity, setCapacity] = useState<HostResources | null>(null);
+  const [denied, setDenied] = useState(false);
 
   const refresh = useCallback(() => {
     void clusterApi.listMembers().then((m) => {
       setMembers(m);
       setLoaded(true);
-    }).catch(() => {
+    }).catch((err: unknown) => {
+      if (err instanceof ApiError && err.status === 403) setDenied(true);
       setLoaded(true);
     });
   }, []);
@@ -65,7 +69,9 @@ export function MemberView() {
   useEffect(() => {
     if (!tokenOpen) return;
     setToken("");
-    void clusterApi.listGroups().then(setGroups).catch(() => {});
+    void clusterApi.listGroups().then(setGroups).catch((err: unknown) => {
+      if (err instanceof ApiError && err.status === 403) setDenied(true);
+    });
   }, [tokenOpen]);
 
   const member = members.find((m) => m.server_name === name);
@@ -121,6 +127,16 @@ export function MemberView() {
       toast("danger", "Copy failed");
     }
   };
+
+  if (denied) {
+    return (
+      <div className="p-6" data-testid="member-view">
+        <div data-testid="permission-denied">
+          <EmptyState title="Permission denied" description="Your account does not have permission to view cluster members." />
+        </div>
+      </div>
+    );
+  }
 
   if (loaded && !member) {
     return (

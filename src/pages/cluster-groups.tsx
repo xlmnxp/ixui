@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { clusterApi } from "../api";
+import { ApiError } from "../api/client";
 import type { ClusterGroup } from "../api/types";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
@@ -21,9 +22,15 @@ export function ClusterGroupsPage({ registerBar }: { registerBar?: (bar: BarStat
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
+  const [denied, setDenied] = useState(false);
 
   const refresh = useCallback(() => {
-    void clusterApi.listGroups().then(setGroups).catch(() => {});
+    void clusterApi
+      .listGroups()
+      .then(setGroups)
+      .catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === 403) setDenied(true);
+      });
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -102,7 +109,11 @@ export function ClusterGroupsPage({ registerBar }: { registerBar?: (bar: BarStat
     <div className="space-y-4" data-testid="cluster-groups-page">
       {!registerBar && <PageBar title="Cluster groups" actions={barActions} />}
 
-      {groups.length === 0 ? (
+      {denied ? (
+        <div data-testid="permission-denied">
+          <EmptyState title="Permission denied" description="Your account does not have permission to view cluster groups." />
+        </div>
+      ) : groups.length === 0 ? (
         <EmptyState title="No cluster groups" />
       ) : (
         <Table columns={columns} rows={groups} rowKey={(g) => g.name} dataTestId="groups-table" />
