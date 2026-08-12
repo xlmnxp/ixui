@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2, X } from "lucide-react";
 import { operationsStore, dismissOperation } from "../state/operations";
 import { useStore } from "../state/store";
 import { Badge } from "../components/badge";
@@ -15,7 +15,7 @@ export function TaskLog() {
     return (
       <div className="flex h-8 items-center justify-between border-t border-border bg-surface-900 px-3" data-testid="task-log">
         <span className="text-xs text-text-secondary">Operations ({operations.length})</span>
-        <button data-testid="tasklog-toggle" onClick={() => setCollapsed(false)} className="text-text-tertiary hover:text-text-primary" aria-label="Expand task log">▴</button>
+        <button data-testid="tasklog-toggle" onClick={() => setCollapsed(false)} className="text-text-tertiary hover:text-text-primary" aria-label="Expand task log"><ChevronUp size={14} /></button>
       </div>
     );
   }
@@ -27,7 +27,7 @@ export function TaskLog() {
       <div className="flex items-center justify-between px-3 py-1.5">
         <span className="text-xs font-medium text-text-secondary">Operations ({running} running)</span>
         <div className="flex gap-2">
-          <button data-testid="tasklog-toggle" onClick={() => setCollapsed(true)} className="text-xs text-text-tertiary hover:text-text-primary" aria-label="Collapse task log">▾</button>
+          <button data-testid="tasklog-toggle" onClick={() => setCollapsed(true)} className="text-xs text-text-tertiary hover:text-text-primary" aria-label="Collapse task log"><ChevronDown size={14} /></button>
           <button data-testid="tasklog-clear" onClick={() => operationsStore.setState((prev) => prev.filter((o) => o.status === "Running"))} className="flex items-center gap-1 text-xs text-text-tertiary hover:text-text-primary"><Trash2 size={12} /> Clear finished</button>
         </div>
       </div>
