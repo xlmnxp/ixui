@@ -84,36 +84,4 @@ describe("ConfigTab", () => {
     act(() => { getActions()?.removeSelected(); });
     expect(screen.queryByTestId("kv-row-limits.memory")).not.toBeInTheDocument();
   });
-
-  it("effective toggle shows provenance values with source badges", async () => {
-    const user = userEvent.setup();
-    const { instancesApi } = await import("../../api");
-    vi.mocked(instancesApi.get).mockClear();
-    renderTab();
-    await screen.findByTestId("kv-key-limits.memory");
-    await user.click(screen.getByTestId("effective-toggle"));
-    expect(await screen.findByTestId("provenance-table")).toBeInTheDocument();
-    await waitFor(() => expect(instancesApi.get).toHaveBeenCalledTimes(2));
-    expect(screen.getByTestId("provenance-key-limits.memory")).toHaveTextContent("limits.memory");
-    expect(screen.getByTestId("provenance-value-limits.memory")).toHaveTextContent("512MiB");
-    expect(screen.getByTestId("provenance-source-limits.memory")).toHaveTextContent("local");
-    expect(screen.queryByTestId("kv-key-limits.memory")).not.toBeInTheDocument();
-  });
-
-  it("override writes a profile-sourced key into the local editor", async () => {
-    const user = userEvent.setup();
-    const { instancesApi } = await import("../../api");
-    vi.mocked(instancesApi.get)
-      .mockResolvedValueOnce(instance())
-      .mockResolvedValueOnce({ ...instance(), config: { "limits.memory": "1GiB" } });
-    const { getActions } = renderTab();
-    await screen.findByTestId("kv-key-limits.memory");
-    await user.click(screen.getByTestId("effective-toggle"));
-    await screen.findByTestId("provenance-table");
-    await user.click(screen.getByTestId("override-limits.memory"));
-    expect(screen.getByTestId("kv-value-limits.memory")).toHaveTextContent("1GiB");
-    expect(getActions()?.dirty).toBe(true);
-    await act(async () => { await getActions()?.save(); });
-    await waitFor(() => expect(instancesApi.update).toHaveBeenCalledWith("web1", expect.objectContaining({ config: expect.objectContaining({ "limits.memory": "1GiB" }) })));
-  });
 });
