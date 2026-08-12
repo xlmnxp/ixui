@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { Shell } from "./shell/layout";
+import { ErrorBoundary } from "./components/error-boundary";
 import { AuthScreen } from "./auth/auth-screen";
 import { authStore } from "./auth/status";
 import { useStore } from "./state/store";
@@ -30,7 +31,8 @@ export function App() {
   }
 
   return (
-    <BrowserRouter basename="/ui/">
+    <ErrorBoundary>
+      <BrowserRouter basename="/ui/">
       <Routes>
         <Route path="terminal/:name" element={<TerminalPage />} />
         <Route element={<Shell />}>
@@ -53,7 +55,8 @@ export function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
-      <Toaster />
-    </BrowserRouter>
+        <Toaster />
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
