@@ -1,17 +1,21 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Camera, Check, FileText, Gauge, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
-import { instancesApi } from "../api";
+import { Camera, Check, Copy as CopyIcon, Cpu, Download, FileText, Gauge, MoreHorizontal, MoveRight, Pencil, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
+import { backupsApi, instancesApi, operationsApi } from "../api";
 import type { Instance } from "../api/types";
+import { loadInstances } from "../state/instances";
+import { currentProjectStore } from "../state/projects";
 import { VerticalTabs } from "../components/vertical-tabs";
 import { SplitPane } from "../components/split-pane";
 import { Button } from "../components/button";
 import { PageBar } from "../components/page-bar";
 import { ConfirmDialog } from "../components/confirm-dialog";
+import { RenameInstanceDialog, CopyInstanceDialog, MoveInstanceDialog } from "../components/instance-dialogs";
 import { toast } from "../components/toast";
 import { InstanceStatusIcon } from "../shell/instance-icon";
 import { OverviewTab } from "./instance-overview";
 import { SnapshotsTab } from "./instance/snapshots";
+import { DevicesTab } from "./instance/devices";
 import { ConfigTab } from "./instance/config";
 import type { ConfigActions } from "./instance/config";
 import { LogsTab } from "./instance/logs";
@@ -24,12 +28,34 @@ export function InstanceDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [configActions, setConfigActions] = useState<ConfigActions | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(() => {
     instancesApi.get(name).then(setInstance).catch(() => setNotFound(true));
   }, [name]);
 
   useEffect(refresh, [refresh]);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMoreOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [moreOpen]);
 
   const setState = async (action: "start" | "stop" | "restart") => {
     try {
@@ -53,6 +79,35 @@ export function InstanceDetailPage() {
     }
   };
 
+  const exportBackup = async () => {
+    setMoreOpen(false);
+    setExporting(true);
+    try {
+      const backupName = `export-${Date.now()}`;
+      const result = await backupsApi.create(name, backupName);
+      if (result && "type" in result && result.type === "async") {
+        const op = await operationsApi.wait(result.operation);
+        if (op.status !== "Success") throw new Error(op.err ?? "Export failed");
+      }
+      const res = await fetch(backupsApi.exportUrl(name, backupName), { credentials: "include" });
+      if (!res.ok) throw new Error(`Export failed (${res.status})`);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `${name}.tar.gz`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+      toast("success", `Export of ${name} downloaded`);
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (notFound) {
     return (
       <div className="p-6" data-testid="instance-not-found">
@@ -66,6 +121,7 @@ export function InstanceDetailPage() {
     { key: "overview", label: "Overview", icon: <Gauge size={14} /> },
     { key: "snapshots", label: "Snapshots", icon: <Camera size={14} /> },
     { key: "config", label: "Config", icon: <Settings size={14} /> },
+    { key: "devices", label: "Devices", icon: <Cpu size={14} /> },
     { key: "logs", label: "Logs", icon: <FileText size={14} /> },
   ];
   const activeTab = tabs.some((t) => t.key === tab) ? tab : "overview";
@@ -92,6 +148,17 @@ export function InstanceDetailPage() {
           <Button key="start" size="sm" variant="ghost" data-testid="detail-action-start" disabled={instance.status === "Started" || instance.status === "Running"} onClick={() => setState("start")}><Play size={14} /> Start</Button>,
           <Button key="stop" size="sm" variant="ghost" data-testid="detail-action-stop" disabled={instance.status === "Stopped" || instance.status === "Error" || instance.status === "Stopping" || instance.status === "Freezing"} onClick={() => setState("stop")}><Square size={14} /> Stop</Button>,
           <Button key="restart" size="sm" variant="ghost" data-testid="detail-action-restart" disabled={instance.status !== "Started" && instance.status !== "Running"} onClick={() => setState("restart")}><RotateCw size={14} /> Restart</Button>,
+          <div key="more" ref={moreRef} className="relative">
+            <Button size="sm" variant="ghost" data-testid="detail-more" onClick={() => setMoreOpen((o) => !o)}><MoreHorizontal size={14} /> More</Button>
+            {moreOpen && (
+              <div data-testid="detail-more-menu" className="absolute right-0 top-full z-40 mt-1 w-40 overflow-hidden rounded border border-border bg-surface-800 py-1 shadow-xl">
+                <button type="button" data-testid="detail-more-rename" onClick={() => { setMoreOpen(false); setRenameOpen(true); }} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-text-primary hover:bg-surface-700"><Pencil size={14} /> Rename</button>
+                <button type="button" data-testid="detail-more-copy" onClick={() => { setMoreOpen(false); setCopyOpen(true); }} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-text-primary hover:bg-surface-700"><CopyIcon size={14} /> Copy</button>
+                <button type="button" data-testid="detail-more-move" onClick={() => { setMoreOpen(false); setMoveOpen(true); }} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-text-primary hover:bg-surface-700"><MoveRight size={14} /> Move</button>
+                <button type="button" data-testid="detail-more-export" disabled={exporting} onClick={() => void exportBackup()} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-text-primary hover:bg-surface-700"><Download size={14} /> Export</button>
+              </div>
+            )}
+          </div>,
           <Button key="delete" size="sm" variant="ghost" data-testid="detail-action-delete" onClick={() => setDeleteOpen(true)}><Trash2 size={14} /> Delete</Button>,
           <Button key="terminal" size="sm" variant="secondary" data-testid="detail-terminal" onClick={() => window.open(`/ui/terminal/${instance.name}`, `terminal-${instance.name}`, "width=1000,height=640")}><TerminalIcon size={14} /> Terminal</Button>,
         ]}
@@ -107,6 +174,7 @@ export function InstanceDetailPage() {
               {activeTab === "overview" && <OverviewTab instance={instance} />}
               {activeTab === "snapshots" && <SnapshotsTab instanceName={name} />}
               {activeTab === "config" && <ConfigTab instanceName={name} registerActions={setConfigActions} />}
+              {activeTab === "devices" && <DevicesTab instanceName={name} />}
               {activeTab === "logs" && <LogsTab instanceName={name} />}
             </div>
           }
@@ -122,6 +190,19 @@ export function InstanceDetailPage() {
         loading={deleting}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteOpen(false)}
+      />
+
+      <RenameInstanceDialog open={renameOpen} onClose={() => setRenameOpen(false)} name={name} onRenamed={(newName) => navigate(`/instances/${newName}`)} />
+      <CopyInstanceDialog open={copyOpen} onClose={() => setCopyOpen(false)} name={name} defaultPool={instance.devices.root?.pool} />
+      <MoveInstanceDialog
+        open={moveOpen}
+        onClose={() => setMoveOpen(false)}
+        name={name}
+        onMoved={(project) => {
+          void loadInstances(currentProjectStore.getState()).catch(() => {});
+          if (project && project !== instance.project) navigate("/instances");
+          else refresh();
+        }}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Star, Trash2, X } from "lucide-react";
-import { infraApi } from "../api";
+import { Pencil, Plus, Star, Trash2, X } from "lucide-react";
+import { infraApi, instancesApi } from "../api";
 import type { Project } from "../api/types";
 import { projectsStore, currentProjectStore, setCurrentProject } from "../state/projects";
 import { useStore } from "../state/store";
@@ -12,6 +12,7 @@ import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
 import { Badge } from "../components/badge";
 import { PageBar } from "../components/page-bar";
+import { ProjectEditor } from "../components/project-editor";
 import { toast } from "../components/toast";
 
 export function ProjectsPage() {
@@ -19,6 +20,8 @@ export function ProjectsPage() {
   const currentProject = useStore(currentProjectStore);
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [editing, setEditing] = useState<Project | null>(null);
+  const [usage, setUsage] = useState<Record<string, number>>({});
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -27,6 +30,35 @@ export function ProjectsPage() {
   }, []);
 
   useEffect(refresh, [refresh]);
+
+  const openEdit = async (project: Project) => {
+    setEditing(project);
+    setUsage({});
+    const next: Record<string, number> = {};
+    try {
+      const instances = await instancesApi.list();
+      next["limits.instances"] = instances.length;
+      next["limits.containers"] = instances.filter((i) => i.type === "container").length;
+      next["limits.virtual-machines"] = instances.filter((i) => i.type === "virtual-machine").length;
+    } catch {
+      // best-effort
+    }
+    try {
+      next["limits.networks"] = (await infraApi.listNetworks()).length;
+    } catch {
+      // best-effort
+    }
+    try {
+      const pools = await infraApi.listPools();
+      const counts = await Promise.all(
+        pools.map((pool) => infraApi.listPoolVolumes(pool.name).then((volumes) => volumes.length).catch(() => 0))
+      );
+      next["limits.disk"] = counts.reduce((sum, count) => sum + count, 0);
+    } catch {
+      // best-effort
+    }
+    setUsage(next);
+  };
 
   const create = async () => {
     setBusy(true);
@@ -73,6 +105,7 @@ export function ProjectsPage() {
           {p.name !== currentProject && (
             <Button size="sm" variant="ghost" data-testid={`project-set-default-${p.name}`} onClick={() => { setCurrentProject(p.name); toast("info", `Switched to project ${p.name}`); }}><Star size={14} /> Set default</Button>
           )}
+          <Button size="sm" variant="ghost" data-testid={`project-edit-${p.name}`} onClick={() => openEdit(p)}><Pencil size={14} /> Edit</Button>
           <Button size="sm" variant="ghost" data-testid={`project-delete-${p.name}`} onClick={() => setDeleteTarget(p)}><Trash2 size={14} /> Delete</Button>
         </div>
       ),
@@ -108,6 +141,15 @@ export function ProjectsPage() {
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      {editing && (
+        <ProjectEditor
+          project={editing}
+          usage={usage}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); refresh(); }}
+        />
+      )}
     </div>
   );
 }

@@ -1,12 +1,21 @@
 import { currentProject, projectQuery, type ApiClient } from "./client";
-import type { Instance, InstanceStateInfo, AsyncResponse, SyncResponse } from "./types";
+import type { Instance, InstanceStateInfo, InstanceBackup, AsyncResponse, SyncResponse } from "./types";
+
+export interface InstanceImageSource {
+  type: "image";
+  image?: string;
+  fingerprint?: string;
+  server?: string;
+  alias?: string;
+  protocol?: string;
+}
 
 export interface CreateInstanceBody {
   name: string;
   type: "container" | "virtual-machine";
   description?: string;
   profiles?: string[];
-  source?: { type: "image"; image?: string; fingerprint?: string; server?: string; alias?: string };
+  source?: InstanceImageSource;
   config?: Record<string, string>;
   devices?: Record<string, Record<string, string>>;
   ephemeral?: boolean;
@@ -28,7 +37,15 @@ export class InstancesApi {
     return this.client.post(`/instances${projectQuery()}${targetQuery}`, body);
   }
 
-  update(name: string, body: { config?: Record<string, string>; description?: string; ephemeral?: boolean }): Promise<AsyncResponse | SyncResponse | null> {
+  update(
+    name: string,
+    body: {
+      config?: Record<string, string>;
+      description?: string;
+      ephemeral?: boolean;
+      devices?: Record<string, Record<string, string>>;
+    }
+  ): Promise<AsyncResponse | SyncResponse | null> {
     return this.client.put(`/instances/${name}${projectQuery()}`, body);
   }
 
@@ -83,5 +100,56 @@ export class InstancesApi {
 
   readLog(name: string, file: string): Promise<string> {
     return this.client.get<string>(`/instances/${name}/logs/${file}${projectQuery()}`);
+  }
+
+  copy(
+    name: string,
+    target: string,
+    options?: { live?: boolean; pool?: string; project?: string }
+  ): Promise<AsyncResponse | SyncResponse | null> {
+    const source: { type: "copy"; source: string; project?: string } = { type: "copy", source: name };
+    if (options?.project !== undefined) source.project = options.project;
+    const body: { source: typeof source; name: string; live?: boolean; pool?: string } = {
+      source,
+      name: target,
+    };
+    if (options?.live !== undefined) body.live = options.live;
+    if (options?.pool !== undefined) body.pool = options.pool;
+    return this.client.post(`/instances${projectQuery()}`, body);
+  }
+
+  rename(name: string, newName: string): Promise<AsyncResponse | SyncResponse | null> {
+    return this.client.post(`/instances/${name}${projectQuery()}`, { name: newName });
+  }
+
+  move(name: string, body: { live?: boolean; pool?: string; project?: string; target?: string }): Promise<AsyncResponse | SyncResponse | null> {
+    const { target, project, ...rest } = body;
+    const projectQueryString = project ? `?project=${encodeURIComponent(project)}` : projectQuery();
+    const targetQuery = target ? `&target=${encodeURIComponent(target)}` : "";
+    return this.client.post(`/instances/${name}${projectQueryString}${targetQuery}`, { migration: true, ...rest });
+  }
+
+  rebuild(name: string, body: { source: InstanceImageSource }): Promise<AsyncResponse | SyncResponse | null> {
+    return this.client.post(`/instances/${name}/rebuild${projectQuery()}`, body);
+  }
+
+  freeze(name: string): Promise<AsyncResponse | null> {
+    return this.setState(name, "freeze");
+  }
+
+  unfreeze(name: string): Promise<AsyncResponse | null> {
+    return this.setState(name, "unfreeze");
+  }
+
+  listBackups(name: string): Promise<InstanceBackup[]> {
+    return this.client.list<InstanceBackup>(`/instances/${name}/backups`, { project: currentProject() });
+  }
+
+  createBackup(name: string, backupName: string): Promise<AsyncResponse | null> {
+    return this.client.post(`/instances/${name}/backups${projectQuery()}`, { name: backupName });
+  }
+
+  deleteBackup(name: string, backupName: string): Promise<void> {
+    return this.client.delete(`/instances/${name}/backups/${backupName}${projectQuery()}`);
   }
 }

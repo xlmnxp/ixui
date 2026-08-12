@@ -3,9 +3,10 @@ export interface SwitchProps {
   onChange: (checked: boolean) => void;
   label?: string;
   disabled?: boolean;
+  dataTestId?: string;
 }
 
-export function Switch({ checked, onChange, label, disabled }: SwitchProps) {
+export function Switch({ checked, onChange, label, disabled, dataTestId = "switch" }: SwitchProps) {
   return (
     <label className={`inline-flex items-center gap-2 ${disabled ? "opacity-50" : ""}`}>
       <button
@@ -15,7 +16,7 @@ export function Switch({ checked, onChange, label, disabled }: SwitchProps) {
         aria-label={label}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        data-testid="switch"
+        data-testid={dataTestId}
         className={`relative h-5 w-9 rounded-full transition-colors ${checked ? "bg-accent-600" : "bg-surface-500"}`}
       >
         <span

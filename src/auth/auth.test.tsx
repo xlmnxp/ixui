@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AuthScreen } from "./auth-screen";
 import { authStore, markForbidden, markAuthenticated } from "./status";
-import { startOidcLogin } from "./login";
+import { startOidcLogin, startOidcLogout } from "./login";
 
 describe("auth status", () => {
   it("transitions on forbidden and success", () => {
@@ -23,6 +23,18 @@ describe("startOidcLogin", () => {
     });
     startOidcLogin();
     expect(assign).toHaveBeenCalledWith("/oidc/login?path=%2Finstances%2Fweb1");
+  });
+});
+
+describe("startOidcLogout", () => {
+  it("redirects to oidc logout", () => {
+    const assign = vi.fn();
+    Object.defineProperty(window, "location", {
+      value: { assign },
+      writable: true,
+    });
+    startOidcLogout();
+    expect(assign).toHaveBeenCalledWith("/oidc/logout");
   });
 });
 

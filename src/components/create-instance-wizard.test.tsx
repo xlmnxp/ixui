@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { CreateInstanceWizard } from "./create-instance-wizard";
 import { toastStore } from "./toast";
 import type { Operation } from "../api/types";
+import type { SimplestreamsCatalog } from "../api/simplestreams";
+import { SIMPLE_STREAMS_DEFAULT } from "../api/simplestreams";
 
 vi.mock("../api", () => ({
   instancesApi: {
@@ -18,8 +20,44 @@ vi.mock("../api", () => ({
   api: { get: vi.fn() },
 }));
 
+vi.mock("../lib/image-prefill", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../lib/image-prefill")>();
+  return { ...actual, loadCatalog: vi.fn().mockResolvedValue(null) };
+});
+
+const CATALOG: SimplestreamsCatalog = {
+  products: {
+    "ubuntu-24.04-default-amd64": {
+      os: "ubuntu", release: "24.04", version: "v1", variant: "default", arch: "amd64",
+      itemTypes: ["squashfs"], size: 100, path: "u", fingerprints: ["f1"],
+    },
+    "ubuntu-24.04-cloud-amd64": {
+      os: "ubuntu", release: "24.04", version: "v1", variant: "cloud", arch: "amd64",
+      itemTypes: ["squashfs"], size: 200, path: "u", fingerprints: ["f2"],
+    },
+  },
+};
+
+async function goToStage2(user: ReturnType<typeof userEvent.setup>) {
+  await screen.findByTestId("wizard-name");
+  await user.type(screen.getByTestId("wizard-name"), "web1");
+  await user.click(screen.getByTestId("wizard-next"));
+}
+
+async function goToStage4(user: ReturnType<typeof userEvent.setup>) {
+  await goToStage2(user);
+  await user.click(await screen.findByTestId("picker-row-ubuntu/24.04/cloud/amd64"));
+  await user.click(screen.getByTestId("wizard-next"));
+  await user.click(screen.getByTestId("wizard-next"));
+}
+
 describe("CreateInstanceWizard", () => {
-  beforeEach(() => toastStore.setState([]));
+  beforeEach(async () => {
+    toastStore.setState([]);
+    const { loadCatalog } = await import("../lib/image-prefill");
+    vi.mocked(loadCatalog).mockReset();
+    vi.mocked(loadCatalog).mockResolvedValue(null);
+  });
 
   it("gates stage 1 on a valid name", async () => {
     const user = userEvent.setup();
@@ -32,37 +70,47 @@ describe("CreateInstanceWizard", () => {
     expect(screen.getByTestId("wizard-next")).toBeEnabled();
   });
 
-  it("walks through stages and creates the instance", async () => {
+  it("creates from a remote image alias without pre-pulling", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     const { instancesApi, operationsApi } = await import("../api");
     render(<CreateInstanceWizard open onClose={onClose} />);
-    await screen.findByTestId("wizard-name");
-    await user.type(screen.getByTestId("wizard-name"), "web1");
-    await user.click(screen.getByTestId("wizard-next"));
-    expect(await screen.findByTestId("wizard-image-f1")).toBeInTheDocument();
-    await user.click(screen.getByTestId("wizard-image-f1"));
-    await user.click(screen.getByTestId("wizard-next"));
-    await user.click(screen.getByTestId("wizard-next"));
+    await goToStage4(user);
     expect(screen.getByTestId("wizard-summary")).toHaveTextContent("web1");
+    expect(screen.getByTestId("wizard-summary")).toHaveTextContent("ubuntu/24.04/cloud/amd64");
     await user.click(screen.getByTestId("wizard-create"));
-    await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: "web1", type: "container", source: expect.objectContaining({ fingerprint: "f1" }) }), undefined));
+    await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({
+      name: "web1",
+      type: "container",
+      source: { type: "image", server: SIMPLE_STREAMS_DEFAULT, protocol: "simplestreams", alias: "ubuntu/24.04/cloud/amd64" },
+    }), undefined));
     expect(operationsApi.wait).toHaveBeenCalled();
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(vi.mocked(instancesApi.create).mock.calls[0]![0]).not.toHaveProperty("project");
+  });
+
+  it("creates from a cached local fingerprint when the image is cached", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../api");
+    const { loadCatalog } = await import("../lib/image-prefill");
+    vi.mocked(loadCatalog).mockResolvedValue(CATALOG);
+    render(<CreateInstanceWizard open onClose={() => {}} />);
+    await goToStage2(user);
+    await user.click(await screen.findByTestId("picker-row-ubuntu/24.04/default/amd64"));
+    expect(screen.getByTestId("picker-cached-ubuntu/24.04/default/amd64")).toBeInTheDocument();
+    await user.click(screen.getByTestId("wizard-next"));
+    await user.click(screen.getByTestId("wizard-next"));
+    await user.click(screen.getByTestId("wizard-create"));
+    await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({
+      source: { type: "image", fingerprint: "f1" },
+    }), undefined));
   });
 
   it("passes the target member to create and shows it in the summary", async () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../api");
     render(<CreateInstanceWizard open onClose={() => {}} targetMember="incus-1" />);
-    await screen.findByTestId("wizard-name");
-    await user.type(screen.getByTestId("wizard-name"), "web1");
-    await user.click(screen.getByTestId("wizard-next"));
-    await screen.findByTestId("wizard-image-f1");
-    await user.click(screen.getByTestId("wizard-image-f1"));
-    await user.click(screen.getByTestId("wizard-next"));
-    await user.click(screen.getByTestId("wizard-next"));
+    await goToStage4(user);
     expect(screen.getByText("Target member:")).toBeInTheDocument();
     await user.click(screen.getByTestId("wizard-create"));
     await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: "web1" }), "incus-1"));
@@ -78,12 +126,7 @@ describe("CreateInstanceWizard", () => {
     };
     vi.mocked(operationsApi.wait).mockResolvedValueOnce(failedOp);
     render(<CreateInstanceWizard open onClose={onClose} />);
-    await screen.findByTestId("wizard-name");
-    await user.type(screen.getByTestId("wizard-name"), "web1");
-    await user.click(screen.getByTestId("wizard-next"));
-    await user.click(await screen.findByTestId("wizard-image-f1"));
-    await user.click(screen.getByTestId("wizard-next"));
-    await user.click(screen.getByTestId("wizard-next"));
+    await goToStage4(user);
     await user.click(screen.getByTestId("wizard-create"));
     await waitFor(() => expect(instancesApi.create).toHaveBeenCalled());
     await waitFor(() => {
@@ -97,10 +140,7 @@ describe("CreateInstanceWizard", () => {
   it("resets state when reopened", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<CreateInstanceWizard open onClose={() => {}} />);
-    await screen.findByTestId("wizard-name");
-    await user.type(screen.getByTestId("wizard-name"), "web1");
-    await user.click(screen.getByTestId("wizard-next"));
-    expect(await screen.findByTestId("wizard-image-f1")).toBeInTheDocument();
+    await goToStage4(user);
     rerender(<CreateInstanceWizard open={false} onClose={() => {}} />);
     expect(screen.queryByTestId("wizard-name")).not.toBeInTheDocument();
     rerender(<CreateInstanceWizard open onClose={() => {}} />);

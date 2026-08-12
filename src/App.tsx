@@ -11,6 +11,11 @@ import { Gallery } from "./pages/gallery";
 import { ProjectsPage } from "./pages/projects";
 import { ProjectOverview } from "./pages/project-overview";
 import { MemberView } from "./pages/member-view";
+import { CertificatesPage } from "./pages/certificates";
+import { OperationsPage } from "./pages/operations";
+import { WarningsPage } from "./pages/warnings";
+import { SettingsPage } from "./pages/settings";
+import { ClusterGroupsPage } from "./pages/cluster-groups";
 
 function TerminalPage() {
   const { name = "" } = useParams();
@@ -40,6 +45,11 @@ export function App() {
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="instances/:name/:tab?" element={<InstanceDetailPage />} />
           <Route path="gallery" element={<Gallery />} />
+          <Route path="operations" element={<OperationsPage />} />
+          <Route path="warnings" element={<WarningsPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="cluster-groups" element={<ClusterGroupsPage />} />
+          <Route path="certificates" element={<CertificatesPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

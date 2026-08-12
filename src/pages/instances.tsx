@@ -15,8 +15,9 @@ import { EmptyState } from "../components/empty-state";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
-import { Play, Square, RotateCw, Snowflake, Trash2, Plus, Eye } from "lucide-react";
+import { Copy as CopyIcon, Play, Square, RotateCw, Snowflake, Trash2, Plus, Eye } from "lucide-react";
 import type { Instance } from "../api/types";
+import { CopyInstanceDialog } from "../components/instance-dialogs";
 
 type Action = "start" | "stop" | "restart" | "freeze" | "unfreeze";
 
@@ -28,6 +29,7 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [copySource, setCopySource] = useState<Instance | null>(null);
 
   const scoped = useMemo(
     () => Object.values(instances).filter((i) => i.project === project && (location === undefined || i.location === location)),
@@ -87,6 +89,7 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
       render: (i) => (
         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <Button size="sm" variant="ghost" data-testid={`row-overview-${i.name}`} onClick={() => navigate(`/instances/${i.name}`)} aria-label={`Overview ${i.name}`}><Eye size={14} /></Button>
+          <Button size="sm" variant="ghost" data-testid={`row-copy-${i.name}`} onClick={() => setCopySource(i)} aria-label={`Copy ${i.name}`}><CopyIcon size={14} /></Button>
           {i.status !== "Started" && i.status !== "Running" && (
             <Button size="sm" variant="ghost" disabled={busy[i.name] ?? false} data-testid={`row-start-${i.name}`} onClick={() => runAction("start", [i.name])}><Play size={14} /> Start</Button>
           )}
@@ -149,6 +152,8 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
         onConfirm={confirmDelete}
         onCancel={() => setDeleteOpen(false)}
       />
+
+      <CopyInstanceDialog open={copySource !== null} onClose={() => setCopySource(null)} name={copySource?.name ?? ""} defaultPool={copySource?.devices.root?.pool} />
     </div>
   );
 }
