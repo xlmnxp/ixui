@@ -24,6 +24,10 @@ vi.mock("../api", () => ({
       { server_name: "incus-1", url: "https://incus-1:8443", database: true, status: "Online", message: "", architecture: "x86_64" },
     ]),
   },
+  operationsApi: {
+    list: vi.fn().mockResolvedValue([]),
+    cancel: vi.fn().mockResolvedValue(undefined),
+  },
   eventStream: { connect: vi.fn(), onEvent: vi.fn() },
   eventsUrl: vi.fn(),
 }));
@@ -122,6 +126,15 @@ describe("App", () => {
     authStore.setState("authenticated");
     render(<App />);
     expect(await screen.findByTestId("shell")).toBeInTheDocument();
+    await act(async () => {});
+  });
+
+  it("renders the operations page at its route", async () => {
+    window.history.pushState({}, "", "/ui/operations");
+    authStore.setState("authenticated");
+    render(<App />);
+    expect(await screen.findByTestId("operations-page")).toBeInTheDocument();
+    expect(screen.getByTestId("tree-admin-operations")).toBeInTheDocument();
     await act(async () => {});
   });
 });

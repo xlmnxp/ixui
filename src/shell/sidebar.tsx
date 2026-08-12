@@ -24,6 +24,12 @@ export function Sidebar() {
   else if (p.startsWith("/members/")) selectedId = `member-${p.split("/")[2] ?? ""}`;
   else if (p.startsWith("/instances/")) selectedId = `instance-${p.split("/")[2] ?? ""}`;
   else if (p === "/gallery") selectedId = "gallery";
+  else if (p === "/operations") selectedId = "admin-operations";
+  else if (p === "/warnings") selectedId = "admin-warnings";
+  else if (p === "/settings") selectedId = "admin-settings";
+  else if (p === "/cluster-groups") selectedId = "admin-cluster-groups";
+  else if (p === "/auth") selectedId = "admin-auth";
+  else if (p === "/certificates") selectedId = "admin-certificates";
 
   return (
     <aside className="flex h-full flex-col border-r border-border bg-sidebar" data-testid="sidebar">
