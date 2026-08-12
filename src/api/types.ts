@@ -83,6 +83,13 @@ export interface Image {
   properties: Record<string, string>;
 }
 
+export interface ImageAlias {
+  name: string;
+  description: string;
+  target: string;
+  type: string;
+}
+
 export interface Profile {
   name: string;
   description: string;

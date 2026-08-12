@@ -10,10 +10,27 @@ vi.mock("../api", () => ({
     ]),
     deleteImage: vi.fn().mockResolvedValue(undefined),
     pullImage: vi.fn().mockResolvedValue(null),
+    listAliases: vi.fn().mockResolvedValue([
+      { name: "ubuntu/24.04", description: "Ubuntu 24.04", target: "ubuntu-24.04-default-amd64", type: "image" },
+    ]),
+    createAlias: vi.fn().mockResolvedValue(null),
+    deleteAlias: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
 describe("ImagesPage", () => {
+  beforeEach(async () => {
+    const { infraApi } = await import("../api");
+    vi.mocked(infraApi.listAliases).mockReset();
+    vi.mocked(infraApi.createAlias).mockReset();
+    vi.mocked(infraApi.deleteAlias).mockReset();
+    vi.mocked(infraApi.listAliases).mockResolvedValue([
+      { name: "ubuntu/24.04", description: "Ubuntu 24.04", target: "ubuntu-24.04-default-amd64", type: "image" },
+    ]);
+    vi.mocked(infraApi.createAlias).mockResolvedValue(null);
+    vi.mocked(infraApi.deleteAlias).mockResolvedValue(undefined);
+  });
+
   it("lists images", async () => {
     render(<ImagesPage />);
     expect(await screen.findByText("Ubuntu 24.04")).toBeInTheDocument();
@@ -56,5 +73,45 @@ describe("ImagesPage", () => {
     await user.click(screen.getByTestId("confirm-confirm"));
     await waitFor(() => expect(infraApi.deleteImage).toHaveBeenCalledWith("abcdef1234567890"));
     await waitFor(() => expect(infraApi.deleteImage).toHaveBeenCalledWith("1234567890abcdef"));
+  });
+
+  it("lists aliases when the section is opened", async () => {
+    const user = userEvent.setup();
+    const { infraApi } = await import("../api");
+    render(<ImagesPage />);
+    await screen.findByText("Ubuntu 24.04");
+    await user.click(screen.getByTestId("aliases-open"));
+    expect(await screen.findByTestId("aliases-section")).toBeInTheDocument();
+    expect(screen.getByText("ubuntu/24.04")).toBeInTheDocument();
+    expect(screen.getByText("ubuntu-24.04-default-amd64")).toBeInTheDocument();
+    await user.click(screen.getByTestId("aliases-open"));
+    expect(screen.queryByTestId("aliases-section")).not.toBeInTheDocument();
+    expect(infraApi.listAliases).toHaveBeenCalled();
+  });
+
+  it("creates an alias", async () => {
+    const user = userEvent.setup();
+    const { infraApi } = await import("../api");
+    render(<ImagesPage />);
+    await screen.findByText("Ubuntu 24.04");
+    await user.click(screen.getByTestId("aliases-open"));
+    await screen.findByTestId("aliases-section");
+    await user.click(screen.getByTestId("alias-create-open"));
+    await user.type(screen.getByTestId("alias-name"), "ubuntu/22.04");
+    await user.type(screen.getByTestId("alias-target"), "ubuntu-22.04-default-amd64");
+    await user.click(screen.getByTestId("alias-create-submit"));
+    await waitFor(() => expect(infraApi.createAlias).toHaveBeenCalledWith({ name: "ubuntu/22.04", target: "ubuntu-22.04-default-amd64" }));
+    await waitFor(() => expect(screen.queryByTestId("dialog")).not.toBeInTheDocument());
+  });
+
+  it("deletes an alias with confirmation", async () => {
+    const user = userEvent.setup();
+    const { infraApi } = await import("../api");
+    render(<ImagesPage />);
+    await screen.findByText("Ubuntu 24.04");
+    await user.click(screen.getByTestId("aliases-open"));
+    await user.click(await screen.findByTestId("alias-delete-ubuntu/24.04"));
+    await user.click(screen.getByTestId("confirm-confirm"));
+    await waitFor(() => expect(infraApi.deleteAlias).toHaveBeenCalledWith("ubuntu/24.04"));
   });
 });
