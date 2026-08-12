@@ -11,7 +11,6 @@ import { Gallery } from "./pages/gallery";
 import { ProjectsPage } from "./pages/projects";
 import { ProjectOverview } from "./pages/project-overview";
 import { MemberView } from "./pages/member-view";
-import { AuthPage } from "./pages/auth";
 import { CertificatesPage } from "./pages/certificates";
 import { OperationsPage } from "./pages/operations";
 import { WarningsPage } from "./pages/warnings";
@@ -50,7 +49,6 @@ export function App() {
           <Route path="warnings" element={<WarningsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="cluster-groups" element={<ClusterGroupsPage />} />
-          <Route path="auth" element={<AuthPage />} />
           <Route path="certificates" element={<CertificatesPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

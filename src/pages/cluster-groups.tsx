@@ -74,7 +74,7 @@ export function ClusterGroupsPage({ registerBar }: { registerBar?: (bar: BarStat
   const columns: Column<ClusterGroup>[] = [
     { key: "name", header: "Name", sortValue: (g) => g.name, render: (g) => <span className="font-medium">{g.name}</span> },
     { key: "description", header: "Description", render: (g) => g.description || "—" },
-    { key: "nodes", header: "Nodes", render: (g) => (g.nodes.length > 0 ? g.nodes.join(", ") : "—") },
+    { key: "members", header: "Members", render: (g) => (g.members.length > 0 ? g.members.join(", ") : "—") },
     {
       key: "actions", header: "", align: "right",
       render: (g) => (

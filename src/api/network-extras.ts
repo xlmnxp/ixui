@@ -57,7 +57,7 @@ export class NetworkExtrasApi {
   }
 
   updateAcl(name: string, body: unknown): Promise<OpResponse> {
-    return this.client.put(`/network-acls/${name}${projectQuery()}`, body);
+    return this.client.patch(`/network-acls/${name}${projectQuery()}`, body);
   }
 
   listForwards(network: string): Promise<Forward[]> {

@@ -1,4 +1,4 @@
-import { instancesApi, infraApi, serverApi, operationsApi, clusterApi, authApi, certificatesApi, backupsApi, filesApi, resourcesApi, warningsApi, networkExtrasApi, volumesApi } from "./index";
+import { instancesApi, infraApi, serverApi, operationsApi, clusterApi, certificatesApi, backupsApi, filesApi, resourcesApi, warningsApi, networkExtrasApi, volumesApi } from "./index";
 import { setProjectProvider } from "./client";
 import { fetchCatalog, type SimplestreamsCatalog } from "./simplestreams";
 
@@ -14,13 +14,6 @@ describe("API endpoints", () => {
     vi.stubGlobal("fetch", fetchMock);
     await instancesApi.list();
     expect(fetchMock).toHaveBeenCalledWith("/1.0/instances?project=default&recursion=1", expect.anything());
-  });
-
-  it("instance getExpanded hits expansion=true", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { name: "web1", expanded_config: {} }));
-    vi.stubGlobal("fetch", fetchMock);
-    await instancesApi.getExpanded("web1");
-    expect(fetchMock).toHaveBeenCalledWith("/1.0/instances/web1?project=default&expansion=true", expect.anything());
   });
 
   it("instance update body includes devices", async () => {
@@ -163,24 +156,6 @@ describe("API endpoints", () => {
     expect(fetchMock).toHaveBeenCalledWith("/1.0/metadata", expect.anything());
   });
 
-  it("auth groups list hits recursion=1", async () => {
-    const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, [{ name: "admins", description: "", permissions: [] }])));
-    vi.stubGlobal("fetch", fetchMock);
-    await authApi.listGroups();
-    expect(fetchMock).toHaveBeenCalledWith("/1.0/auth/groups?recursion=1", expect.anything());
-  });
-
-
-  it("auth identity update PUTs groups", async () => {
-    const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
-    vi.stubGlobal("fetch", fetchMock);
-    await authApi.updateIdentity("certificate", "fpr-1234", { groups: ["admins"] });
-    const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe("/1.0/auth/identities/certificate/fpr-1234");
-    expect(init?.method).toBe("PUT");
-    expect(JSON.parse(init?.body as string)).toEqual({ groups: ["admins"] });
-  });
-
   it("certificates token posts type client with description and expiry", async () => {
     const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
     vi.stubGlobal("fetch", fetchMock);
@@ -194,28 +169,44 @@ describe("API endpoints", () => {
   it("backups create posts name and options", async () => {
     const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
     vi.stubGlobal("fetch", fetchMock);
-    await backupsApi.create("web1", "snap-before-deploy", { compression: "gzip" });
+    await backupsApi.create("web1", "snap-before-deploy", { compression_algorithm: "gzip" });
     const [url, init] = fetchMock.mock.calls[0]!;
     expect(url).toBe("/1.0/instances/web1/backups?project=default");
-    expect(JSON.parse(init?.body as string)).toEqual({ name: "snap-before-deploy", compression: "gzip" });
+    expect(JSON.parse(init?.body as string)).toEqual({ name: "snap-before-deploy", compression_algorithm: "gzip" });
   });
 
-  it("files get URL encodes the path", async () => {
+  it("backups list is project-scoped with recursion=1", async () => {
+    const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, [{ name: "b1" }])));
+    vi.stubGlobal("fetch", fetchMock);
+    await backupsApi.list("web1");
+    expect(fetchMock).toHaveBeenCalledWith("/1.0/instances/web1/backups?project=default&recursion=1", expect.anything());
+  });
+
+  it("files get URL encodes the path and project", async () => {
     const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, "file contents")));
     vi.stubGlobal("fetch", fetchMock);
     await filesApi.get("web1", "/etc/nginx/conf.d/default.conf");
-    expect(fetchMock).toHaveBeenCalledWith("/1.0/instances/web1/files?path=%2Fetc%2Fnginx%2Fconf.d%2Fdefault.conf", expect.anything());
+    expect(fetchMock).toHaveBeenCalledWith("/1.0/instances/web1/files?project=default&path=%2Fetc%2Fnginx%2Fconf.d%2Fdefault.conf", expect.anything());
   });
 
-  it("files put posts raw body with text/plain header", async () => {
+  it("files put posts raw body with text/plain header and project", async () => {
     const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
     vi.stubGlobal("fetch", fetchMock);
     await filesApi.put("web1", "/etc/motd", "hello world");
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe("/1.0/instances/web1/files?path=%2Fetc%2Fmotd");
+    expect(url).toBe("/1.0/instances/web1/files?project=default&path=%2Fetc%2Fmotd");
     expect(init?.method).toBe("POST");
     expect(init?.headers).toEqual({ "Content-Type": "text/plain" });
     expect(init?.body).toBe("hello world");
+  });
+
+  it("files remove deletes with path and project", async () => {
+    const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
+    vi.stubGlobal("fetch", fetchMock);
+    await filesApi.remove("web1", "/etc/motd");
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("/1.0/instances/web1/files?project=default&path=%2Fetc%2Fmotd");
+    expect(init?.method).toBe("DELETE");
   });
 
   it("files put throws ApiError on failure", async () => {
@@ -228,17 +219,24 @@ describe("API endpoints", () => {
     const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, { cpu: { total: 8 }, memory: { total: 16000, used: 8000 } })));
     vi.stubGlobal("fetch", fetchMock);
     await resourcesApi.get();
-    expect(fetchMock).toHaveBeenCalledWith("/1.0/resources?recursion=1", expect.anything());
+    expect(fetchMock).toHaveBeenCalledWith("/1.0/resources", expect.anything());
   });
 
-  it("warnings ack PUTs acknowledged flag", async () => {
+  it("member resources hit the global resources endpoint with target", async () => {
+    const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, { cpu: { total: 8 }, memory: { total: 16000, used: 8000 } })));
+    vi.stubGlobal("fetch", fetchMock);
+    await resourcesApi.getMemberResources("incus-1");
+    expect(fetchMock).toHaveBeenCalledWith("/1.0/resources?target=incus-1", expect.anything());
+  });
+
+  it("warnings ack PUTs acknowledged status", async () => {
     const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
     vi.stubGlobal("fetch", fetchMock);
     await warningsApi.ack("w-1");
     const [url, init] = fetchMock.mock.calls[0]!;
     expect(url).toBe("/1.0/warnings/w-1");
     expect(init?.method).toBe("PUT");
-    expect(JSON.parse(init?.body as string)).toEqual({ acknowledged: true });
+    expect(JSON.parse(init?.body as string)).toEqual({ status: "acknowledged" });
   });
 
   it("operations list and cancel", async () => {
@@ -252,8 +250,8 @@ describe("API endpoints", () => {
     expect(init?.method).toBe("DELETE");
   });
 
-  it("backups exportUrl returns the download path", () => {
-    expect(backupsApi.exportUrl("web1", "backup-1")).toBe("/instances/web1/backups/backup-1/export");
+  it("backups exportUrl returns the base-qualified download path", () => {
+    expect(backupsApi.exportUrl("web1", "backup-1")).toBe("/1.0/instances/web1/backups/backup-1/export?project=default");
   });
 
   it("simplestreams catalog follows index path and parses products", async () => {
@@ -326,7 +324,8 @@ describe("API endpoints", () => {
       expect(fetchMock.mock.calls[2]![0]).toBe("/1.0/network-acls/acl1?project=default");
       expect(fetchMock.mock.calls[2]![1]!.method).toBe("DELETE");
       expect(fetchMock.mock.calls[3]![0]).toBe("/1.0/network-acls/acl1?project=default");
-      expect(fetchMock.mock.calls[3]![1]!.method).toBe("PUT");
+      expect(fetchMock.mock.calls[3]![1]!.method).toBe("PATCH");
+      expect(JSON.parse(fetchMock.mock.calls[3]![1]!.body as string)).toEqual({ egress: [], ingress: [] });
     });
 
     it("forwards list, create, and delete", async () => {
@@ -415,33 +414,33 @@ describe("API endpoints", () => {
       const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, [{ name: "snap1" }])));
       vi.stubGlobal("fetch", fetchMock);
       await volumesApi.listSnapshots("default", "custom", "vol1");
-      await volumesApi.createSnapshot("default", "custom", "vol1", "snap1", true);
+      await volumesApi.createSnapshot("default", "custom", "vol1", "snap1");
       await volumesApi.deleteSnapshot("default", "custom", "vol1", "snap1");
       expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/storage-pools/default/volumes/custom/vol1/snapshots?project=default&recursion=1");
       expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/storage-pools/default/volumes/custom/vol1/snapshots?project=default");
-      expect(JSON.parse(fetchMock.mock.calls[1]![1]!.body as string)).toEqual({ name: "snap1", stateful: true });
+      expect(JSON.parse(fetchMock.mock.calls[1]![1]!.body as string)).toEqual({ name: "snap1" });
       expect(fetchMock.mock.calls[2]![0]).toBe("/1.0/storage-pools/default/volumes/custom/vol1/snapshots/snap1?project=default");
     });
 
-    it("volume snapshot restore puts restore key", async () => {
+    it("volume snapshot restore puts restore key on the volume", async () => {
       const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
       vi.stubGlobal("fetch", fetchMock);
       await volumesApi.restoreSnapshot("default", "custom", "vol1", "snap1");
       const [url, init] = fetchMock.mock.calls[0]!;
-      expect(url).toBe("/1.0/storage-pools/default/volumes/custom/vol1/snapshots/snap1?project=default");
+      expect(url).toBe("/1.0/storage-pools/default/volumes/custom/vol1?project=default");
       expect(init?.method).toBe("PUT");
       expect(JSON.parse(init?.body as string)).toEqual({ restore: "snap1" });
     });
 
-    it("iso upload posts the file body", async () => {
+    it("iso upload posts to the volumes collection with incus type and name headers", async () => {
       const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
       vi.stubGlobal("fetch", fetchMock);
       const file = new Blob(["iso-bytes"], { type: "application/octet-stream" });
       await volumesApi.uploadIso("default", "myiso", file);
       const [url, init] = fetchMock.mock.calls[0]!;
-      expect(url).toBe("/1.0/storage-pools/default/volumes/custom/myiso?project=default");
+      expect(url).toBe("/1.0/storage-pools/default/volumes?project=default");
       expect(init?.method).toBe("POST");
-      expect(init?.headers).toEqual({ "Content-Type": "application/octet-stream" });
+      expect(init?.headers).toEqual({ "Content-Type": "application/octet-stream", "X-Incus-type": "iso", "X-Incus-name": "myiso" });
       expect(init?.body).toBe(file);
     });
 
@@ -459,14 +458,21 @@ describe("API endpoints", () => {
   });
 
   describe("instance extras", () => {
-    it("copy posts source type copy with target name in body", async () => {
+    it("copy posts source type copy to the instances collection", async () => {
       const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
       vi.stubGlobal("fetch", fetchMock);
       await instancesApi.copy("web1", "web2", { live: true, pool: "default" });
       const [url, init] = fetchMock.mock.calls[0]!;
-      expect(url).toBe("/1.0/instances/web1?project=default");
+      expect(url).toBe("/1.0/instances?project=default");
       expect(init?.method).toBe("POST");
       expect(JSON.parse(init?.body as string)).toEqual({ source: { type: "copy", source: "web1" }, name: "web2", live: true, pool: "default" });
+    });
+
+    it("copy places a source project inside the source object", async () => {
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
+      vi.stubGlobal("fetch", fetchMock);
+      await instancesApi.copy("web1", "web2", { project: "other" });
+      expect(JSON.parse(fetchMock.mock.calls[0]![1]!.body as string)).toEqual({ source: { type: "copy", source: "web1", project: "other" }, name: "web2" });
     });
 
     it("rename posts the new name", async () => {
@@ -478,12 +484,13 @@ describe("API endpoints", () => {
       expect(JSON.parse(init?.body as string)).toEqual({ name: "web2" });
     });
 
-    it("move posts migration flag with options", async () => {
+    it("move puts target in the query and migration flag in the body", async () => {
       const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
       vi.stubGlobal("fetch", fetchMock);
       await instancesApi.move("web1", { target: "incus-2", live: true });
-      const [, init] = fetchMock.mock.calls[0]!;
-      expect(JSON.parse(init?.body as string)).toEqual({ migration: true, target: "incus-2", live: true });
+      const [url, init] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("/1.0/instances/web1?project=default&target=incus-2");
+      expect(JSON.parse(init?.body as string)).toEqual({ migration: true, live: true });
     });
 
     it("rebuild posts image source to rebuild URL", async () => {
@@ -558,7 +565,7 @@ describe("API endpoints", () => {
 
   describe("cluster extras", () => {
     it("groups list, create, and delete are not project-scoped", async () => {
-      const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, [{ name: "g1", nodes: [] }])));
+      const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, [{ name: "g1", members: [] }])));
       vi.stubGlobal("fetch", fetchMock);
       await clusterApi.listGroups();
       await clusterApi.createGroup({ name: "g1", description: "web" });
@@ -569,13 +576,13 @@ describe("API endpoints", () => {
       expect(fetchMock.mock.calls[2]![0]).toBe("/1.0/cluster/groups/g1");
     });
 
-    it("group update is PUT with description", async () => {
+    it("group update is PATCH with description", async () => {
       const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
       vi.stubGlobal("fetch", fetchMock);
       await clusterApi.updateGroup("g1", { description: "web" });
       const [url, init] = fetchMock.mock.calls[0]!;
       expect(url).toBe("/1.0/cluster/groups/g1");
-      expect(init?.method).toBe("PUT");
+      expect(init?.method).toBe("PATCH");
       expect(JSON.parse(init?.body as string)).toEqual({ description: "web" });
     });
 
@@ -603,13 +610,6 @@ describe("API endpoints", () => {
       vi.stubGlobal("fetch", fetchMock);
       await clusterApi.createJoinToken("new-node");
       expect(JSON.parse(fetchMock.mock.calls[0]![1]!.body as string)).toEqual({ server_name: "new-node", groups: [] });
-    });
-
-    it("member resources GET is not project-scoped", async () => {
-      const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { resources: { cpu: {} } }));
-      vi.stubGlobal("fetch", fetchMock);
-      await clusterApi.getMemberResources("incus-1");
-      expect(fetchMock).toHaveBeenCalledWith("/1.0/cluster/members/incus-1/resources", expect.anything());
     });
   });
 });

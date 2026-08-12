@@ -4,8 +4,8 @@ import { ClusterGroupsPage } from "./cluster-groups";
 import { clusterApi } from "../api";
 
 const groups = [
-  { name: "g1", description: "web group", nodes: ["incus-1", "incus-2"] },
-  { name: "g2", description: "", nodes: [] },
+  { name: "g1", description: "web group", members: ["incus-1", "incus-2"] },
+  { name: "g2", description: "", members: [] },
 ];
 
 vi.mock("../api", () => ({
@@ -22,7 +22,7 @@ describe("ClusterGroupsPage", () => {
     vi.mocked(clusterApi.listGroups).mockResolvedValue(groups);
   });
 
-  it("renders groups with name, description and nodes", async () => {
+  it("renders groups with name, description and members", async () => {
     render(<ClusterGroupsPage />);
     expect(await screen.findByTestId("cluster-groups-page")).toBeInTheDocument();
     expect(screen.getByText("g1")).toBeInTheDocument();

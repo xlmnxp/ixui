@@ -11,7 +11,7 @@ vi.mock("../api", () => ({
   clusterApi: {
     listMembers: vi.fn(),
     setMemberState: vi.fn().mockResolvedValue(null),
-    listGroups: vi.fn().mockResolvedValue([{ name: "g1", description: "web", nodes: [] }]),
+    listGroups: vi.fn().mockResolvedValue([{ name: "g1", description: "web", members: [] }]),
     createJoinToken: vi.fn().mockResolvedValue({ token: "TOK123" }),
   },
   instancesApi: { list: vi.fn().mockResolvedValue([]) },

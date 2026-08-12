@@ -61,7 +61,7 @@ export interface ClusterMember {
 export interface ClusterGroup {
   name: string;
   description: string;
-  nodes: string[];
+  members: string[];
 }
 
 export interface InstanceBackup {

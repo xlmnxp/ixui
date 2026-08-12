@@ -46,7 +46,7 @@ export class ApiClient {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
 
-    if (res.status === 401 || res.status === 403) this.forbiddenHandler?.();
+    if (res.status === 401) this.forbiddenHandler?.();
 
     const text = await res.text();
     let json: unknown = null;
@@ -84,14 +84,14 @@ export class ApiClient {
     return this.request<T>("POST", path, body);
   }
 
-  async postRaw<T>(path: string, body: BodyInit, contentType = "application/octet-stream"): Promise<T> {
+  async postRaw<T>(path: string, body: BodyInit, headers?: Record<string, string>): Promise<T> {
     const res = await fetch(`${this.basePath}${path}`, {
       method: "POST",
-      headers: { "Content-Type": contentType },
+      headers: headers ?? { "Content-Type": "application/octet-stream" },
       body,
     });
 
-    if (res.status === 401 || res.status === 403) this.forbiddenHandler?.();
+    if (res.status === 401) this.forbiddenHandler?.();
 
     const text = await res.text();
     let json: unknown = null;
@@ -116,6 +116,10 @@ export class ApiClient {
 
   put<T>(path: string, body: unknown): Promise<T> {
     return this.request<T>("PUT", path, body);
+  }
+
+  patch<T>(path: string, body: unknown): Promise<T> {
+    return this.request<T>("PATCH", path, body);
   }
 
   delete(path: string): Promise<void> {

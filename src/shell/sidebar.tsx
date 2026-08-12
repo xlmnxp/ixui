@@ -28,7 +28,6 @@ export function Sidebar() {
   else if (p === "/warnings") selectedId = "admin-warnings";
   else if (p === "/settings") selectedId = "admin-settings";
   else if (p === "/cluster-groups") selectedId = "admin-cluster-groups";
-  else if (p === "/auth") selectedId = "admin-auth";
   else if (p === "/certificates") selectedId = "admin-certificates";
 
   return (

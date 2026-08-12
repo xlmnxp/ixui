@@ -24,6 +24,6 @@ export class WarningsApi {
   }
 
   ack(id: string): Promise<void> {
-    return this.client.put(`/warnings/${id}`, { acknowledged: true });
+    return this.client.put(`/warnings/${id}`, { status: "acknowledged" });
   }
 }

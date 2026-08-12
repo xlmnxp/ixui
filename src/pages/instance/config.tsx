@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { instancesApi, serverApi } from "../../api";
-import type { Instance, ExpandedInstance } from "../../api/types";
+import type { Instance } from "../../api/types";
 import { KeyValueEditor } from "../../components/key-value-editor";
 import { Badge } from "../../components/badge";
 import { Button } from "../../components/button";
@@ -23,7 +23,7 @@ export interface ConfigTabProps {
 
 export function ConfigTab({ instanceName, registerActions }: ConfigTabProps) {
   const [instance, setInstance] = useState<Instance | null>(null);
-  const [expanded, setExpanded] = useState<ExpandedInstance | null>(null);
+  const [expanded, setExpanded] = useState<Instance | null>(null);
   const [effective, setEffective] = useState(false);
   const [config, setConfig] = useState<Record<string, string>>({});
   const [description, setDescription] = useState("");
@@ -49,7 +49,7 @@ export function ConfigTab({ instanceName, registerActions }: ConfigTabProps) {
 
   useEffect(() => {
     if (!effective) return;
-    instancesApi.getExpanded(instanceName).then(setExpanded).catch(() => {});
+    instancesApi.get(instanceName).then(setExpanded).catch(() => {});
   }, [effective, instanceName]);
 
   useEffect(() => {
@@ -141,17 +141,17 @@ export function ConfigTab({ instanceName, registerActions }: ConfigTabProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-surface-800">
-              {Object.entries(expanded?.expanded_config ?? {}).map(([key, info]) => (
+              {Object.entries(expanded?.config ?? {}).map(([key, value]) => (
                 <tr key={key} data-testid={`provenance-row-${key}`}>
                   <td data-testid={`provenance-key-${key}`} className="px-2 py-1.5 font-mono text-xs text-text-primary">{key}</td>
-                  <td data-testid={`provenance-value-${key}`} className="px-2 py-1.5 text-sm text-text-primary">{info.value !== undefined ? String(info.value) : ""}</td>
+                  <td data-testid={`provenance-value-${key}`} className="px-2 py-1.5 text-sm text-text-primary">{value}</td>
                   <td className="px-2 py-1.5">
                     <span data-testid={`provenance-source-${key}`}>
-                      <Badge tone={info.source === "local" ? "info" : "neutral"}>{info.source ?? "unknown"}</Badge>
+                      <Badge tone="info">local</Badge>
                     </span>
                   </td>
                   <td className="px-2 py-1.5">
-                    <Button size="sm" variant="ghost" data-testid={`override-${key}`} onClick={() => override(key, info.value)}>Override</Button>
+                    <Button size="sm" variant="ghost" data-testid={`override-${key}`} onClick={() => override(key, value)}>Override</Button>
                   </td>
                 </tr>
               ))}

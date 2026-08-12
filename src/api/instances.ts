@@ -1,5 +1,5 @@
 import { currentProject, projectQuery, type ApiClient } from "./client";
-import type { Instance, ExpandedInstance, InstanceStateInfo, InstanceBackup, AsyncResponse, SyncResponse } from "./types";
+import type { Instance, InstanceStateInfo, InstanceBackup, AsyncResponse, SyncResponse } from "./types";
 
 export interface InstanceImageSource {
   type: "image";
@@ -30,10 +30,6 @@ export class InstancesApi {
 
   get(name: string): Promise<Instance> {
     return this.client.get<Instance>(`/instances/${name}${projectQuery()}`);
-  }
-
-  getExpanded(name: string): Promise<ExpandedInstance> {
-    return this.client.get<ExpandedInstance>(`/instances/${name}${projectQuery()}&expansion=true`);
   }
 
   create(body: CreateInstanceBody, target?: string): Promise<AsyncResponse | SyncResponse | null> {
@@ -111,14 +107,15 @@ export class InstancesApi {
     target: string,
     options?: { live?: boolean; pool?: string; project?: string }
   ): Promise<AsyncResponse | SyncResponse | null> {
-    const body: { source: { type: "copy"; source: string }; name: string; live?: boolean; pool?: string; project?: string } = {
-      source: { type: "copy", source: name },
+    const source: { type: "copy"; source: string; project?: string } = { type: "copy", source: name };
+    if (options?.project !== undefined) source.project = options.project;
+    const body: { source: typeof source; name: string; live?: boolean; pool?: string } = {
+      source,
       name: target,
     };
     if (options?.live !== undefined) body.live = options.live;
     if (options?.pool !== undefined) body.pool = options.pool;
-    if (options?.project !== undefined) body.project = options.project;
-    return this.client.post(`/instances/${name}${projectQuery()}`, body);
+    return this.client.post(`/instances${projectQuery()}`, body);
   }
 
   rename(name: string, newName: string): Promise<AsyncResponse | SyncResponse | null> {
@@ -126,7 +123,9 @@ export class InstancesApi {
   }
 
   move(name: string, body: { live?: boolean; pool?: string; project?: string; target?: string }): Promise<AsyncResponse | SyncResponse | null> {
-    return this.client.post(`/instances/${name}${projectQuery()}`, { migration: true, ...body });
+    const { target, ...rest } = body;
+    const targetQuery = target ? `&target=${encodeURIComponent(target)}` : "";
+    return this.client.post(`/instances/${name}${projectQuery()}${targetQuery}`, { migration: true, ...rest });
   }
 
   rebuild(name: string, body: { source: InstanceImageSource }): Promise<AsyncResponse | SyncResponse | null> {

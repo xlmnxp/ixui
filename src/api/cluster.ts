@@ -19,7 +19,7 @@ export class ClusterApi {
   }
 
   updateGroup(name: string, body: { description?: string }): Promise<OpResponse> {
-    return this.client.put(`/cluster/groups/${name}`, body);
+    return this.client.patch(`/cluster/groups/${name}`, body);
   }
 
   deleteGroup(name: string): Promise<void> {
@@ -32,9 +32,5 @@ export class ClusterApi {
 
   createJoinToken(name: string, groups: string[] = []): Promise<OpResponse> {
     return this.client.post("/cluster/members", { server_name: name, groups });
-  }
-
-  getMemberResources(member: string): Promise<unknown> {
-    return this.client.get(`/cluster/members/${member}/resources`);
   }
 }

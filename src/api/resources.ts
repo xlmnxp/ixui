@@ -10,12 +10,11 @@ export interface HostResources {
 export class ResourcesApi {
   constructor(private client: ApiClient) {}
 
-  get(project?: string): Promise<HostResources> {
-    const qs = project !== undefined ? `?project=${encodeURIComponent(project)}&recursion=1` : "?recursion=1";
-    return this.client.get<HostResources>(`/resources${qs}`);
+  get(): Promise<HostResources> {
+    return this.client.get<HostResources>("/resources");
   }
 
   getMemberResources(member: string): Promise<HostResources> {
-    return this.client.get<HostResources>(`/cluster/members/${member}/resources?recursion=1`);
+    return this.client.get<HostResources>(`/resources?target=${encodeURIComponent(member)}`);
   }
 }

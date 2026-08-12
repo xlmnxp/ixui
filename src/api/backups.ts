@@ -1,4 +1,4 @@
-import { projectQuery, type ApiClient } from "./client";
+import { currentProject, projectQuery, type ApiClient } from "./client";
 import type { AsyncResponse, SyncResponse } from "./types";
 
 export interface Backup {
@@ -9,7 +9,7 @@ export interface Backup {
 }
 
 export interface CreateBackupOptions {
-  compression?: string;
+  compression_algorithm?: string;
   optimized_storage?: boolean;
 }
 
@@ -17,7 +17,7 @@ export class BackupsApi {
   constructor(private client: ApiClient) {}
 
   list(instance: string): Promise<Backup[]> {
-    return this.client.list<Backup>(`/instances/${instance}/backups`);
+    return this.client.list<Backup>(`/instances/${instance}/backups`, { project: currentProject() });
   }
 
   create(instance: string, name: string, options?: CreateBackupOptions): Promise<AsyncResponse | SyncResponse | null> {
@@ -29,6 +29,6 @@ export class BackupsApi {
   }
 
   exportUrl(instance: string, name: string): string {
-    return `/instances/${instance}/backups/${name}/export`;
+    return `/1.0/instances/${instance}/backups/${name}/export${projectQuery()}`;
   }
 }

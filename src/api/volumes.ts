@@ -1,11 +1,5 @@
 import { currentProject, projectQuery, type ApiClient } from "./client";
-import type { StorageVolume, AsyncResponse, SyncResponse } from "./types";
-
-export interface StorageVolumeDetail extends StorageVolume {
-  config: Record<string, string>;
-  created_at: string;
-  used_by?: string[];
-}
+import type { StorageVolume, StorageVolumeDetail, AsyncResponse, SyncResponse } from "./types";
 
 export type OpResponse = AsyncResponse | SyncResponse | null;
 
@@ -53,10 +47,9 @@ export class VolumesApi {
     });
   }
 
-  createSnapshot(pool: string, type: string, name: string, snapName: string, stateful = false): Promise<OpResponse> {
+  createSnapshot(pool: string, type: string, name: string, snapName: string): Promise<OpResponse> {
     return this.client.post(`/storage-pools/${pool}/volumes/${type}/${name}/snapshots${projectQuery()}`, {
       name: snapName,
-      stateful,
     });
   }
 
@@ -65,16 +58,16 @@ export class VolumesApi {
   }
 
   restoreSnapshot(pool: string, type: string, name: string, snap: string): Promise<OpResponse> {
-    return this.client.put(`/storage-pools/${pool}/volumes/${type}/${name}/snapshots/${snap}${projectQuery()}`, {
+    return this.client.put(`/storage-pools/${pool}/volumes/${type}/${name}${projectQuery()}`, {
       restore: snap,
     });
   }
 
   uploadIso(pool: string, name: string, file: Blob): Promise<OpResponse> {
     return this.client.postRaw(
-      `/storage-pools/${pool}/volumes/custom/${name}${projectQuery()}`,
+      `/storage-pools/${pool}/volumes${projectQuery()}`,
       file,
-      "application/octet-stream"
+      { "Content-Type": "application/octet-stream", "X-Incus-type": "iso", "X-Incus-name": name }
     );
   }
 

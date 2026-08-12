@@ -132,14 +132,6 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
           ),
         },
         {
-          id: "admin-auth",
-          label: (
-            <span className="flex items-center gap-2">
-              <Link to="/auth">Auth &amp; Permissions</Link>
-            </span>
-          ),
-        },
-        {
           id: "admin-certificates",
           label: (
             <span className="flex items-center gap-2">
