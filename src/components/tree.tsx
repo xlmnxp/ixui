@@ -40,21 +40,26 @@ function TreeNodeItem({
   const [expanded, setExpanded] = useState(depth === 0);
   const hasChildren = (node.children?.length ?? 0) > 0;
 
+  const handleClick = () => {
+    onSelect?.(node.id);
+    if (hasChildren) setExpanded((e) => !e);
+  };
+
   return (
     <li role="treeitem" aria-expanded={hasChildren ? expanded : undefined} aria-selected={selectedId === node.id}>
       <div
-        data-testid={`tree-${node.id}`}
-        onClick={() => {
-          onSelect?.(node.id);
-          if (hasChildren) setExpanded((e) => !e);
-        }}
-        className={`group flex cursor-pointer items-center gap-1.5 px-2 py-0.5 ${selectedId === node.id ? "bg-accent-600/15 text-accent-300" : "text-text-secondary hover:bg-surface-700/60 hover:text-text-primary"}`}
+        className={`group flex items-center gap-1.5 px-2 py-0.5 ${selectedId === node.id ? "bg-accent-600/15 text-accent-300" : "text-text-secondary hover:bg-surface-700/60 hover:text-text-primary"}`}
         style={{ paddingLeft: `${depth * 14 + 8}px` }}
       >
-        <span className={`w-3 text-text-tertiary ${hasChildren ? "" : "invisible"}`}>
+        <span
+          className={`w-3 cursor-pointer text-text-tertiary ${hasChildren ? "" : "invisible"}`}
+          onClick={(e) => { e.stopPropagation(); handleClick(); }}
+        >
           {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         </span>
-        <span className="truncate text-sm">{node.label}</span>
+        <span data-testid={`tree-${node.id}`} onClick={handleClick} className="cursor-pointer truncate text-sm">
+          {node.label}
+        </span>
         {node.badge && <span className="ml-auto">{node.badge}</span>}
         {node.action && (
           <span
