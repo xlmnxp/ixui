@@ -87,8 +87,12 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
       render: (i) => (
         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <Button size="sm" variant="ghost" data-testid={`row-overview-${i.name}`} onClick={() => navigate(`/instances/${i.name}`)} aria-label={`Overview ${i.name}`}><Eye size={14} /></Button>
-          <Button size="sm" variant="ghost" disabled={busy[i.name] ?? false} data-testid={`row-start-${i.name}`} onClick={() => runAction("start", [i.name])}><Play size={14} /> Start</Button>
-          <Button size="sm" variant="ghost" disabled={busy[i.name] ?? false} data-testid={`row-stop-${i.name}`} onClick={() => runAction("stop", [i.name])}><Square size={14} /> Stop</Button>
+          {i.status !== "Started" && i.status !== "Running" && (
+            <Button size="sm" variant="ghost" disabled={busy[i.name] ?? false} data-testid={`row-start-${i.name}`} onClick={() => runAction("start", [i.name])}><Play size={14} /> Start</Button>
+          )}
+          {(i.status === "Started" || i.status === "Running" || i.status === "Frozen") && (
+            <Button size="sm" variant="ghost" disabled={busy[i.name] ?? false} data-testid={`row-stop-${i.name}`} onClick={() => runAction("stop", [i.name])}><Square size={14} /> Stop</Button>
+          )}
         </div>
       ),
     },

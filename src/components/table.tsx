@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 export interface Column<T> {
   key: string;
@@ -87,7 +88,7 @@ export function Table<T>({
                 style={{ width: col.width }}
               >
                 {col.header}
-                {sortCol === col.key ? (sortDir === "asc" ? " ↑" : " ↓") : ""}
+                {sortCol === col.key ? (sortDir === "asc" ? <ChevronUp size={12} className="inline" /> : <ChevronDown size={12} className="inline" />) : null}
               </th>
             ))}
           </tr>
