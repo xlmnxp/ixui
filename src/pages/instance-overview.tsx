@@ -34,7 +34,7 @@ export function OverviewTab({ instance }: OverviewTabProps) {
   ];
 
   return (
-    <div className="space-y-4" data-testid="overview-tab">
+    <div data-testid="overview-tab">
       <KeyValueTable rows={rows} />
       {instance.description && <p className="mt-2 border-t border-border px-3 py-2 text-sm text-text-secondary">{instance.description}</p>}
     </div>

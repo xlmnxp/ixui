@@ -7,6 +7,7 @@ import { instancesStore } from "../state/instances";
 import { KeyValueTable } from "../components/key-value-table";
 import { Badge } from "../components/badge";
 import { PageBar } from "../components/page-bar";
+import { SplitPane } from "../components/split-pane";
 
 const instanceStateCounts = (instances: { status: string }[]) => {
   const counts: Record<string, number> = {};
@@ -40,40 +41,46 @@ export function DashboardPage() {
   const stateCounts = instanceStateCounts(scoped);
 
   return (
-    <div className="space-y-4" data-testid="dashboard-page">
+    <div className="flex h-full flex-col" data-testid="dashboard-page">
       <PageBar title="Dashboard" />
-      <KeyValueTable
-        rows={[
-          { key: "Hostname", value: server?.hostname ?? "—" },
-          { key: "Version", value: server ? `Version ${server.version}` : "—" },
-          { key: "Project", value: project },
-        ]}
-        dataTestId="dashboard-server-table"
-      />
-      <KeyValueTable
-        rows={[
-          { key: "Instances by state", value: Object.entries(stateCounts).map(([s, n]) => `${s}: ${n}`).join(" · ") || "—" },
-          { key: "Images", value: String(counts.images) },
-          { key: "Profiles", value: String(counts.profiles) },
-          { key: "Networks", value: String(counts.networks) },
-          { key: "Storage pools", value: String(counts.storage) },
-        ]}
-        dataTestId="dashboard-summary-table"
-      />
-      <div className="border-t border-border">
-        <h2 className="px-3 py-2 text-xs font-semibold text-text-secondary">Recent operations</h2>
-        {operations.length === 0 ? (
-          <p className="px-3 pb-2 text-xs text-text-tertiary">No operations yet.</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {operations.slice(0, 10).map((op) => (
-              <li key={op.id} className="flex items-center gap-3 px-3 py-1.5 text-xs">
-                <Badge tone={op.status === "Running" ? "info" : op.status === "Success" ? "success" : op.status === "Failure" ? "danger" : "warning"}>{op.status}</Badge>
-                <span className="text-text-primary">{op.description}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+      <div className="min-h-0 flex-1">
+        <SplitPane
+          vertical
+          initial={45}
+          min={25}
+          left={
+            <KeyValueTable
+              dataTestId="dashboard-overview-table"
+              rows={[
+                { key: "Hostname", value: server?.hostname ?? "—" },
+                { key: "Version", value: server ? `Version ${server.version}` : "—" },
+                { key: "Project", value: project },
+                { key: "Instances by state", value: Object.entries(stateCounts).map(([s, n]) => `${s}: ${n}`).join(" · ") || "—" },
+                { key: "Images", value: String(counts.images) },
+                { key: "Profiles", value: String(counts.profiles) },
+                { key: "Networks", value: String(counts.networks) },
+                { key: "Storage pools", value: String(counts.storage) },
+              ]}
+            />
+          }
+          right={
+            <div className="h-full overflow-auto border-t border-border">
+              <h2 className="px-3 py-2 text-xs font-semibold text-text-secondary">Recent operations</h2>
+              {operations.length === 0 ? (
+                <p className="px-3 pb-2 text-xs text-text-tertiary">No operations yet.</p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {operations.slice(0, 10).map((op) => (
+                    <li key={op.id} className="flex items-center gap-3 px-3 py-1.5 text-xs">
+                      <Badge tone={op.status === "Running" ? "info" : op.status === "Success" ? "success" : op.status === "Failure" ? "danger" : "warning"}>{op.status}</Badge>
+                      <span className="text-text-primary">{op.description}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          }
+        />
       </div>
     </div>
   );

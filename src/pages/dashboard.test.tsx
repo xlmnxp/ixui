@@ -28,8 +28,7 @@ describe("DashboardPage", () => {
     render(<DashboardPage />);
     expect(await screen.findByText("host1")).toBeInTheDocument();
     expect(screen.getByText("Version 6.0.0")).toBeInTheDocument();
-    expect(screen.getByTestId("dashboard-server-table")).toBeInTheDocument();
-    expect(screen.getByTestId("dashboard-summary-table")).toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-overview-table")).toBeInTheDocument();
     expect(screen.getByText("Storage pools")).toBeInTheDocument();
   });
 

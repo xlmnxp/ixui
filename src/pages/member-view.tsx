@@ -174,7 +174,7 @@ export function MemberView() {
           right={
             <div className="h-full overflow-auto">
               {tab === "overview" && (
-                <div className="space-y-6 p-4">
+                <div className="space-y-6">
                   <div>
                     <h2 className="mb-2 text-sm font-semibold text-text-primary">Member</h2>
                     <KeyValueTable rows={[
