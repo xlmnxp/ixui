@@ -1,5 +1,5 @@
 import { currentProject, projectQuery, type ApiClient } from "./client";
-import type { Instance, InstanceStateInfo, AsyncResponse, SyncResponse } from "./types";
+import type { Instance, InstanceStateInfo, InstanceBackup, AsyncResponse, SyncResponse } from "./types";
 
 export interface CreateInstanceBody {
   name: string;
@@ -83,5 +83,52 @@ export class InstancesApi {
 
   readLog(name: string, file: string): Promise<string> {
     return this.client.get<string>(`/instances/${name}/logs/${file}${projectQuery()}`);
+  }
+
+  copy(
+    name: string,
+    target: string,
+    options?: { live?: boolean; pool?: string; project?: string }
+  ): Promise<AsyncResponse | SyncResponse | null> {
+    const body: { source: { type: "copy"; source: string }; name: string; live?: boolean; pool?: string; project?: string } = {
+      source: { type: "copy", source: name },
+      name: target,
+    };
+    if (options?.live !== undefined) body.live = options.live;
+    if (options?.pool !== undefined) body.pool = options.pool;
+    if (options?.project !== undefined) body.project = options.project;
+    return this.client.post(`/instances/${name}${projectQuery()}`, body);
+  }
+
+  rename(name: string, newName: string): Promise<AsyncResponse | SyncResponse | null> {
+    return this.client.post(`/instances/${name}${projectQuery()}`, { name: newName });
+  }
+
+  move(name: string, body: { live?: boolean; pool?: string; project?: string; target?: string }): Promise<AsyncResponse | SyncResponse | null> {
+    return this.client.post(`/instances/${name}${projectQuery()}`, { migration: true, ...body });
+  }
+
+  rebuild(name: string, body: { source: { type: "image"; image?: string; fingerprint?: string; server?: string; alias?: string } }): Promise<AsyncResponse | SyncResponse | null> {
+    return this.client.post(`/instances/${name}/rebuild${projectQuery()}`, body);
+  }
+
+  freeze(name: string): Promise<AsyncResponse | null> {
+    return this.setState(name, "freeze");
+  }
+
+  unfreeze(name: string): Promise<AsyncResponse | null> {
+    return this.setState(name, "unfreeze");
+  }
+
+  listBackups(name: string): Promise<InstanceBackup[]> {
+    return this.client.list<InstanceBackup>(`/instances/${name}/backups`, { project: currentProject() });
+  }
+
+  createBackup(name: string, backupName: string): Promise<AsyncResponse | null> {
+    return this.client.post(`/instances/${name}/backups${projectQuery()}`, { name: backupName });
+  }
+
+  deleteBackup(name: string, backupName: string): Promise<void> {
+    return this.client.delete(`/instances/${name}/backups/${backupName}${projectQuery()}`);
   }
 }

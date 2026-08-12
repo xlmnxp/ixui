@@ -93,4 +93,16 @@ export class InfraApi {
   deleteProject(name: string): Promise<void> {
     return this.client.delete(`/projects/${name}`);
   }
+
+  updateProject(name: string, body: { description?: string; config?: Record<string, string> }): Promise<OpResponse> {
+    return this.client.put(`/projects/${name}`, body);
+  }
+
+  updateNetworkConfig(name: string, body: { config?: Record<string, string> }): Promise<OpResponse> {
+    return this.client.put(`/networks/${name}${projectQuery()}`, body);
+  }
+
+  updatePoolConfig(name: string, body: { config?: Record<string, string> }): Promise<OpResponse> {
+    return this.client.put(`/storage-pools/${name}${projectQuery()}`, body);
+  }
 }

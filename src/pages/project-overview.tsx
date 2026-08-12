@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Boxes, Database, Image as ImageIcon, Network, UserCog } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { VerticalTabs } from "../components/vertical-tabs";
@@ -38,6 +38,8 @@ export function ProjectOverview() {
     setSearchParams({ tab: key }, { replace: false });
   };
 
+  const openCreate = useCallback(() => setWizardOpen(true), []);
+
   return (
     <div className="flex h-full flex-col" data-testid="project-overview">
       <PageBar title={`Project ${project}`} actions={tabBar?.actions} />
@@ -48,7 +50,7 @@ export function ProjectOverview() {
           left={<VerticalTabs tabs={TABS} active={tab} onChange={setTab} />}
           right={
             <div className="h-full overflow-auto">
-              {tab === "instances" && <InstancesPage onCreate={() => setWizardOpen(true)} registerBar={setTabBar} />}
+              {tab === "instances" && <InstancesPage onCreate={openCreate} registerBar={setTabBar} />}
               {tab === "images" && <ImagesPage registerBar={setTabBar} />}
               {tab === "profiles" && <ProfilesPage registerBar={setTabBar} />}
               {tab === "networks" && <NetworksPage registerBar={setTabBar} />}
