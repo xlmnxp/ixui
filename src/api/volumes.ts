@@ -64,6 +64,20 @@ export class VolumesApi {
     return this.client.delete(`/storage-pools/${pool}/volumes/${type}/${name}/snapshots/${snap}${projectQuery()}`);
   }
 
+  restoreSnapshot(pool: string, type: string, name: string, snap: string): Promise<OpResponse> {
+    return this.client.put(`/storage-pools/${pool}/volumes/${type}/${name}/snapshots/${snap}${projectQuery()}`, {
+      restore: snap,
+    });
+  }
+
+  uploadIso(pool: string, name: string, file: Blob): Promise<OpResponse> {
+    return this.client.postRaw(
+      `/storage-pools/${pool}/volumes/custom/${name}${projectQuery()}`,
+      file,
+      "application/octet-stream"
+    );
+  }
+
   listBuckets(pool: string): Promise<StorageVolumeDetail[]> {
     return this.client.list<StorageVolumeDetail>(`/storage-pools/${pool}/buckets`, { project: currentProject() });
   }

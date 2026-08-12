@@ -84,6 +84,36 @@ export class ApiClient {
     return this.request<T>("POST", path, body);
   }
 
+  async postRaw<T>(path: string, body: BodyInit, contentType = "application/octet-stream"): Promise<T> {
+    const res = await fetch(`${this.basePath}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": contentType },
+      body,
+    });
+
+    if (res.status === 401 || res.status === 403) this.forbiddenHandler?.();
+
+    const text = await res.text();
+    let json: unknown = null;
+    if (text) {
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = text;
+      }
+    }
+
+    if (!res.ok) {
+      const err = json as ErrorBody | null;
+      throw new ApiError(res.status, err?.error_code, err?.error ?? res.statusText);
+    }
+    markAuthenticated();
+    if (json && typeof json === "object" && (json as { type?: unknown }).type === "sync") {
+      json = (json as { metadata: unknown }).metadata;
+    }
+    return json as T;
+  }
+
   put<T>(path: string, body: unknown): Promise<T> {
     return this.request<T>("PUT", path, body);
   }

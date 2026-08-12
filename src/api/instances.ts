@@ -28,7 +28,15 @@ export class InstancesApi {
     return this.client.post(`/instances${projectQuery()}${targetQuery}`, body);
   }
 
-  update(name: string, body: { config?: Record<string, string>; description?: string; ephemeral?: boolean }): Promise<AsyncResponse | SyncResponse | null> {
+  update(
+    name: string,
+    body: {
+      config?: Record<string, string>;
+      description?: string;
+      ephemeral?: boolean;
+      devices?: Record<string, Record<string, string>>;
+    }
+  ): Promise<AsyncResponse | SyncResponse | null> {
     return this.client.put(`/instances/${name}${projectQuery()}`, body);
   }
 
