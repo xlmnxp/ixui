@@ -65,6 +65,6 @@ describe("currentProjectStore", () => {
   it("persists selection", () => {
     setCurrentProject("prod");
     expect(currentProjectStore.getState()).toBe("prod");
-    expect(localStorage.getItem("ixui.project")).toBe("prod");
+    expect(localStorage.getItem("ixui.project.v2")).toBe("prod");
   });
 });

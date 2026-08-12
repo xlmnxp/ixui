@@ -48,16 +48,14 @@ function TreeNodeItem({
   return (
     <li role="treeitem" aria-expanded={hasChildren ? expanded : undefined} aria-selected={selectedId === node.id}>
       <div
-        className={`group flex items-center gap-1.5 px-2 py-0.5 ${selectedId === node.id ? "bg-accent-600/15 text-accent-300" : "text-text-secondary hover:bg-surface-700/60 hover:text-text-primary"}`}
+        onClick={handleClick}
+        className={`group flex cursor-pointer items-center gap-1.5 px-2 py-0.5 ${selectedId === node.id ? "bg-accent-600/15 text-accent-300" : "text-text-secondary hover:bg-surface-700/60 hover:text-text-primary"}`}
         style={{ paddingLeft: `${depth * 14 + 8}px` }}
       >
-        <span
-          className={`w-3 cursor-pointer text-text-tertiary ${hasChildren ? "" : "invisible"}`}
-          onClick={(e) => { e.stopPropagation(); handleClick(); }}
-        >
+        <span className={`w-3 text-text-tertiary ${hasChildren ? "" : "invisible"}`}>
           {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         </span>
-        <span data-testid={`tree-${node.id}`} onClick={handleClick} className="cursor-pointer truncate text-sm">
+        <span data-testid={`tree-${node.id}`} className="truncate text-sm">
           {node.label}
         </span>
         {node.badge && <span className="ml-auto">{node.badge}</span>}

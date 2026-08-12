@@ -5,7 +5,7 @@ import type { Project } from "../api/types";
 
 function readStoredProject(): string {
   try {
-    return window.localStorage.getItem("ixui.project") ?? ALL_PROJECTS;
+    return window.localStorage.getItem("ixui.project.v2") ?? ALL_PROJECTS;
   } catch {
     return ALL_PROJECTS;
   }
@@ -17,7 +17,7 @@ export const currentProjectStore = createStore<string>(readStoredProject());
 export function setCurrentProject(name: string): void {
   currentProjectStore.setState(name);
   try {
-    window.localStorage.setItem("ixui.project", name);
+    window.localStorage.setItem("ixui.project.v2", name);
   } catch {
     // storage unavailable — non-fatal
   }
