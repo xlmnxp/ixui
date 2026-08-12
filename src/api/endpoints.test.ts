@@ -552,6 +552,16 @@ describe("API endpoints", () => {
       expect(fetchMock.mock.calls[2]![0]).toBe("/1.0/cluster/groups/g1");
     });
 
+    it("group update is PUT with description", async () => {
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
+      vi.stubGlobal("fetch", fetchMock);
+      await clusterApi.updateGroup("g1", { description: "web" });
+      const [url, init] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("/1.0/cluster/groups/g1");
+      expect(init?.method).toBe("PUT");
+      expect(JSON.parse(init?.body as string)).toEqual({ description: "web" });
+    });
+
     it("setMemberState posts the action", async () => {
       const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
       vi.stubGlobal("fetch", fetchMock);

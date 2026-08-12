@@ -18,6 +18,10 @@ export class ClusterApi {
     return this.client.post("/cluster/groups", body);
   }
 
+  updateGroup(name: string, body: { description?: string }): Promise<OpResponse> {
+    return this.client.put(`/cluster/groups/${name}`, body);
+  }
+
   deleteGroup(name: string): Promise<void> {
     return this.client.delete(`/cluster/groups/${name}`);
   }

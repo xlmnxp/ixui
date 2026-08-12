@@ -44,7 +44,7 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
         <span className="flex items-center gap-2">
           <Server size={14} className="text-text-secondary" />
           <Link to={`/members/${m.server_name}`}>{m.server_name}</Link>
-          <span className={`h-2 w-2 rounded-full ${m.status === "Online" ? "bg-success" : "bg-text-tertiary"}`} />
+          <span data-testid={`member-dot-${m.server_name}`} className={`h-2 w-2 rounded-full ${m.status === "Online" ? "bg-success" : m.status === "Evacuated" ? "bg-warning" : "bg-text-tertiary"}`} />
         </span>
       ),
       children: (instancesByMember[m.server_name] ?? [])

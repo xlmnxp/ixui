@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { Boxes, Gauge, Server } from "lucide-react";
-import { clusterApi } from "../api";
-import type { ClusterMember } from "../api/types";
+import { Boxes, Copy, Gauge, KeyRound, Power, RotateCcw, Server } from "lucide-react";
+import { clusterApi, resourcesApi } from "../api";
+import type { ClusterMember, ClusterGroup } from "../api/types";
+import type { HostResources } from "../api/resources";
 import { Badge } from "../components/badge";
+import { Button } from "../components/button";
+import { Checkbox } from "../components/checkbox";
+import { Dialog } from "../components/dialog";
+import { ConfirmDialog } from "../components/confirm-dialog";
+import { Input } from "../components/input";
 import { KeyValueTable } from "../components/key-value-table";
 import { VerticalTabs } from "../components/vertical-tabs";
 import type { VerticalTabItem } from "../components/vertical-tabs";
@@ -11,6 +17,8 @@ import { SplitPane } from "../components/split-pane";
 import { InstancesPage } from "./instances";
 import { CreateInstanceWizard } from "../components/create-instance-wizard";
 import type { BarState } from "../components/page-bar";
+import { toast } from "../components/toast";
+import { formatBytes } from "../lib/format";
 
 const tabs: VerticalTabItem[] = [
   { key: "overview", label: "Overview", icon: <Gauge size={14} /> },
@@ -28,7 +36,17 @@ export function MemberView() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const openCreate = useCallback(() => setWizardOpen(true), []);
 
-  useEffect(() => {
+  const [confirmAction, setConfirmAction] = useState<"evacuate" | "restore" | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [tokenOpen, setTokenOpen] = useState(false);
+  const [tokenName, setTokenName] = useState("");
+  const [groups, setGroups] = useState<ClusterGroup[]>([]);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  const [token, setToken] = useState("");
+  const [tokenBusy, setTokenBusy] = useState(false);
+  const [capacity, setCapacity] = useState<HostResources | null>(null);
+
+  const refresh = useCallback(() => {
     void clusterApi.listMembers().then((m) => {
       setMembers(m);
       setLoaded(true);
@@ -37,7 +55,72 @@ export function MemberView() {
     });
   }, []);
 
+  useEffect(refresh, [refresh]);
+
+  useEffect(() => {
+    if (!name) return;
+    void resourcesApi.getMemberResources(name).then(setCapacity).catch(() => setCapacity(null));
+  }, [name]);
+
+  useEffect(() => {
+    if (!tokenOpen) return;
+    setToken("");
+    void clusterApi.listGroups().then(setGroups).catch(() => {});
+  }, [tokenOpen]);
+
   const member = members.find((m) => m.server_name === name);
+
+  const runStateAction = async () => {
+    if (!confirmAction) return;
+    setActionBusy(true);
+    try {
+      await clusterApi.setMemberState(name, confirmAction);
+      toast("success", `Member ${name} ${confirmAction === "evacuate" ? "evacuated" : "restored"}`);
+      setConfirmAction(null);
+      refresh();
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Action failed");
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
+  const openTokenDialog = () => {
+    setTokenName(name);
+    setSelectedGroups([]);
+    setTokenOpen(true);
+  };
+
+  const toggleGroup = (group: string) => {
+    setSelectedGroups((prev) => (prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]));
+  };
+
+  const createToken = async () => {
+    if (!tokenName.trim()) return;
+    setTokenBusy(true);
+    try {
+      const res = (await clusterApi.createJoinToken(tokenName.trim(), selectedGroups)) as { token?: unknown } | null;
+      const value = res?.token;
+      if (typeof value === "string" && value.length > 0) {
+        setToken(value);
+      } else {
+        toast("danger", "No join token returned");
+      }
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Token creation failed");
+    } finally {
+      setTokenBusy(false);
+    }
+  };
+
+  const copyToken = async () => {
+    try {
+      await navigator.clipboard?.writeText(token);
+      toast("success", "Token copied");
+    } catch {
+      toast("danger", "Copy failed");
+    }
+  };
 
   if (loaded && !member) {
     return (
@@ -55,9 +138,16 @@ export function MemberView() {
           <h1 className="text-base font-semibold text-text-primary">{member.server_name}</h1>
           <Badge tone={member.status === "Online" ? "success" : "neutral"}>{member.status}</Badge>
           <span className="text-xs text-text-tertiary">{member.architecture}</span>
-          {tabBar?.actions && tabBar.actions.length > 0 && (
-            <div className="ml-auto flex items-center gap-1.5">{tabBar.actions}</div>
-          )}
+          <div className="ml-auto flex items-center gap-1.5">
+            {member.status === "Online" && (
+              <Button size="sm" variant="danger" data-testid="member-evacuate" onClick={() => setConfirmAction("evacuate")}><Power size={14} /> Evacuate</Button>
+            )}
+            {member.status === "Evacuated" && (
+              <Button size="sm" variant="secondary" data-testid="member-restore" onClick={() => setConfirmAction("restore")}><RotateCcw size={14} /> Restore</Button>
+            )}
+            <Button size="sm" variant="secondary" data-testid="member-join-token" onClick={openTokenDialog}><KeyRound size={14} /> Join token</Button>
+            {tabBar?.actions}
+          </div>
         </div>
       )}
       <div className="min-h-0 flex-1">
@@ -68,14 +158,27 @@ export function MemberView() {
           right={
             <div className="h-full overflow-auto">
               {tab === "overview" && (
-                <KeyValueTable rows={[
-                  { key: "Member", value: member?.server_name ?? name },
-                  { key: "Status", value: member ? <Badge tone={member.status === "Online" ? "success" : "neutral"}>{member.status}</Badge> : "—" },
-                  { key: "Architecture", value: member?.architecture ?? "—" },
-                  { key: "Database", value: member ? (member.database ? "Yes" : "No") : "—" },
-                  { key: "URL", value: member?.url ?? "—" },
-                  { key: "Message", value: member?.message || "—" },
-                ]} />
+                <div className="space-y-6 p-4">
+                  <div>
+                    <h2 className="mb-2 text-sm font-semibold text-text-primary">Member</h2>
+                    <KeyValueTable rows={[
+                      { key: "Member", value: member?.server_name ?? name },
+                      { key: "Status", value: member ? <Badge tone={member.status === "Online" ? "success" : "neutral"}>{member.status}</Badge> : "—" },
+                      { key: "Architecture", value: member?.architecture ?? "—" },
+                      { key: "Database", value: member ? (member.database ? "Yes" : "No") : "—" },
+                      { key: "URL", value: member?.url ?? "—" },
+                      { key: "Message", value: member?.message || "—" },
+                    ]} />
+                  </div>
+                  <div>
+                    <h2 className="mb-2 text-sm font-semibold text-text-primary">Capacity</h2>
+                    <KeyValueTable dataTestId="member-capacity" rows={[
+                      { key: "CPU", value: capacity ? String(capacity.cpu?.total ?? "—") : "—" },
+                      { key: "Memory total", value: capacity?.memory?.total ? formatBytes(capacity.memory.total) : "—" },
+                      { key: "Memory used", value: capacity?.memory?.used ? formatBytes(capacity.memory.used) : "—" },
+                    ]} />
+                  </div>
+                </div>
               )}
               {tab === "instances" && <InstancesPage location={name} onCreate={openCreate} registerBar={setTabBar} />}
             </div>
@@ -83,6 +186,60 @@ export function MemberView() {
         />
       </div>
       <CreateInstanceWizard open={wizardOpen} onClose={() => setWizardOpen(false)} targetMember={name} />
+
+      <ConfirmDialog
+        open={confirmAction !== null}
+        title={confirmAction === "restore" ? "Restore member" : "Evacuate member"}
+        body={confirmAction === "restore" ? `Restore member ${name}? Instances will be moved back.` : `Evacuate member ${name}? Instances will be moved to other members.`}
+        confirmLabel={confirmAction === "restore" ? "Restore" : "Evacuate"}
+        tone="danger"
+        loading={actionBusy}
+        onConfirm={runStateAction}
+        onCancel={() => setConfirmAction(null)}
+      />
+
+      <Dialog open={tokenOpen} onClose={() => setTokenOpen(false)} title={`Join token for ${name}`} footer={
+        <>
+          {token ? (
+            <Button variant="secondary" onClick={() => setTokenOpen(false)} data-testid="token-done">Done</Button>
+          ) : (
+            <>
+              <Button variant="secondary" onClick={() => setTokenOpen(false)}>Cancel</Button>
+              <Button onClick={createToken} loading={tokenBusy} data-testid="token-submit"><KeyRound size={14} /> Create token</Button>
+            </>
+          )}
+        </>
+      }>
+        <div className="space-y-3">
+          <Input label="Server name" name="token-name" data-testid="token-name" value={tokenName} onChange={(e) => setTokenName(e.target.value)} disabled={Boolean(token)} />
+          {!token && (
+            <div>
+              <span className="text-xs font-medium text-text-secondary">Groups</span>
+              <div className="mt-1 space-y-1">
+                {groups.length === 0 && <span className="text-xs text-text-tertiary">No groups</span>}
+                {groups.map((g) => (
+                  <Checkbox
+                    key={g.name}
+                    data-testid={`token-group-${g.name}`}
+                    label={g.name}
+                    checked={selectedGroups.includes(g.name)}
+                    onChange={() => toggleGroup(g.name)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          {token && (
+            <div className="space-y-2">
+              <span className="text-xs font-medium text-text-secondary">Token</span>
+              <div className="flex items-center gap-2 rounded border border-border bg-surface-900 p-2">
+                <code data-testid="token-value" className="min-w-0 flex-1 break-all text-xs text-text-primary">{token}</code>
+                <Button size="sm" variant="secondary" data-testid="token-copy" onClick={copyToken}><Copy size={14} /> Copy</Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Dialog>
     </div>
   );
 }
