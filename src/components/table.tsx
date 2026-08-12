@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { Checkbox } from "./checkbox";
 
 export interface Column<T> {
   key: string;
@@ -76,7 +77,7 @@ export function Table<T>({
           <tr>
             {onSelectionChange ? (
               <th className="w-8 px-3 py-2">
-                <input type="checkbox" data-testid="select-all" checked={allSelected} onChange={toggleAll} className="accent-accent-600" aria-label="Select all" />
+                <Checkbox data-testid="select-all" checked={allSelected} onChange={toggleAll} aria-label="Select all" />
               </th>
             ) : null}
             {columns.map((col) => (
@@ -113,16 +114,8 @@ export function Table<T>({
                   className={`text-text-primary ${onRowClick ? "cursor-pointer" : ""} ${selected ? "bg-accent-600/10" : "hover:bg-surface-700/60"}`}
                 >
                   {onSelectionChange ? (
-                    <td className="px-3 py-2">
-                      <input
-                        type="checkbox"
-                        data-testid="row-select"
-                        checked={selected}
-                        onChange={() => toggle(key)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="accent-accent-600"
-                        aria-label={`Select ${key}`}
-                      />
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox data-testid="row-select" checked={selected} onChange={() => toggle(key)} aria-label={`Select ${key}`} />
                     </td>
                   ) : null}
                   {columns.map((col) => (

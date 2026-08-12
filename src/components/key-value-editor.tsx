@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "./button";
+import { Checkbox } from "./checkbox";
 
 const DESCRIPTION_ROW = "__description__";
 
@@ -198,7 +199,7 @@ export function KeyValueEditor({
         <thead className="border-b border-border bg-surface-700 text-left text-xs text-text-secondary">
           <tr>
             <th className="w-8 px-2 py-1">
-              <input type="checkbox" data-testid="kv-select-all" checked={allSelected} onChange={toggleAll} className="accent-accent-600" aria-label="Select all" />
+              <Checkbox data-testid="kv-select-all" checked={allSelected} onChange={toggleAll} aria-label="Select all" />
             </th>
             <th className="px-2 py-1">Key</th>
             <th className="px-2 py-1">Value</th>
@@ -212,7 +213,7 @@ export function KeyValueEditor({
               className={`group ${selectedKeys.includes(DESCRIPTION_ROW) ? "bg-accent-600/10" : "hover:bg-surface-700/60"}`}
             >
               <td className="w-8 px-2 py-1">
-                <input type="checkbox" data-testid="kv-check-Description" checked={selectedKeys.includes(DESCRIPTION_ROW)} onChange={() => toggle(DESCRIPTION_ROW)} className="accent-accent-600" aria-label="Select Description" />
+                <Checkbox data-testid="kv-check-Description" checked={selectedKeys.includes(DESCRIPTION_ROW)} onChange={() => toggle(DESCRIPTION_ROW)} aria-label="Select Description" />
               </td>
               <td className="px-2 py-1 text-xs text-text-primary">Description</td>
               <td data-testid="kv-value-Description" onDoubleClick={() => startEditing(DESCRIPTION_ROW)} className="px-2 py-1 text-sm text-text-primary">
@@ -235,7 +236,7 @@ export function KeyValueEditor({
               className={`group ${selectedKeys.includes(key) ? "bg-accent-600/10" : "hover:bg-surface-700/60"}`}
             >
               <td className="w-8 px-2 py-1">
-                <input type="checkbox" data-testid={`kv-check-${key}`} checked={selectedKeys.includes(key)} onChange={() => toggle(key)} className="accent-accent-600" aria-label={`Select ${key}`} />
+                <Checkbox data-testid={`kv-check-${key}`} checked={selectedKeys.includes(key)} onChange={() => toggle(key)} aria-label={`Select ${key}`} />
               </td>
               <td data-testid={`kv-key-${key}`} onDoubleClick={() => startEditing(key)} className="px-2 py-1 font-mono text-xs text-text-primary">
                 {editing === key ? keyInput(key) : key}
