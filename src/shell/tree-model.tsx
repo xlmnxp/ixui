@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Folder, Server, Palette, Gauge, Plus } from "lucide-react";
+import { Folder, Server, Palette, Gauge, Plus, FolderCog } from "lucide-react";
 import type { ReactNode } from "react";
 import type { TreeNode } from "../components/tree";
 import type { ClusterMember, Instance } from "../api/types";
@@ -89,6 +89,65 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
           <Link to="/gallery">Component Gallery</Link>
         </span>
       ),
+    },
+    {
+      id: "administration",
+      label: (
+        <span className="flex items-center gap-2">
+          <FolderCog size={14} className="text-text-secondary" />
+          <span>Administration</span>
+        </span>
+      ),
+      children: [
+        {
+          id: "admin-operations",
+          label: (
+            <span className="flex items-center gap-2">
+              <Link to="/operations">Operations</Link>
+            </span>
+          ),
+        },
+        {
+          id: "admin-warnings",
+          label: (
+            <span className="flex items-center gap-2">
+              <Link to="/warnings">Warnings</Link>
+            </span>
+          ),
+        },
+        {
+          id: "admin-settings",
+          label: (
+            <span className="flex items-center gap-2">
+              <Link to="/settings">Settings</Link>
+            </span>
+          ),
+        },
+        {
+          id: "admin-cluster-groups",
+          label: (
+            <span className="flex items-center gap-2">
+              <Link to="/cluster-groups">Cluster Groups</Link>
+            </span>
+          ),
+        },
+        {
+          id: "admin-auth",
+          label: (
+            <span className="flex items-center gap-2">
+              <Link to="/auth">Auth &amp; Permissions</Link>
+            </span>
+          ),
+        },
+        {
+          id: "admin-certificates",
+          label: (
+            <span className="flex items-center gap-2">
+              <Link to="/certificates">Certificates</Link>
+            </span>
+          ),
+        },
+      ],
     },
   ];
 }
