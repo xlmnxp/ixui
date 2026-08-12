@@ -1,8 +1,9 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { Boxes, Database, Image as ImageIcon, Network, UserCog } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { VerticalTabs } from "../components/vertical-tabs";
 import type { VerticalTabItem } from "../components/vertical-tabs";
+import { SplitPane } from "../components/split-pane";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { CreateInstanceWizard } from "../components/create-instance-wizard";
@@ -37,20 +38,24 @@ export function ProjectOverview() {
     setSearchParams({ tab: key }, { replace: false });
   };
 
-  const openWizard = useCallback(() => setWizardOpen(true), []);
-
   return (
     <div className="flex h-full flex-col" data-testid="project-overview">
       <PageBar title={`Project ${project}`} actions={tabBar?.actions} />
-      <div className="flex min-h-0 flex-1">
-        <VerticalTabs tabs={TABS} active={tab} onChange={setTab} />
-        <div className="min-w-0 flex-1 overflow-auto">
-          {tab === "instances" && <InstancesPage onCreate={openWizard} registerBar={setTabBar} />}
-          {tab === "images" && <ImagesPage registerBar={setTabBar} />}
-          {tab === "profiles" && <ProfilesPage registerBar={setTabBar} />}
-          {tab === "networks" && <NetworksPage registerBar={setTabBar} />}
-          {tab === "storage" && <StoragePage registerBar={setTabBar} />}
-        </div>
+      <div className="min-h-0 flex-1">
+        <SplitPane
+          initial={20}
+          min={12}
+          left={<VerticalTabs tabs={TABS} active={tab} onChange={setTab} />}
+          right={
+            <div className="h-full overflow-auto">
+              {tab === "instances" && <InstancesPage onCreate={() => setWizardOpen(true)} registerBar={setTabBar} />}
+              {tab === "images" && <ImagesPage registerBar={setTabBar} />}
+              {tab === "profiles" && <ProfilesPage registerBar={setTabBar} />}
+              {tab === "networks" && <NetworksPage registerBar={setTabBar} />}
+              {tab === "storage" && <StoragePage registerBar={setTabBar} />}
+            </div>
+          }
+        />
       </div>
       <CreateInstanceWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
     </div>

@@ -4,6 +4,7 @@ import { Camera, Check, FileText, Gauge, Play, RotateCw, Settings, Square, Termi
 import { instancesApi } from "../api";
 import type { Instance } from "../api/types";
 import { VerticalTabs } from "../components/vertical-tabs";
+import { SplitPane } from "../components/split-pane";
 import { Button } from "../components/button";
 import { PageBar } from "../components/page-bar";
 import { ConfirmDialog } from "../components/confirm-dialog";
@@ -96,14 +97,20 @@ export function InstanceDetailPage() {
         ]}
       />
 
-      <div className="flex h-full min-h-0">
-        <VerticalTabs tabs={tabs} active={activeTab} onChange={(key) => navigate(`/instances/${name}/${key}`)} />
-        <div className="min-w-0 flex-1 overflow-auto">
-          {activeTab === "overview" && <OverviewTab instance={instance} />}
-          {activeTab === "snapshots" && <SnapshotsTab instanceName={name} />}
-          {activeTab === "config" && <ConfigTab instanceName={name} registerActions={setConfigActions} />}
-          {activeTab === "logs" && <LogsTab instanceName={name} />}
-        </div>
+      <div className="min-h-0 flex-1">
+        <SplitPane
+          initial={20}
+          min={12}
+          left={<VerticalTabs tabs={tabs} active={activeTab} onChange={(key) => navigate(`/instances/${name}/${key}`)} />}
+          right={
+            <div className="h-full overflow-auto">
+              {activeTab === "overview" && <OverviewTab instance={instance} />}
+              {activeTab === "snapshots" && <SnapshotsTab instanceName={name} />}
+              {activeTab === "config" && <ConfigTab instanceName={name} registerActions={setConfigActions} />}
+              {activeTab === "logs" && <LogsTab instanceName={name} />}
+            </div>
+          }
+        />
       </div>
 
       <ConfirmDialog

@@ -12,7 +12,7 @@ Convert all three "overview" views — instance detail, member (node) view, and 
 | Topic | Decision |
 |---|---|
 | Shared component | `KeyValueTable` — read-only two-column table (Property \| Value) built on the existing `Table` primitive |
-| Checkbox column | Present in EVERY table — functional with selection, inert (disabled) otherwise |
+| Checkbox column | Shown ONLY where selection is functional (instances table, config editor) — hidden otherwise |
 | Descriptions | Field help — muted helper text under the value in the Value cell, NOT a column |
 | IP rows | One row per IP address; IPv4 + IPv6 |
 | Instance overview | `OverviewTab` renders a `KeyValueTable` (Status, Type, Created, Last used, Profiles, one IP row per address, Memory limit, CPU limit) + description below |
@@ -39,7 +39,7 @@ Convert all three "overview" views — instance detail, member (node) view, and 
 The shared `KeyValueEditor` (instance Config tab + Profiles dialog) matches the real `Table` design exactly:
 
 - **Header row:** thead with a checkbox header (select-all) + `Key | Value`. NO description column — descriptions are field help, rendered as muted helper text under the value inside the Value cell.
-- **Checkbox column:** per-row checkboxes drive selection — **multi-select** like the real Table (checking a row no longer clears others; row-click no longer selects). `Edit` acts on the first selected row; `Remove` removes all selected rows; both stay disabled with no selection.
+- **Checkbox column:** shown only when selection wiring is present — per-row multi-select checkboxes + select-all in the header; `Edit` acts on the first selected row; `Remove` removes all selected rows; both stay disabled with no selection. (In the config page the selection drives the bar's Delete.)
 - **Visual parity:** same `text-[13px]` sizing, `divide-y` row separation, `bg-surface-800` tbody, and row hover as the regular Table.
 - Hover pencil (`kv-edit-<key>`, next to the VALUE) and double-click value editing unchanged.
 - Tests updated: selection via checkboxes (multi-select, select-all), Edit on first selected, Remove-all-selected, description-as-helper-text.
@@ -48,8 +48,21 @@ The shared `KeyValueEditor` (instance Config tab + Profiles dialog) matches the 
 
 - **Full-width table:** the Config tab has no max-width/padding — the editor table spans the full content width like the overview tables.
 - **Description as a nullable first row:** the instance description is a first table row ("Description") in the editor — editable inline like any row, nullable (empty allowed), wired via `description`/`onDescriptionChange` props. Not a top input, not a column.
-- **No Add button — in-table placeholder:** the toolbar Add button is gone; a ghost "+ Add row" row at the bottom of the table (`kv-add-row`) appends an EMPTY row (no `custom_N` prefill), enters edit mode with the key input focused and preselected. **Escape removes the freshly created row** (existing rows: Escape just cancels).
-- **Save/Cancel/Delete in the instance bar (Config tab only):** the config editor lifts its actions up via `registerActions` (save, cancel, removeSelected, dirty, selectedCount); the instance action strip shows **Save (disabled unless dirty) | Cancel | Delete (enabled when rows are selected)** on the Config tab, grouped before the lifecycle buttons.
+- **No Add button — in-table placeholder:** the toolbar Add button is gone; a ghost "+ Add row" row at the bottom of the table (`kv-add-row`) appends an EMPTY row (no prefill), enters edit mode with the key input focused and preselected. **Escape removes the freshly created row** (existing rows: Escape just cancels).
+- **Save/Cancel/Delete in the instance bar (Config tab only):** the config editor lifts its actions up via `registerActions` (save, cancel, removeSelected, dirty, selectedCount); the instance detail bar shows **Save (disabled unless dirty) | Cancel | Delete (enabled when rows are selected)** on the Config tab, grouped before the lifecycle buttons.
+- **Hover edit button:** the hover pencil appears next to the VALUE cell, not the key.
+
+## 1d. Action Bars (directives)
+
+- **Shared `PageBar` component** (`src/components/page-bar.tsx`): one consistent bar (title left, actions right) used by every page's own bar. No global bar.
+- **Project overview bar hosts tab actions:** the "Project <name>" bar on the project overview shows the ACTIONS OF THE SELECTED TAB — the tab pages (instances/images/profiles/networks/storage) register their title+actions via a `registerBar` prop (`BarState | null`, cleanup on unmount) and render their own bar only when used standalone.
+- **Member (node) view reuses its member bar:** the member-header bar shows the instance actions on the Instances tab (via the same `registerBar` mechanism) and includes a **Create instance** button targeted to that member (`?target=<member>` via the wizard's `targetMember`).
+- **Per-page bulk Delete:** images/profiles/networks/storage tables gained multi-select checkboxes + a Delete toolbar button (with ConfirmDialog) deleting all selected rows.
+
+## 1e. Row Action Visibility + Icons
+
+- Instances table row actions are conditional: **Start hidden** when the instance is Started/Running; **Stop hidden** unless Started/Running/Frozen.
+- All arrow glyphs replaced with lucide chevrons: table sort (`ChevronUp`/`ChevronDown`), tree expand (`ChevronDown`/`ChevronRight`), task log toggle (`ChevronUp`/`ChevronDown`).
 
 ## 1c. IP Rows and IPv6
 

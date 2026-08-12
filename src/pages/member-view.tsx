@@ -7,6 +7,7 @@ import { Badge } from "../components/badge";
 import { KeyValueTable } from "../components/key-value-table";
 import { VerticalTabs } from "../components/vertical-tabs";
 import type { VerticalTabItem } from "../components/vertical-tabs";
+import { SplitPane } from "../components/split-pane";
 import { InstancesPage } from "./instances";
 import { CreateInstanceWizard } from "../components/create-instance-wizard";
 import type { BarState } from "../components/page-bar";
@@ -59,21 +60,27 @@ export function MemberView() {
           )}
         </div>
       )}
-      <div className="flex min-h-0 flex-1">
-        <VerticalTabs tabs={tabs} active={tab} onChange={(key) => setSearchParams({ tab: key })} />
-        <div className="min-w-0 flex-1 overflow-auto">
-          {tab === "overview" && (
-            <KeyValueTable rows={[
-              { key: "Member", value: member?.server_name ?? name },
-              { key: "Status", value: member ? <Badge tone={member.status === "Online" ? "success" : "neutral"}>{member.status}</Badge> : "—" },
-              { key: "Architecture", value: member?.architecture ?? "—" },
-              { key: "Database", value: member ? (member.database ? "Yes" : "No") : "—" },
-              { key: "URL", value: member?.url ?? "—" },
-              { key: "Message", value: member?.message || "—" },
-            ]} />
-          )}
-          {tab === "instances" && <InstancesPage location={name} onCreate={openCreate} registerBar={setTabBar} />}
-        </div>
+      <div className="min-h-0 flex-1">
+        <SplitPane
+          initial={20}
+          min={12}
+          left={<VerticalTabs tabs={tabs} active={tab} onChange={(key) => setSearchParams({ tab: key })} />}
+          right={
+            <div className="h-full overflow-auto">
+              {tab === "overview" && (
+                <KeyValueTable rows={[
+                  { key: "Member", value: member?.server_name ?? name },
+                  { key: "Status", value: member ? <Badge tone={member.status === "Online" ? "success" : "neutral"}>{member.status}</Badge> : "—" },
+                  { key: "Architecture", value: member?.architecture ?? "—" },
+                  { key: "Database", value: member ? (member.database ? "Yes" : "No") : "—" },
+                  { key: "URL", value: member?.url ?? "—" },
+                  { key: "Message", value: member?.message || "—" },
+                ]} />
+              )}
+              {tab === "instances" && <InstancesPage location={name} onCreate={openCreate} registerBar={setTabBar} />}
+            </div>
+          }
+        />
       </div>
       <CreateInstanceWizard open={wizardOpen} onClose={() => setWizardOpen(false)} targetMember={name} />
     </div>
