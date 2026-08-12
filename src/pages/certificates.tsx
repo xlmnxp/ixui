@@ -100,7 +100,7 @@ export function CertificatesPage() {
   ];
 
   return (
-    <div className="space-y-4" data-testid="certificates-page">
+    <div data-testid="certificates-page">
       <PageBar
         title="Certificates"
         actions={[

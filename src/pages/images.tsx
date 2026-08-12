@@ -163,7 +163,7 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
   }, [registerBar, barActions]);
 
   return (
-    <div className="space-y-4" data-testid="images-page">
+    <div data-testid="images-page">
       {!registerBar && <PageBar title="Images" actions={barActions} />}
 
       {images.length === 0 ? (

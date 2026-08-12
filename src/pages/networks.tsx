@@ -237,7 +237,7 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
   }, [registerBar, barActions]);
 
   return (
-    <div className="space-y-4" data-testid="networks-page">
+    <div data-testid="networks-page">
       {!registerBar && <PageBar title="Networks" actions={barActions} />}
 
       {networks.length === 0 ? (

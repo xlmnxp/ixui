@@ -89,7 +89,7 @@ export function WarningsPage({ registerBar }: { registerBar?: (bar: BarState | n
   }, [registerBar]);
 
   return (
-    <div className="space-y-4" data-testid="warnings-page">
+    <div data-testid="warnings-page">
       {denied ? (
         <div data-testid="permission-denied">
           <EmptyState title="Permission denied" description="Your account does not have permission to view warnings." />

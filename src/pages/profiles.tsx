@@ -139,7 +139,7 @@ export function ProfilesPage({ registerBar }: { registerBar?: (bar: BarState | n
   }, [registerBar, barActions]);
 
   return (
-    <div className="space-y-4" data-testid="profiles-page">
+    <div data-testid="profiles-page">
       {!registerBar && <PageBar title="Profiles" actions={barActions} />}
 
       {profiles.length === 0 ? (

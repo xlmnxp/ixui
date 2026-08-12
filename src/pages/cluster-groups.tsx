@@ -106,7 +106,7 @@ export function ClusterGroupsPage({ registerBar }: { registerBar?: (bar: BarStat
   }, [registerBar, barActions]);
 
   return (
-    <div className="space-y-4" data-testid="cluster-groups-page">
+    <div data-testid="cluster-groups-page">
       {!registerBar && <PageBar title="Cluster groups" actions={barActions} />}
 
       {denied ? (

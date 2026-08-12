@@ -94,7 +94,7 @@ export function OperationsPage({ registerBar }: { registerBar?: (bar: BarState |
   }, [registerBar, barActions]);
 
   return (
-    <div className="space-y-4" data-testid="operations-page">
+    <div data-testid="operations-page">
       {denied ? (
         <div data-testid="permission-denied">
           <EmptyState title="Permission denied" description="Your account does not have permission to view operations." />

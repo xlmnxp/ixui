@@ -522,7 +522,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
   }, [registerBar, barActions]);
 
   return (
-    <div className="space-y-4" data-testid="storage-page">
+    <div data-testid="storage-page">
       {!registerBar && <PageBar title="Storage pools" actions={barActions} />}
 
       {pools.length === 0 ? (
