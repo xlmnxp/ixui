@@ -12,6 +12,7 @@ import { loadInstances } from "../state/instances";
 import { currentProjectStore } from "../state/projects";
 import { useStore } from "../state/store";
 import { toast } from "./toast";
+import { validateInstanceName } from "../lib/instance-name";
 import type { Profile, Network } from "../api/types";
 
 export interface CreateInstanceWizardProps {
@@ -61,7 +62,8 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
     setPicked(null);
   }, [type]);
 
-  const nameValid = /^[a-zA-Z0-9-]+$/.test(name.trim());
+  const nameError = validateInstanceName(name);
+  const nameValid = nameError === null;
   const stage2Complete = picked !== null;
   const stage4Complete = nameValid && picked !== null;
 
@@ -147,7 +149,7 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
                 </button>
               ))}
             </div>
-            <Input label="Name" name="wizard-name" data-testid="wizard-name" value={name} onChange={(e) => setName(e.target.value)} error={name && !nameValid ? "Name must contain only letters, numbers, and hyphens" : undefined} />
+            <Input label="Name" name="wizard-name" data-testid="wizard-name" value={name} onChange={(e) => setName(e.target.value)} error={name && !nameValid ? nameError : undefined} />
             <Input label="Description (optional)" name="wizard-description" data-testid="wizard-description" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
         )}
