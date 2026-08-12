@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { clusterApi } from "../api";
 import { ALL_PROJECTS } from "../api/client";
 import { instancesStore, loadInstances } from "../state/instances";
-import { currentProjectStore } from "../state/projects";
+import { projectsStore, currentProjectStore } from "../state/projects";
 import { useStore } from "../state/store";
 import type { ClusterMember, Instance } from "../api/types";
 
@@ -19,6 +19,7 @@ export interface TreeData {
 
 export function useTreeData(): TreeData {
   const project = useStore(currentProjectStore);
+  const projects = useStore(projectsStore);
   const instances = useStore(instancesStore);
   const [members, setMembers] = useState<ClusterMember[]>([]);
 
@@ -33,6 +34,7 @@ export function useTreeData(): TreeData {
   const groups: ProjectGroup[] = [];
   if (project === ALL_PROJECTS) {
     const byProject = new Map<string, { byMember: Record<string, Instance[]>; unassigned: Instance[] }>();
+    for (const p of projects) byProject.set(p.name, { byMember: {}, unassigned: [] });
     for (const i of Object.values(instances)) {
       const group = byProject.get(i.project) ?? { byMember: {}, unassigned: [] };
       if (i.location && i.location !== "none") (group.byMember[i.location] ??= []).push(i);
