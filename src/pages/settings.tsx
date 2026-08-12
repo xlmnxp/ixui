@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RotateCcw, Save } from "lucide-react";
+import { RotateCcw, Save, Trash2 } from "lucide-react";
 import { serverApi } from "../api";
 import { ApiError } from "../api/client";
 import { KeyValueEditor } from "../components/key-value-editor";
@@ -24,6 +24,7 @@ export function maskConfig(config: Record<string, string>): Record<string, strin
 export function SettingsPage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [original, setOriginal] = useState<Record<string, string>>({});
   const [config, setConfig] = useState<Record<string, string>>({});
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [denied, setDenied] = useState(false);
 
@@ -61,8 +62,18 @@ export function SettingsPage({ registerBar }: { registerBar?: (bar: BarState | n
 
   const reset = () => setConfig(maskConfig(original));
 
+  const removeSelected = () => {
+    if (selectedKeys.length === 0) return;
+    const next = { ...config };
+    for (const key of selectedKeys) delete next[key];
+    setConfig(next);
+    setSelectedKeys([]);
+  };
+
   const barActions = useMemo(
     () => [
+      <Button key="remove" size="sm" variant="secondary" data-testid="settings-remove" onClick={removeSelected} disabled={selectedKeys.length === 0}><Trash2 size={14} /> Remove</Button>,
+      <span key="divider" className="mx-1 h-5 w-px bg-border" />,
       <Button key="reset" size="sm" variant="secondary" data-testid="settings-reset" onClick={reset} disabled={busy}>
         <RotateCcw size={14} /> Reset
       </Button>,
@@ -70,7 +81,7 @@ export function SettingsPage({ registerBar }: { registerBar?: (bar: BarState | n
         <Save size={14} /> Save
       </Button>,
     ],
-    [busy, config, original]
+    [busy, config, original, selectedKeys, removeSelected]
   );
 
   useEffect(() => {
@@ -90,7 +101,7 @@ export function SettingsPage({ registerBar }: { registerBar?: (bar: BarState | n
           {Object.keys(original).length === 0 ? (
             <EmptyState title="—" description="No server config available" />
           ) : (
-            <KeyValueEditor values={config} onChange={setConfig} dataTestId="settings-editor" />
+            <KeyValueEditor values={config} onChange={setConfig} dataTestId="settings-editor" selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} showToolbar={false} />
           )}
         </>
       )}

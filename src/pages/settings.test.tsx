@@ -65,6 +65,19 @@ describe("SettingsPage", () => {
     expect(screen.getByText("10.0.0.1:8443")).toBeInTheDocument();
   });
 
+  it("shows editor actions in the page bar and removes a selected row", async () => {
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+    await screen.findByText("10.0.0.1:8443");
+    expect(screen.getByTestId("settings-remove")).toBeInTheDocument();
+    expect(screen.getByTestId("settings-remove")).toBeDisabled();
+    expect(screen.queryByTestId("kv-add")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("kv-check-core.https_address"));
+    expect(screen.getByTestId("settings-remove")).toBeEnabled();
+    await user.click(screen.getByTestId("settings-remove"));
+    expect(screen.queryByText("10.0.0.1:8443")).not.toBeInTheDocument();
+  });
+
   it("shows permission denied instead of crashing on 403", async () => {
     const { serverApi } = await import("../api");
     vi.mocked(serverApi.info).mockRejectedValueOnce(new ApiError(403, 403, "denied"));
