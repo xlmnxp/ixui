@@ -27,7 +27,7 @@ export function OverviewTab({ instance }: OverviewTabProps) {
     { key: "Last used", value: instance.last_used_at ? new Date(instance.last_used_at).toLocaleString() : "Never" },
     { key: "Profiles", value: instance.profiles.join(", ") || "—" },
     ...(ips.length > 0
-      ? ips.map((ip) => ({ key: "IP address", value: ip }))
+      ? ips.map((ip) => ({ id: `ip-${ip}`, key: "IP address", value: ip }))
       : [{ key: "IP addresses", value: "—" }]),
     { key: "Memory limit", value: instance.config["limits.memory"] ?? "—" },
     { key: "CPU limit", value: instance.config["limits.cpu"] ?? "—" },

@@ -5,6 +5,7 @@ import type { Column } from "./table";
 export interface KeyValueRow {
   key: string;
   value: ReactNode;
+  id?: string;
 }
 
 export interface KeyValueTableProps {
@@ -17,5 +18,5 @@ export function KeyValueTable({ rows, dataTestId = "kv-table" }: KeyValueTablePr
     { key: "property", header: "Property", render: (r) => r.key },
     { key: "value", header: "Value", render: (r) => r.value },
   ];
-  return <Table columns={columns} rows={rows} rowKey={(r) => r.key} emptyMessage="No data" dataTestId={dataTestId} />;
+  return <Table columns={columns} rows={rows} rowKey={(r) => r.id ?? r.key} emptyMessage="No data" dataTestId={dataTestId} />;
 }
