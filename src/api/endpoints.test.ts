@@ -243,7 +243,7 @@ describe("API endpoints", () => {
     const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, [])));
     vi.stubGlobal("fetch", fetchMock);
     await operationsApi.list();
-    expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/operations?all-projects=true&recursion=1");
+    expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/operations?project=default&recursion=1");
     await operationsApi.cancel("op1");
     const [url, init] = fetchMock.mock.calls[1]!;
     expect(url).toBe("/1.0/operations/op1");

@@ -1,7 +1,7 @@
-import { currentProject, type ApiClient } from "./client";
+import { projectFor, type ApiClient } from "./client";
 
 function filesUrl(instance: string, path: string): string {
-  const project = currentProject();
+  const project = projectFor(instance);
   const projectPart = project !== undefined ? `project=${encodeURIComponent(project)}&` : "";
   return `/instances/${instance}/files?${projectPart}path=${encodeURIComponent(path)}`;
 }

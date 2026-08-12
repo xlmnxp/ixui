@@ -5,6 +5,7 @@ import "xterm/css/xterm.css";
 import { Monitor, SquareTerminal, Terminal as TerminalIcon } from "lucide-react";
 import { SpiceMainConn, handle_resize } from "../../lib/spice/src/main.js";
 import { instancesApi } from "../api";
+import { registerInstanceProject } from "../api/client";
 import type { AsyncResponse } from "../api/types";
 import { Button } from "../components/button";
 import { toast } from "../components/toast";
@@ -22,6 +23,12 @@ const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
 export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
+  const project = new URLSearchParams(window.location.search).get("project") ?? undefined;
+
+  useEffect(() => {
+    if (project) registerInstanceProject(instanceName, project);
+  }, [instanceName, project]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [kind, setKind] = useState<"exec" | "console">("exec");
   const [status, setStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");

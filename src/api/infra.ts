@@ -1,4 +1,4 @@
-import { currentProject, projectQuery, type ApiClient } from "./client";
+import { projectListParam, projectQuery, type ApiClient } from "./client";
 import type { Image, ImageAlias, Profile, Network, StoragePool, StorageVolume, Project, AsyncResponse, SyncResponse } from "./types";
 
 export type OpResponse = AsyncResponse | SyncResponse | null;
@@ -7,7 +7,7 @@ export class InfraApi {
   constructor(private client: ApiClient) {}
 
   listImages(): Promise<Image[]> {
-    return this.client.list<Image>("/images", { project: currentProject() });
+    return this.client.list<Image>("/images", projectListParam());
   }
 
   deleteImage(fingerprint: string): Promise<void> {
@@ -35,7 +35,7 @@ export class InfraApi {
   }
 
   listProfiles(): Promise<Profile[]> {
-    return this.client.list<Profile>("/profiles", { project: currentProject() });
+    return this.client.list<Profile>("/profiles", projectListParam());
   }
 
   getProfile(name: string): Promise<Profile> {
@@ -55,7 +55,7 @@ export class InfraApi {
   }
 
   listNetworks(): Promise<Network[]> {
-    return this.client.list<Network>("/networks", { project: currentProject() });
+    return this.client.list<Network>("/networks", projectListParam());
   }
 
   getNetwork(name: string): Promise<Network> {
@@ -75,7 +75,7 @@ export class InfraApi {
   }
 
   listPools(): Promise<StoragePool[]> {
-    return this.client.list<StoragePool>("/storage-pools", { project: currentProject() });
+    return this.client.list<StoragePool>("/storage-pools", projectListParam());
   }
 
   createPool(body: { name: string; driver: string; description?: string }): Promise<OpResponse> {
@@ -87,7 +87,7 @@ export class InfraApi {
   }
 
   listPoolVolumes(pool: string): Promise<StorageVolume[]> {
-    return this.client.list<StorageVolume>(`/storage-pools/${pool}/volumes`, { project: currentProject() });
+    return this.client.list<StorageVolume>(`/storage-pools/${pool}/volumes`, projectListParam());
   }
 
   deletePoolVolume(pool: string, name: string): Promise<void> {

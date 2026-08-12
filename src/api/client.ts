@@ -18,6 +18,28 @@ export function projectQuery(): string {
   return project === undefined ? "" : `?project=${encodeURIComponent(project)}`;
 }
 
+const instanceProjects: Record<string, string> = {};
+
+export function registerInstanceProject(name: string, project: string): void {
+  instanceProjects[name] = project;
+}
+
+export function projectFor(name: string): string | undefined {
+  const current = currentProject();
+  if (current !== undefined) return current;
+  return instanceProjects[name];
+}
+
+export function projectQueryFor(name: string): string {
+  const project = projectFor(name);
+  return project === undefined ? "" : `?project=${encodeURIComponent(project)}`;
+}
+
+export function projectListParam(): { project?: string; allProjects?: boolean } {
+  const project = currentProject();
+  return project === undefined ? { allProjects: true } : { project };
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -77,11 +99,13 @@ export class ApiClient {
     return this.request<T>("GET", path);
   }
 
-  async list<T>(path: string, opts?: { project?: string }): Promise<T[]> {
+  async list<T>(path: string, opts?: { project?: string; allProjects?: boolean }): Promise<T[]> {
     const project = opts?.project;
     const qs = project !== undefined
       ? `?project=${encodeURIComponent(project)}&recursion=1`
-      : "?all-projects=true&recursion=1";
+      : opts?.allProjects
+        ? "?all-projects=true&recursion=1"
+        : "?recursion=1";
     const items = await this.request<(string | T)[]>("GET", `${path}${qs}`);
     return (items ?? []).filter((item): item is T => typeof item !== "string");
   }

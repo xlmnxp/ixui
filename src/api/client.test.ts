@@ -21,6 +21,13 @@ describe("ApiClient", () => {
     const client = new ApiClient("/1.0");
     const data = await client.list<{ name: string }>("/instances");
     expect(data).toEqual([{ name: "web1" }]);
+    expect(fetch).toHaveBeenCalledWith("/1.0/instances?recursion=1", expect.anything());
+  });
+
+  it("lists all projects when the allProjects flag is set", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(200, [])));
+    const client = new ApiClient("/1.0");
+    await client.list("/instances", { allProjects: true });
     expect(fetch).toHaveBeenCalledWith("/1.0/instances?all-projects=true&recursion=1", expect.anything());
   });
 

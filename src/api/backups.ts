@@ -1,4 +1,4 @@
-import { currentProject, projectQuery, type ApiClient } from "./client";
+import { projectFor, projectQueryFor, type ApiClient } from "./client";
 import type { AsyncResponse, SyncResponse } from "./types";
 
 export interface Backup {
@@ -17,18 +17,18 @@ export class BackupsApi {
   constructor(private client: ApiClient) {}
 
   list(instance: string): Promise<Backup[]> {
-    return this.client.list<Backup>(`/instances/${instance}/backups`, { project: currentProject() });
+    return this.client.list<Backup>(`/instances/${instance}/backups`, { project: projectFor(instance) });
   }
 
   create(instance: string, name: string, options?: CreateBackupOptions): Promise<AsyncResponse | SyncResponse | null> {
-    return this.client.post(`/instances/${instance}/backups${projectQuery()}`, { name, ...options });
+    return this.client.post(`/instances/${instance}/backups${projectQueryFor(instance)}`, { name, ...options });
   }
 
   delete(instance: string, name: string): Promise<void> {
-    return this.client.delete(`/instances/${instance}/backups/${name}${projectQuery()}`);
+    return this.client.delete(`/instances/${instance}/backups/${name}${projectQueryFor(instance)}`);
   }
 
   exportUrl(instance: string, name: string): string {
-    return `/1.0/instances/${instance}/backups/${name}/export${projectQuery()}`;
+    return `/1.0/instances/${instance}/backups/${name}/export${projectQueryFor(instance)}`;
   }
 }

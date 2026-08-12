@@ -1,4 +1,4 @@
-import { currentProject, projectQuery, type ApiClient } from "./client";
+import { currentProject, projectListParam, projectQuery, type ApiClient } from "./client";
 import type { StorageVolume, StorageVolumeDetail, AsyncResponse, SyncResponse } from "./types";
 
 export type OpResponse = AsyncResponse | SyncResponse | null;
@@ -14,7 +14,7 @@ export class VolumesApi {
   constructor(private client: ApiClient) {}
 
   list(pool: string): Promise<StorageVolume[]> {
-    return this.client.list<StorageVolume>(`/storage-pools/${pool}/volumes`, { project: currentProject() });
+    return this.client.list<StorageVolume>(`/storage-pools/${pool}/volumes`, projectListParam());
   }
 
   get(pool: string, type: string, name: string): Promise<StorageVolumeDetail> {
@@ -42,9 +42,7 @@ export class VolumesApi {
   }
 
   listSnapshots(pool: string, type: string, name: string): Promise<StorageVolumeDetail[]> {
-    return this.client.list<StorageVolumeDetail>(`/storage-pools/${pool}/volumes/${type}/${name}/snapshots`, {
-      project: currentProject(),
-    });
+    return this.client.list<StorageVolumeDetail>(`/storage-pools/${pool}/volumes/${type}/${name}/snapshots`, { project: currentProject() });
   }
 
   createSnapshot(pool: string, type: string, name: string, snapName: string): Promise<OpResponse> {
@@ -72,7 +70,7 @@ export class VolumesApi {
   }
 
   listBuckets(pool: string): Promise<StorageVolumeDetail[]> {
-    return this.client.list<StorageVolumeDetail>(`/storage-pools/${pool}/buckets`, { project: currentProject() });
+    return this.client.list<StorageVolumeDetail>(`/storage-pools/${pool}/buckets`, projectListParam());
   }
 
   createBucket(pool: string, body: unknown): Promise<OpResponse> {

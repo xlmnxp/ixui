@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Camera, Check, Copy as CopyIcon, Cpu, Download, FileText, Gauge, MoreHorizontal, Plus, MoveRight, Pencil, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
 import { backupsApi, instancesApi, operationsApi } from "../api";
 import type { Instance } from "../api/types";
-import { loadInstances } from "../state/instances";
+import { instancesStore, loadInstances } from "../state/instances";
 import { currentProjectStore } from "../state/projects";
+import { useStore } from "../state/store";
+import { ALL_PROJECTS, registerInstanceProject } from "../api/client";
 import { VerticalTabs } from "../components/vertical-tabs";
 import { SplitPane } from "../components/split-pane";
 import { Button } from "../components/button";
@@ -25,6 +27,9 @@ import { LogsTab } from "./instance/logs";
 export function InstanceDetailPage() {
   const { name = "", tab = "overview" } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const currentProject = useStore(currentProjectStore);
+  const allInstances = useStore(instancesStore);
   const [instance, setInstance] = useState<Instance | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -39,9 +44,20 @@ export function InstanceDetailPage() {
   const [exporting, setExporting] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
+  const explicitProject = searchParams.get("project") ?? undefined;
+  const storeProject = Object.values(allInstances).find((i) => i.name === name)?.project;
+  const apiProject = explicitProject ?? (currentProject === ALL_PROJECTS ? storeProject : currentProject);
+
+  useEffect(() => {
+    if (apiProject) registerInstanceProject(name, apiProject);
+  }, [apiProject, name]);
+
   const refresh = useCallback(() => {
-    instancesApi.get(name).then(setInstance).catch(() => setNotFound(true));
-  }, [name]);
+    setNotFound(false);
+    instancesApi.get(name, apiProject).then(setInstance).catch(() => {
+      if (apiProject !== undefined) setNotFound(true);
+    });
+  }, [name, apiProject]);
 
   useEffect(refresh, [refresh]);
 
@@ -176,7 +192,7 @@ export function InstanceDetailPage() {
             )}
           </div>,
           <Button key="delete" size="sm" variant="ghost" data-testid="detail-action-delete" onClick={() => setDeleteOpen(true)}><Trash2 size={14} /> Delete</Button>,
-          <Button key="terminal" size="sm" variant="secondary" data-testid="detail-terminal" onClick={() => window.open(`/ui/terminal/${instance.name}`, `terminal-${instance.name}`, "width=1000,height=640")}><TerminalIcon size={14} /> Terminal</Button>,
+          <Button key="terminal" size="sm" variant="secondary" data-testid="detail-terminal" onClick={() => window.open(`/ui/terminal/${instance.name}?project=${instance.project}`, `terminal-${instance.name}`, "width=1000,height=640")}><TerminalIcon size={14} /> Terminal</Button>,
         ]}
       />
 

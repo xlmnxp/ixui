@@ -19,7 +19,7 @@ const instanceNode = (i: Instance): TreeNode => ({
   label: (
     <span className="flex items-center gap-2">
       <InstanceIcon status={i.status} type={i.type} />
-      <Link to={`/instances/${i.name}`}>{i.name}</Link>
+      <Link to={`/instances/${i.name}?project=${encodeURIComponent(i.project)}`}>{i.name}</Link>
     </span>
   ),
 });

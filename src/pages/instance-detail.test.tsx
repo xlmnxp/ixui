@@ -151,7 +151,7 @@ describe("InstanceDetailPage", () => {
     );
     await screen.findByText("web1");
     await user.click(screen.getByTestId("detail-terminal"));
-    expect(openSpy).toHaveBeenCalledWith("/ui/terminal/web1", "terminal-web1", "width=1000,height=640");
+    expect(openSpy).toHaveBeenCalledWith("/ui/terminal/web1?project=default", "terminal-web1", "width=1000,height=640");
     restore();
   });
 

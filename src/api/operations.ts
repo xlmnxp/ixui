@@ -1,11 +1,11 @@
-import type { ApiClient } from "./client";
+import { projectListParam, type ApiClient } from "./client";
 import type { Operation } from "./types";
 
 export class OperationsApi {
   constructor(private client: ApiClient) {}
 
   list(): Promise<Operation[]> {
-    return this.client.list<Operation>("/operations");
+    return this.client.list<Operation>("/operations", projectListParam());
   }
 
   get(id: string): Promise<Operation> {

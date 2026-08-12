@@ -92,7 +92,7 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
       key: "actions", header: "", align: "right",
       render: (i) => (
         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-          <Button size="sm" variant="ghost" data-testid={`row-overview-${i.name}`} onClick={() => navigate(`/instances/${i.name}`)} aria-label={`Overview ${i.name}`}><Eye size={14} /></Button>
+          <Button size="sm" variant="ghost" data-testid={`row-overview-${i.name}`} onClick={() => navigate(`/instances/${i.name}?project=${encodeURIComponent(i.project)}`)} aria-label={`Overview ${i.name}`}><Eye size={14} /></Button>
           <Button size="sm" variant="ghost" data-testid={`row-copy-${i.name}`} onClick={() => setCopySource(i)} aria-label={`Copy ${i.name}`}><CopyIcon size={14} /></Button>
           {i.status !== "Started" && i.status !== "Running" && (
             <Button size="sm" variant="ghost" disabled={busy[i.name] ?? false} data-testid={`row-start-${i.name}`} onClick={() => runAction("start", [i.name])}><Play size={14} /> Start</Button>
@@ -141,7 +141,7 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
           rowKey={(i) => i.name}
           selectedKeys={selectedKeys}
           onSelectionChange={setSelectedKeys}
-          onRowClick={(i) => navigate(`/instances/${i.name}`)}
+          onRowClick={(i) => navigate(`/instances/${i.name}?project=${encodeURIComponent(i.project)}`)}
         />
       )}
 

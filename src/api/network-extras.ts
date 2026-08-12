@@ -1,4 +1,4 @@
-import { currentProject, projectQuery, type ApiClient } from "./client";
+import { projectListParam, projectQuery, type ApiClient } from "./client";
 import type { AsyncResponse, SyncResponse } from "./types";
 
 export interface Acl {
@@ -41,7 +41,7 @@ export class NetworkExtrasApi {
   constructor(private client: ApiClient) {}
 
   listAcls(): Promise<Acl[]> {
-    return this.client.list<Acl>("/network-acls", { project: currentProject() });
+    return this.client.list<Acl>("/network-acls", projectListParam());
   }
 
   getAcl(name: string): Promise<Acl> {
@@ -61,7 +61,7 @@ export class NetworkExtrasApi {
   }
 
   listForwards(network: string): Promise<Forward[]> {
-    return this.client.list<Forward>(`/networks/${network}/forwards`, { project: currentProject() });
+    return this.client.list<Forward>(`/networks/${network}/forwards`, projectListParam());
   }
 
   createForward(network: string, body: unknown): Promise<OpResponse> {
@@ -73,11 +73,11 @@ export class NetworkExtrasApi {
   }
 
   listLeases(network: string): Promise<Lease[]> {
-    return this.client.list<Lease>(`/networks/${network}/leases`, { project: currentProject() });
+    return this.client.list<Lease>(`/networks/${network}/leases`, projectListParam());
   }
 
   listZones(): Promise<Zone[]> {
-    return this.client.list<Zone>("/network-zones", { project: currentProject() });
+    return this.client.list<Zone>("/network-zones", projectListParam());
   }
 
   createZone(body: unknown): Promise<OpResponse> {
@@ -89,7 +89,7 @@ export class NetworkExtrasApi {
   }
 
   listAddressSets(): Promise<AddressSet[]> {
-    return this.client.list<AddressSet>("/network-address-sets", { project: currentProject() });
+    return this.client.list<AddressSet>("/network-address-sets", projectListParam());
   }
 
   createAddressSet(body: { name: string; addresses?: string[] }): Promise<OpResponse> {
