@@ -45,8 +45,8 @@ export function KeyValueEditor({
   }, [values]);
 
   const entries = Object.entries(displayValues);
-  const entryCount = entries.length;
-  const allSelected = entryCount > 0 && selectedKeys.length === entryCount;
+  const selectableKeys = [...entries.map(([key]) => key), ...(description !== undefined ? [DESCRIPTION_ROW] : [])];
+  const allSelected = selectableKeys.length > 0 && selectedKeys.length === selectableKeys.length;
 
   const toggle = (key: string) => {
     setSelectedKeys((prev) =>
@@ -55,7 +55,7 @@ export function KeyValueEditor({
   };
 
   const toggleAll = () => {
-    setSelectedKeys(allSelected ? [] : entries.map(([key]) => key));
+    setSelectedKeys(allSelected ? [] : selectableKeys);
   };
 
   const startEditing = (key: string) => {

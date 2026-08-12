@@ -158,6 +158,14 @@ describe("KeyValueEditor", () => {
     expect(screen.getByTestId("kv-check-key2")).toBeChecked();
   });
 
+  it("select-all includes the description row", async () => {
+    const user = userEvent.setup();
+    render(<KeyValueEditor values={{ key1: "a" }} description="A description" onDescriptionChange={() => {}} onChange={() => {}} />);
+    await user.click(screen.getByTestId("kv-select-all"));
+    expect(screen.getByTestId("kv-check-key1")).toBeChecked();
+    expect(screen.getByTestId("kv-check-Description")).toBeChecked();
+  });
+
   it("renders descriptions as helper text under the value", () => {
     render(<KeyValueEditor values={{ key1: "a", key2: "b" }} descriptions={{ key1: "Memory limit" }} onChange={() => {}} />);
     expect(screen.getByText("Memory limit")).toBeInTheDocument();
