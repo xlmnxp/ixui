@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { Boxes, Gauge, Server } from "lucide-react";
 import { clusterApi } from "../api";
@@ -8,6 +8,7 @@ import { KeyValueTable } from "../components/key-value-table";
 import { VerticalTabs } from "../components/vertical-tabs";
 import type { VerticalTabItem } from "../components/vertical-tabs";
 import { InstancesPage } from "./instances";
+import { CreateInstanceWizard } from "../components/create-instance-wizard";
 import type { BarState } from "../components/page-bar";
 
 const tabs: VerticalTabItem[] = [
@@ -23,6 +24,8 @@ export function MemberView() {
   const [members, setMembers] = useState<ClusterMember[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [tabBar, setTabBar] = useState<BarState | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const openCreate = useCallback(() => setWizardOpen(true), []);
 
   useEffect(() => {
     void clusterApi.listMembers().then((m) => {
@@ -69,9 +72,10 @@ export function MemberView() {
               { key: "Message", value: member?.message || "—" },
             ]} />
           )}
-          {tab === "instances" && <InstancesPage location={name} registerBar={setTabBar} />}
+          {tab === "instances" && <InstancesPage location={name} onCreate={openCreate} registerBar={setTabBar} />}
         </div>
       </div>
+      <CreateInstanceWizard open={wizardOpen} onClose={() => setWizardOpen(false)} targetMember={name} />
     </div>
   );
 }

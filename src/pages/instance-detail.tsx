@@ -84,7 +84,7 @@ export function InstanceDetailPage() {
             ? [
                 <Button key="save" size="sm" variant="secondary" data-testid="config-save" disabled={!configActions.dirty} onClick={() => void configActions.save()}><Check size={14} /> Save</Button>,
                 <Button key="cancel" size="sm" variant="ghost" data-testid="config-cancel" onClick={configActions.cancel}><X size={14} /> Cancel</Button>,
-                <Button key="delete" size="sm" variant="ghost" data-testid="config-delete" disabled={configActions.selectedCount === 0} onClick={configActions.removeSelected}><Trash2 size={14} /> Delete</Button>,
+                <Button key="config-delete" size="sm" variant="ghost" data-testid="config-delete" disabled={configActions.selectedCount === 0} onClick={configActions.removeSelected}><Trash2 size={14} /> Delete</Button>,
                 <span key="divider" className="mx-1 h-5 w-px bg-border" />,
               ]
             : []),
