@@ -61,6 +61,11 @@ export function InstanceDetailPage() {
 
   useEffect(refresh, [refresh]);
 
+  const storeInstance = Object.values(allInstances).find((i) => i.name === name);
+  useEffect(() => {
+    if (storeInstance) setInstance(storeInstance);
+  }, [storeInstance, name]);
+
   useEffect(() => {
     if (!moreOpen) return;
     const onDocClick = (e: MouseEvent) => {
