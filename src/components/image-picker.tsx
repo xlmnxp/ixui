@@ -34,6 +34,7 @@ export interface ImagePickerProps {
 
 interface PickerRow {
   key: string;
+  alias: string;
   os: string;
   release: string;
   variant: string;
@@ -63,8 +64,10 @@ function rowsFromCatalog(catalog: SimplestreamsCatalog, type: "container" | "vir
     if (existing && (existing.fingerprints.length >= (product.fingerprints?.length ?? 0) || (existing.size ?? 0) >= (product.size ?? 0))) {
       continue;
     }
+    const declared = product.aliases?.[0];
     byKey.set(key, {
       key,
+      alias: declared ? `${declared}/${product.arch}` : key,
       os: product.os,
       release: product.release,
       variant: product.variant,
@@ -84,6 +87,7 @@ function rowsFromPrefill(): PickerRow[] {
     for (const arch of entry.archs) {
       rows.push({
         key: SIMPLESTREAMS_PREFILL_ALIAS(entry, arch),
+        alias: SIMPLESTREAMS_PREFILL_ALIAS(entry, arch),
         os: entry.os,
         release: entry.release,
         variant: entry.variant,
@@ -190,7 +194,7 @@ export function ImagePicker({ type, cloudInitEnabled, onSelect }: ImagePickerPro
     const local = localImages.find((img) => row.fingerprints.includes(normalizeFingerprint(img.fingerprint)));
     const picked: PickedImage = {
       server: remote,
-      alias: row.key,
+      alias: row.alias,
       protocol: "simplestreams",
       ...(local ? { fingerprint: local.fingerprint } : {}),
     };

@@ -9,6 +9,7 @@ export interface SimplestreamsProduct {
   itemTypes: string[];
   size: number;
   path: string;
+  aliases?: string[];
   fingerprints?: string[];
 }
 
@@ -28,6 +29,7 @@ interface SimplestreamsProductRaw {
   version?: string;
   variant?: string;
   arch?: string;
+  aliases?: string;
   variants?: Record<string, { items?: Record<string, SimplestreamsItem> }>;
   versions?: Record<string, { items?: Record<string, SimplestreamsItem> } | SimplestreamsItem>;
 }
@@ -71,6 +73,9 @@ function parseProduct(key: string, raw: SimplestreamsProductRaw): SimplestreamsP
     itemTypes: itemKeys,
     size: firstItem?.size ?? 0,
     path: firstItem?.path ?? "",
+    ...((raw.aliases ?? "").split(",").map((s) => s.trim()).filter(Boolean).length > 0
+      ? { aliases: (raw.aliases ?? "").split(",").map((s) => s.trim()).filter(Boolean) }
+      : {}),
     ...(fingerprints.length > 0 ? { fingerprints } : {}),
   };
 }

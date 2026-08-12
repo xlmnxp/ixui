@@ -80,7 +80,7 @@ interface CatalogCacheEntry {
 const memoryCache = new Map<string, CatalogCacheEntry>();
 
 function cacheKey(server: string): string {
-  return `ixui.catalog.v2.${server}`;
+  return `ixui.catalog.v3.${server}`;
 }
 
 function readCache(server: string): CatalogCacheEntry | null {
