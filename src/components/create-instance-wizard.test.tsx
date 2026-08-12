@@ -76,6 +76,7 @@ describe("CreateInstanceWizard", () => {
     const { instancesApi, operationsApi } = await import("../api");
     render(<CreateInstanceWizard open onClose={onClose} />);
     await goToStage4(user);
+    expect(screen.getByTestId("wizard-summary")).toHaveTextContent("Project: default");
     expect(screen.getByTestId("wizard-summary")).toHaveTextContent("web1");
     expect(screen.getByTestId("wizard-summary")).toHaveTextContent("ubuntu/24.04/cloud/amd64");
     await user.click(screen.getByTestId("wizard-create"));
@@ -83,7 +84,7 @@ describe("CreateInstanceWizard", () => {
       name: "web1",
       type: "container",
       source: { type: "image", server: SIMPLE_STREAMS_DEFAULT, protocol: "simplestreams", alias: "ubuntu/24.04/cloud/amd64" },
-    }), undefined));
+    }), undefined, "default"));
     expect(operationsApi.wait).toHaveBeenCalled();
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(vi.mocked(instancesApi.create).mock.calls[0]![0]).not.toHaveProperty("project");
@@ -103,7 +104,24 @@ describe("CreateInstanceWizard", () => {
     await user.click(screen.getByTestId("wizard-create"));
     await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({
       source: { type: "image", fingerprint: "f1" },
-    }), undefined));
+    }), undefined, "default"));
+  });
+
+  it("creates in the selected project", async () => {
+    const user = userEvent.setup();
+    const { instancesApi, infraApi } = await import("../api");
+    const { projectsStore } = await import("../state/projects");
+    projectsStore.setState([
+      { name: "default", description: "", config: {} },
+      { name: "prod", description: "", config: {} },
+    ]);
+    render(<CreateInstanceWizard open onClose={() => {}} />);
+    await user.selectOptions(screen.getByTestId("wizard-project"), "prod");
+    await goToStage4(user);
+    expect(screen.getByTestId("wizard-summary")).toHaveTextContent("Project: prod");
+    await user.click(screen.getByTestId("wizard-create"));
+    await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: "web1" }), undefined, "prod"));
+    expect(infraApi.listProfiles).toHaveBeenCalledWith("prod");
   });
 
   it("passes the target member to create and shows it in the summary", async () => {
@@ -113,7 +131,7 @@ describe("CreateInstanceWizard", () => {
     await goToStage4(user);
     expect(screen.getByText("Target member:")).toBeInTheDocument();
     await user.click(screen.getByTestId("wizard-create"));
-    await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: "web1" }), "incus-1"));
+    await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: "web1" }), "incus-1", "default"));
   });
 
   it("toasts an error and does not close when the async create fails", async () => {

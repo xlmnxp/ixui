@@ -32,9 +32,10 @@ export class InstancesApi {
     return this.client.get<Instance>(`/instances/${name}${project !== undefined ? `?project=${encodeURIComponent(project)}` : projectQueryFor(name)}`);
   }
 
-  create(body: CreateInstanceBody, target?: string): Promise<AsyncResponse | SyncResponse | null> {
+  create(body: CreateInstanceBody, target?: string, project?: string): Promise<AsyncResponse | SyncResponse | null> {
+    const projectQueryString = project !== undefined ? `?project=${encodeURIComponent(project)}` : projectQuery();
     const targetQuery = target ? `&target=${encodeURIComponent(target)}` : "";
-    return this.client.post(`/instances${projectQuery()}${targetQuery}`, body);
+    return this.client.post(`/instances${projectQueryString}${targetQuery}`, body);
   }
 
   update(

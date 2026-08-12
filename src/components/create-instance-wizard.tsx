@@ -9,7 +9,8 @@ import { ImagePicker } from "./image-picker";
 import type { PickedImage } from "./image-picker";
 import { instancesApi, operationsApi, infraApi } from "../api";
 import { loadInstances } from "../state/instances";
-import { currentProjectStore } from "../state/projects";
+import { projectsStore, currentProjectStore } from "../state/projects";
+import { ALL_PROJECTS } from "../api/client";
 import { useStore } from "../state/store";
 import { toast } from "./toast";
 import { validateInstanceName } from "../lib/instance-name";
@@ -24,7 +25,9 @@ export interface CreateInstanceWizardProps {
 const LIMIT_KEYS: Record<"memory" | "cpu", string> = { memory: "limits.memory", cpu: "limits.cpu" };
 
 export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInstanceWizardProps) {
-  const project = useStore(currentProjectStore);
+  const currentProject = useStore(currentProjectStore);
+  const projects = useStore(projectsStore);
+  const [project, setProject] = useState<string>(currentProject === ALL_PROJECTS ? "default" : currentProject);
   const [stage, setStage] = useState(1);
   const [type, setType] = useState<"container" | "virtual-machine">("container");
   const [name, setName] = useState("");
@@ -50,13 +53,19 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
     setCpu("");
     setNetwork("");
     setBusy(false);
-    void Promise.all([infraApi.listProfiles(), infraApi.listNetworks()])
+    setProject(currentProject === ALL_PROJECTS ? "default" : currentProject);
+  }, [open, currentProject]);
+
+  useEffect(() => {
+    if (!open) return;
+    void Promise.all([infraApi.listProfiles(project), infraApi.listNetworks(project)])
       .then(([profs, nets]) => {
         setProfileList(profs);
         setNetworkList(nets);
+        if (!profs.some((p) => p.name === "default")) setProfiles([]);
       })
       .catch(() => {});
-  }, [open]);
+  }, [open, project]);
 
   useEffect(() => {
     setPicked(null);
@@ -103,7 +112,7 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
         source,
         config,
         devices,
-      }, targetMember);
+      }, targetMember, project);
       if (result && "type" in result && result.type === "async") {
         const op = await operationsApi.wait(result.operation);
         if (op.status !== "Success") throw new Error(op.err ?? "Create failed");
@@ -151,6 +160,11 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
             </div>
             <Input label="Name" name="wizard-name" data-testid="wizard-name" value={name} onChange={(e) => setName(e.target.value)} error={name && !nameValid ? nameError : undefined} />
             <Input label="Description (optional)" name="wizard-description" data-testid="wizard-description" value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Select label="Project" name="wizard-project" data-testid="wizard-project" value={project} onChange={(e) => setProject(e.target.value)}>
+              {projects.map((p) => (
+                <option key={p.name} value={p.name}>{p.name}</option>
+              ))}
+            </Select>
           </div>
         )}
         {stage === 2 && (
@@ -189,6 +203,7 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
         {stage === 4 && (
           <div data-testid="wizard-summary" className="space-y-1.5 text-[13px]">
             <p><span className="text-text-tertiary">Name:</span> {name.trim()}</p>
+            <p><span className="text-text-tertiary">Project:</span> {project}</p>
             <p><span className="text-text-tertiary">Type:</span> {type === "container" ? "Container" : "Virtual machine"}</p>
             <p>
               <span className="text-text-tertiary">Image:</span>{" "}

@@ -44,7 +44,7 @@ export const PREFILL_IMAGES: PrefillImage[] = [
 ];
 
 export function SIMPLESTREAMS_PREFILL_ALIAS(entry: PrefillImage, arch: string): string {
-  return `${entry.os}/${entry.release}/${entry.variant}/${arch}`;
+  return [entry.os, entry.release, entry.variant, arch].filter(Boolean).join("/");
 }
 
 const REMOTES_KEY = "ixui.custom-remotes";
@@ -80,7 +80,7 @@ interface CatalogCacheEntry {
 const memoryCache = new Map<string, CatalogCacheEntry>();
 
 function cacheKey(server: string): string {
-  return `ixui.catalog.${server}`;
+  return `ixui.catalog.v2.${server}`;
 }
 
 function readCache(server: string): CatalogCacheEntry | null {

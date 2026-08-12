@@ -58,7 +58,7 @@ function rowsFromCatalog(catalog: SimplestreamsCatalog, type: "container" | "vir
   const byKey = new Map<string, PickerRow>();
   for (const product of Object.values(catalog.products)) {
     if (!productTypes(product.itemTypes).includes(type)) continue;
-    const key = `${product.os}/${product.release}/${product.variant}/${product.arch}`;
+    const key = [product.os, product.release, product.variant, product.arch].map((s) => s.toLowerCase()).filter(Boolean).join("/");
     const existing = byKey.get(key);
     if (existing && (existing.fingerprints.length >= (product.fingerprints?.length ?? 0) || (existing.size ?? 0) >= (product.size ?? 0))) {
       continue;

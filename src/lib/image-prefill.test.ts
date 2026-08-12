@@ -107,7 +107,7 @@ describe("image-prefill", () => {
           },
         },
       };
-      localStorage.setItem("ixui.catalog.https://images.b.example.com", JSON.stringify({ catalog }));
+      localStorage.setItem("ixui.catalog.v2.https://images.b.example.com", JSON.stringify({ catalog }));
       vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
       const result = await loadCatalog("https://images.b.example.com");
       expect(result?.products["debian-13-cloud-amd64"]?.fingerprints).toEqual(["fp1"]);

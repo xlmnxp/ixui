@@ -34,8 +34,8 @@ export class InfraApi {
     return this.client.delete(`/images/aliases/${encodeURIComponent(name)}`);
   }
 
-  listProfiles(): Promise<Profile[]> {
-    return this.client.list<Profile>("/profiles", projectListParam());
+  listProfiles(project?: string): Promise<Profile[]> {
+    return this.client.list<Profile>("/profiles", project !== undefined ? { project } : projectListParam());
   }
 
   getProfile(name: string): Promise<Profile> {
@@ -54,8 +54,8 @@ export class InfraApi {
     return this.client.delete(`/profiles/${name}${projectQuery()}`);
   }
 
-  listNetworks(): Promise<Network[]> {
-    return this.client.list<Network>("/networks", projectListParam());
+  listNetworks(project?: string): Promise<Network[]> {
+    return this.client.list<Network>("/networks", project !== undefined ? { project } : projectListParam());
   }
 
   getNetwork(name: string): Promise<Network> {
