@@ -69,6 +69,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
   const [historyIndex, setHistoryIndex] = useState(0);
   const [editingPath, setEditingPath] = useState(false);
   const [pathDraft, setPathDraft] = useState("");
+  const [pathError, setPathError] = useState<string | null>(null);
   const [entries, setEntries] = useState<string[] | null>(null);
   const [stats, setStats] = useState<Record<string, FileStat>>({});
   const [editPath, setEditPath] = useState<string | null>(null);
@@ -80,6 +81,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const uploadRef = useRef<HTMLInputElement>(null);
+  const pathBusyRef = useRef(false);
 
   const navigateTo = useCallback((path: string) => {
     if (history[historyIndex] === path) return;
@@ -103,11 +105,33 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
     setCwd(history[idx] ?? "/");
   }, [history, historyIndex]);
 
-  const commitPath = useCallback(() => {
-    setEditingPath(false);
+  const commitPath = useCallback(async () => {
     const path = normalizeTypedPath(pathDraft);
-    if (path !== cwd) navigateTo(path);
-  }, [pathDraft, cwd, navigateTo]);
+    if (path === cwd) {
+      setEditingPath(false);
+      setPathError(null);
+      return;
+    }
+    pathBusyRef.current = true;
+    setPathError(null);
+    try {
+      const result = await filesApi.read(instanceName, path, project);
+      if (Array.isArray(result)) {
+        navigateTo(path);
+      } else {
+        // The path points at a file: jump to its parent and open it in the editor.
+        navigateTo(parentOf(path));
+        setEditPath(path);
+        setEditContent(result);
+      }
+      setEditingPath(false);
+      setPathError(null);
+    } catch {
+      setPathError(`Path not found: ${path}`);
+    } finally {
+      pathBusyRef.current = false;
+    }
+  }, [pathDraft, cwd, navigateTo, instanceName, project]);
 
   const sweepStats = useCallback((dir: string, names: string[]) => {
     void Promise.all(
@@ -331,7 +355,8 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
 
   return (
     <div data-testid="files-tab">
-      <div className="sticky top-0 z-10 flex items-center gap-1.5 border-b border-border bg-surface-900 px-3 py-2" data-testid="files-navbar">
+      <div className="sticky top-0 z-10 bg-surface-900" data-testid="files-navbar">
+      <div className="flex items-center gap-1.5 border-b border-border px-3 py-2">
         <Button size="sm" variant="ghost" aria-label="Back" data-testid="files-back" disabled={historyIndex <= 0} onClick={goBack}><ArrowLeft size={14} /></Button>
         <Button size="sm" variant="ghost" aria-label="Forward" data-testid="files-forward" disabled={historyIndex >= history.length - 1} onClick={goForward}><ArrowRight size={14} /></Button>
         <Button size="sm" variant="ghost" data-testid="files-up" disabled={cwd === "/"} onClick={() => navigateTo(parentOf(cwd))}><ArrowUp size={14} /></Button>
@@ -340,15 +365,27 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
           <input
             autoFocus
             data-testid="files-path-input"
+            aria-invalid={pathError !== null}
             value={pathDraft}
-            onChange={(e) => setPathDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") commitPath();
-              else if (e.key === "Escape") setEditingPath(false);
+            onChange={(e) => {
+              setPathDraft(e.target.value);
+              if (pathError) setPathError(null);
             }}
-            onBlur={() => setEditingPath(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void commitPath();
+              else if (e.key === "Escape") {
+                setEditingPath(false);
+                setPathError(null);
+              }
+            }}
+            onBlur={() => {
+              if (!pathBusyRef.current) {
+                setEditingPath(false);
+                setPathError(null);
+              }
+            }}
             placeholder="/path/to/directory"
-            className="min-w-0 flex-1 rounded border border-accent-500 bg-surface-700 px-2 py-1.5 font-mono text-xs text-text-primary outline-none placeholder:text-text-tertiary"
+            className={`min-w-0 flex-1 rounded border bg-surface-700 px-2 py-1.5 font-mono text-xs text-text-primary outline-none placeholder:text-text-tertiary ${pathError ? "border-danger focus:border-danger" : "border-accent-500"}`}
           />
         ) : (
           <div
@@ -402,6 +439,17 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
         <Button size="sm" variant="ghost" data-testid="files-upload" onClick={() => uploadRef.current?.click()}><Upload size={14} /> Upload</Button>
         <Button size="sm" variant="ghost" data-testid="files-refresh" onClick={refresh}><RefreshCw size={14} /></Button>
         <input ref={uploadRef} type="file" data-testid="files-upload-input" className="hidden" onChange={(e) => void upload(e.target.files?.[0])} />
+      </div>
+
+      {pathError && (
+        <div
+          role="alert"
+          data-testid="files-path-error"
+          className="border-b border-danger/40 bg-danger/10 px-3 py-1.5 text-xs text-red-300"
+        >
+          {pathError}
+        </div>
+      )}
       </div>
 
       {sorted.length === 0 ? (

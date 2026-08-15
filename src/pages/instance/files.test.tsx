@@ -238,6 +238,66 @@ describe("FilesTab", () => {
     expect(filesApi.read).not.toHaveBeenCalledWith("web1", "/etc", "default");
   });
 
+  it("shows an error in the field for a nonexistent path", async () => {
+    const user = userEvent.setup();
+    vi.mocked(filesApi.read).mockImplementation((_i, path) =>
+      path === "/nope"
+        ? Promise.reject(new Error("not found"))
+        : Promise.resolve(["etc"])
+    );
+    renderTab();
+    await screen.findByTestId("files-table");
+    await user.click(screen.getByTestId("files-breadcrumbs"));
+    const input = screen.getByTestId("files-path-input");
+    await user.clear(input);
+    await user.type(input, "/nope{Enter}");
+    expect(await screen.findByTestId("files-path-error")).toHaveTextContent("Path not found: /nope");
+    // The input stays open with an error highlight so the user can correct it.
+    expect(screen.getByTestId("files-path-input")).toBeInTheDocument();
+    expect(screen.getByTestId("files-path-input").className).toContain("border-danger");
+    expect(screen.getByTestId("files-path-input")).toHaveAttribute("aria-invalid", "true");
+    // No navigation happened: still at the root.
+    expect(screen.queryByTestId("crumb-0")).not.toBeInTheDocument();
+  });
+
+  it("clears the path error while typing", async () => {
+    const user = userEvent.setup();
+    vi.mocked(filesApi.read).mockImplementation((_i, path) =>
+      path === "/nope"
+        ? Promise.reject(new Error("not found"))
+        : Promise.resolve(["etc"])
+    );
+    renderTab();
+    await screen.findByTestId("files-table");
+    await user.click(screen.getByTestId("files-breadcrumbs"));
+    const input = screen.getByTestId("files-path-input");
+    await user.clear(input);
+    await user.type(input, "/nope{Enter}");
+    expect(await screen.findByTestId("files-path-error")).toBeInTheDocument();
+    await user.type(input, "x");
+    expect(screen.queryByTestId("files-path-error")).not.toBeInTheDocument();
+    expect(screen.getByTestId("files-path-input").className).not.toContain("border-danger");
+  });
+
+  it("entering a file path opens its parent directory and the editor", async () => {
+    const user = userEvent.setup();
+    vi.mocked(filesApi.read).mockImplementation((_i, path) => {
+      if (path === "/") return Promise.resolve(["etc"]);
+      if (path === "/etc") return Promise.resolve(["motd"]);
+      if (path === "/etc/motd") return Promise.resolve("hello");
+      return Promise.resolve([]);
+    });
+    renderTab();
+    await screen.findByTestId("files-table");
+    await user.click(screen.getByTestId("files-breadcrumbs"));
+    const input = screen.getByTestId("files-path-input");
+    await user.clear(input);
+    await user.type(input, "/etc/motd{Enter}");
+    await waitFor(() => expect(screen.getByTestId("crumb-0")).toHaveTextContent("etc"));
+    expect(await screen.findByTestId("file-content")).toHaveValue("hello");
+    expect(screen.queryByTestId("files-path-error")).not.toBeInTheDocument();
+  });
+
   it("opens a file in the editor and saves via put", async () => {
     const user = userEvent.setup();
     vi.mocked(filesApi.read).mockImplementation((_i, path) =>
