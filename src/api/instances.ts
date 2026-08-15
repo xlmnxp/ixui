@@ -81,6 +81,13 @@ export class InstancesApi {
     return this.client.post(`/instances/${name}/console${projectQueryFor(name, project)}`, { width, height, type: "vga", force: true });
   }
 
+  /** URL of the VM display screenshot (GET console with type=vga returns image/png). */
+  screenshotUrl(name: string, project?: string): string {
+    const query = projectQueryFor(name, project);
+    const separator = query === "" ? "?" : `${query}&`;
+    return `/1.0/instances/${name}/console${separator}type=vga`;
+  }
+
   listSnapshots(name: string, project?: string): Promise<Instance[]> {
     return this.client.list<Instance>(`/instances/${name}/snapshots`, { project: project ?? projectFor(name) });
   }
