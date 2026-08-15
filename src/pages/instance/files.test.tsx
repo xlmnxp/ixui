@@ -54,8 +54,16 @@ describe("FilesTab", () => {
     expect(screen.getByTestId("file-row-motd")).toBeInTheDocument();
     expect(screen.getByTestId("file-edit-motd")).toBeInTheDocument();
     expect(screen.getByTestId("file-download-motd")).toBeInTheDocument();
-    expect(screen.getByTestId("files-cwd")).toHaveTextContent("/");
+    expect(screen.getByTestId("crumb-root")).toHaveTextContent("/");
+    expect(screen.getByTestId("files-back")).toBeDisabled();
+    expect(screen.getByTestId("files-forward")).toBeDisabled();
     expect(filesApi.read).toHaveBeenCalledWith("web1", "/", "default");
+  });
+
+  it("keeps the navigation bar sticky at the top", async () => {
+    renderTab();
+    await screen.findByTestId("files-table");
+    expect(screen.getByTestId("files-navbar").className).toContain("sticky");
   });
 
   it("renders type icons from the stat sweep", async () => {
@@ -105,7 +113,7 @@ describe("FilesTab", () => {
     renderTab();
     await user.click(await screen.findByTestId("file-row-etc"));
     expect(await screen.findByTestId("file-row-nginx.conf")).toBeInTheDocument();
-    expect(screen.getByTestId("files-cwd")).toHaveTextContent("/etc");
+    expect(await screen.findByTestId("crumb-0")).toHaveTextContent("etc");
   });
 
   it("moves up to the parent directory", async () => {
@@ -115,9 +123,54 @@ describe("FilesTab", () => {
     );
     renderTab();
     await user.click(await screen.findByTestId("file-row-etc"));
-    await waitFor(() => expect(screen.getByTestId("files-cwd")).toHaveTextContent("/etc"));
+    await waitFor(() => expect(screen.getByTestId("crumb-0")).toHaveTextContent("etc"));
     await user.click(screen.getByTestId("files-up"));
-    await waitFor(() => expect(screen.getByTestId("files-cwd")).toHaveTextContent("/"));
+    await waitFor(() => expect(screen.queryByTestId("crumb-0")).not.toBeInTheDocument());
+  });
+
+  it("navigates back and forward through history", async () => {
+    const user = userEvent.setup();
+    vi.mocked(filesApi.stat).mockImplementation(() =>
+      Promise.resolve({ type: "directory", size: null, modified: null })
+    );
+    vi.mocked(filesApi.read).mockImplementation((_i, path) =>
+      Promise.resolve(path === "/" ? ["etc"] : path === "/etc" ? ["nginx"] : [])
+    );
+    renderTab();
+    await user.click(await screen.findByTestId("file-row-etc"));
+    await screen.findByTestId("file-row-nginx");
+    await user.click(screen.getByTestId("file-row-nginx"));
+    await waitFor(() => expect(screen.getByTestId("crumb-1")).toHaveTextContent("nginx"));
+
+    await user.click(screen.getByTestId("files-back"));
+    await waitFor(() => expect(screen.queryByTestId("crumb-1")).not.toBeInTheDocument());
+    expect(screen.getByTestId("crumb-0")).toHaveTextContent("etc");
+
+    await user.click(screen.getByTestId("files-forward"));
+    await waitFor(() => expect(screen.getByTestId("crumb-1")).toHaveTextContent("nginx"));
+
+    // Back is still enabled; forward is disabled at the tip of the history.
+    expect(screen.getByTestId("files-back")).toBeEnabled();
+    expect(screen.getByTestId("files-forward")).toBeDisabled();
+  });
+
+  it("navigates via breadcrumb segments", async () => {
+    const user = userEvent.setup();
+    vi.mocked(filesApi.stat).mockImplementation(() =>
+      Promise.resolve({ type: "directory", size: null, modified: null })
+    );
+    vi.mocked(filesApi.read).mockImplementation((_i, path) =>
+      Promise.resolve(path === "/" ? ["etc"] : path === "/etc" ? ["nginx"] : [])
+    );
+    renderTab();
+    await user.click(await screen.findByTestId("file-row-etc"));
+    await screen.findByTestId("file-row-nginx");
+    await user.click(screen.getByTestId("file-row-nginx"));
+    await waitFor(() => expect(screen.getByTestId("crumb-1")).toHaveTextContent("nginx"));
+
+    await user.click(screen.getByTestId("crumb-root"));
+    await waitFor(() => expect(screen.queryByTestId("crumb-0")).not.toBeInTheDocument());
+    expect(await screen.findByTestId("file-row-etc")).toBeInTheDocument();
   });
 
   it("opens a file in the editor and saves via put", async () => {

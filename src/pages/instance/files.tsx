@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, Check, Download, File, FilePlus2, FileText, Folder, FolderPlus, Link2, Pencil, RefreshCw, Trash2, Upload, X } from "lucide-react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, ArrowUp, Check, ChevronRight, Download, File, FilePlus2, FileText, Folder, FolderPlus, Link2, Pencil, RefreshCw, Trash2, Upload, X } from "lucide-react";
 import { filesApi } from "../../api";
 import type { FileEntryType, FileStat } from "../../api/files";
 import { Table } from "../../components/table";
@@ -55,6 +55,8 @@ export function basenameOf(path: string): string {
 
 export function FilesTab({ instanceName, project }: FilesTabProps) {
   const [cwd, setCwd] = useState("/");
+  const [history, setHistory] = useState<string[]>(["/"]);
+  const [historyIndex, setHistoryIndex] = useState(0);
   const [entries, setEntries] = useState<string[] | null>(null);
   const [stats, setStats] = useState<Record<string, FileStat>>({});
   const [editPath, setEditPath] = useState<string | null>(null);
@@ -66,6 +68,28 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const uploadRef = useRef<HTMLInputElement>(null);
+
+  const navigateTo = useCallback((path: string) => {
+    if (history[historyIndex] === path) return;
+    const next = [...history.slice(0, historyIndex + 1), path];
+    setHistory(next);
+    setHistoryIndex(next.length - 1);
+    setCwd(path);
+  }, [history, historyIndex]);
+
+  const goBack = useCallback(() => {
+    if (historyIndex <= 0) return;
+    const idx = historyIndex - 1;
+    setHistoryIndex(idx);
+    setCwd(history[idx] ?? "/");
+  }, [history, historyIndex]);
+
+  const goForward = useCallback(() => {
+    if (historyIndex >= history.length - 1) return;
+    const idx = historyIndex + 1;
+    setHistoryIndex(idx);
+    setCwd(history[idx] ?? "/");
+  }, [history, historyIndex]);
 
   const sweepStats = useCallback((dir: string, names: string[]) => {
     void Promise.all(
@@ -108,13 +132,13 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
   const openEntry = async (name: string) => {
     const path = joinPath(cwd, name);
     if (stats[name]?.type === "directory") {
-      setCwd(path);
+      navigateTo(path);
       return;
     }
     try {
       const result = await filesApi.read(instanceName, path, project);
       if (Array.isArray(result)) {
-        setCwd(path);
+        navigateTo(path);
       } else {
         setEditPath(path);
         setEditContent(result);
@@ -285,17 +309,47 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
     },
   ];
 
+  const crumbs = cwd === "/" ? [] : cwd.split("/").slice(1);
+
   return (
-    <div className="space-y-3" data-testid="files-tab">
-      <div className="flex items-center gap-2 px-3 pt-3">
-        <Button size="sm" variant="ghost" data-testid="files-up" disabled={cwd === "/"} onClick={() => setCwd(parentOf(cwd))}><ArrowUp size={14} /> Up</Button>
-        <Button size="sm" variant="ghost" data-testid="files-refresh" onClick={refresh}><RefreshCw size={14} /> Refresh</Button>
-        <span className="mx-1 h-5 w-px bg-border" />
+    <div data-testid="files-tab">
+      <div className="sticky top-0 z-10 flex items-center gap-1.5 border-b border-border bg-surface-900 px-3 py-2" data-testid="files-navbar">
+        <Button size="sm" variant="ghost" aria-label="Back" data-testid="files-back" disabled={historyIndex <= 0} onClick={goBack}><ArrowLeft size={14} /></Button>
+        <Button size="sm" variant="ghost" aria-label="Forward" data-testid="files-forward" disabled={historyIndex >= history.length - 1} onClick={goForward}><ArrowRight size={14} /></Button>
+        <Button size="sm" variant="ghost" data-testid="files-up" disabled={cwd === "/"} onClick={() => navigateTo(parentOf(cwd))}><ArrowUp size={14} /></Button>
+
+        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden rounded border border-border bg-surface-700 px-2 py-1.5" data-testid="files-breadcrumbs">
+          <button
+            type="button"
+            data-testid="crumb-root"
+            onClick={() => navigateTo("/")}
+            className="shrink-0 rounded px-1 font-mono text-xs text-text-secondary hover:bg-surface-600 hover:text-text-primary"
+          >
+            /
+          </button>
+          {crumbs.map((segment, i) => {
+            const path = "/" + crumbs.slice(0, i + 1).join("/");
+            return (
+              <Fragment key={path}>
+                <ChevronRight size={12} className="shrink-0 text-text-tertiary" />
+                <button
+                  type="button"
+                  data-testid={`crumb-${i}`}
+                  onClick={() => navigateTo(path)}
+                  className={`shrink-0 rounded px-1 font-mono text-xs ${i === crumbs.length - 1 ? "text-text-primary" : "text-text-secondary hover:bg-surface-600 hover:text-text-primary"}`}
+                >
+                  {segment}
+                </button>
+              </Fragment>
+            );
+          })}
+        </div>
+
         <Button size="sm" variant="ghost" data-testid="files-new-file" onClick={() => { setNewOpen(true); setNewName(""); setEditContent(""); setEditPath(""); }}><FilePlus2 size={14} /> New file</Button>
         <Button size="sm" variant="ghost" data-testid="files-new-dir" onClick={() => { setMkdirOpen(true); setMkdirName(""); }}><FolderPlus size={14} /> New folder</Button>
         <Button size="sm" variant="ghost" data-testid="files-upload" onClick={() => uploadRef.current?.click()}><Upload size={14} /> Upload</Button>
+        <Button size="sm" variant="ghost" data-testid="files-refresh" onClick={refresh}><RefreshCw size={14} /></Button>
         <input ref={uploadRef} type="file" data-testid="files-upload-input" className="hidden" onChange={(e) => void upload(e.target.files?.[0])} />
-        <span className="ml-auto font-mono text-xs text-text-tertiary" data-testid="files-cwd">{cwd}</span>
       </div>
 
       {sorted.length === 0 ? (
