@@ -14,7 +14,7 @@ export interface VerticalTabsProps {
 
 export function VerticalTabs({ tabs, active, onChange }: VerticalTabsProps) {
   return (
-    <div role="tablist" aria-orientation="vertical" data-testid="vertical-tabs" className="flex h-full flex-col border-r border-border bg-surface-900">
+    <div role="tablist" aria-orientation="vertical" data-testid="vertical-tabs" className="flex h-full flex-col overflow-y-auto border-r border-border bg-surface-900">
       {tabs.map((t) => (
         <button
           key={t.key}
