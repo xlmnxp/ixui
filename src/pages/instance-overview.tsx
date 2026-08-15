@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Monitor, RefreshCw } from "lucide-react";
 import { instancesApi } from "../api";
 import type { Instance, InstanceStateInfo } from "../api/types";
 import { Badge } from "../components/badge";
@@ -90,12 +90,29 @@ export function OverviewTab({ instance }: OverviewTabProps) {
               </span>
             )}
             {screenshotState === "ready" && screenshot && (
-              <img
-                src={screenshot.url}
-                alt={`${instance.name} console`}
-                data-testid="screenshot-image"
-                className="max-h-36 w-auto max-w-full rounded"
-              />
+              <button
+                type="button"
+                data-testid="screenshot-open-console"
+                aria-label={`Open console for ${instance.name}`}
+                onClick={() =>
+                  window.open(
+                    `/ui/terminal/${instance.name}?project=${encodeURIComponent(instance.project)}`,
+                    `terminal-${instance.name}`,
+                    "width=1000,height=640"
+                  )
+                }
+                className="group relative cursor-pointer"
+              >
+                <img
+                  src={screenshot.url}
+                  alt={`${instance.name} console`}
+                  data-testid="screenshot-image"
+                  className="max-h-36 w-auto max-w-full rounded"
+                />
+                <span className="pointer-events-none absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded bg-surface-900/90 px-1.5 py-0.5 text-[11px] text-text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                  <Monitor size={12} /> Click to open console
+                </span>
+              </button>
             )}
             {screenshotState === "error" && (
               <p className="text-xs text-text-secondary" data-testid="screenshot-error">
