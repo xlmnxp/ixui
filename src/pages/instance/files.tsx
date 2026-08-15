@@ -286,8 +286,8 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
   ];
 
   return (
-    <div className="space-y-3 p-3" data-testid="files-tab">
-      <div className="flex items-center gap-2">
+    <div className="space-y-3" data-testid="files-tab">
+      <div className="flex items-center gap-2 px-3 pt-3">
         <Button size="sm" variant="ghost" data-testid="files-up" disabled={cwd === "/"} onClick={() => setCwd(parentOf(cwd))}><ArrowUp size={14} /> Up</Button>
         <Button size="sm" variant="ghost" data-testid="files-refresh" onClick={refresh}><RefreshCw size={14} /> Refresh</Button>
         <span className="mx-1 h-5 w-px bg-border" />
@@ -299,7 +299,9 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
       </div>
 
       {sorted.length === 0 ? (
-        <EmptyState title="Empty directory" description="No files or folders here." />
+        <div className="px-3 pb-3">
+          <EmptyState title="Empty directory" description="No files or folders here." />
+        </div>
       ) : (
         <Table columns={columns} rows={sorted} rowKey={(e) => e} dataTestId="files-table" />
       )}
