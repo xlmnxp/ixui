@@ -28,6 +28,9 @@ const textDecoder = new TextDecoder();
 /** Shells to try for the exec console, in order: bash first, then sh. */
 const SHELL_CANDIDATES: string[][] = [["/bin/bash"], ["/bin/sh"]];
 
+/** How long a connection may take to reach "connected" before we give up. */
+const CONNECT_TIMEOUT_MS = 20_000;
+
 export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const project = new URLSearchParams(window.location.search).get("project") ?? undefined;
 
@@ -44,8 +47,27 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const spiceRef = useRef<{ stop?: () => void } | null>(null);
   const sessionRef = useRef(0);
   const shimRef = useRef(createSubprotocolShim());
+  const connectTimerRef = useRef<number | null>(null);
+
+  const clearConnectTimer = () => {
+    if (connectTimerRef.current !== null) {
+      window.clearTimeout(connectTimerRef.current);
+      connectTimerRef.current = null;
+    }
+  };
+
+  const armConnectTimer = () => {
+    clearConnectTimer();
+    connectTimerRef.current = window.setTimeout(() => {
+      connectTimerRef.current = null;
+      cleanup();
+      setStatus("error");
+      toast("danger", "Connection timed out — is the instance running?");
+    }, CONNECT_TIMEOUT_MS);
+  };
 
   const cleanup = () => {
+    clearConnectTimer();
     shimRef.current.restore();
     wsRef.current?.close();
     wsRef.current = null;
@@ -108,12 +130,14 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
         // spice-html5 requests the "binary" subprotocol which incusd does not
         // negotiate; drop subprotocols while the VGA console is active.
         shimRef.current.install();
+        armConnectTimer();
         const conn = new SpiceMainConn({
           uri: toWsUrl(wsPath),
           password: "",
           screen_id: "spice-screen",
           onerror: onError,
           onsuccess: () => {
+            clearConnectTimer();
             setStatus("connected");
             handle_resize();
           },
@@ -135,6 +159,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
       wsRef.current = ws;
       const control = controlPath ? new WebSocket(toWsUrl(controlPath)) : null;
       controlRef.current = control;
+      armConnectTimer();
 
       let reachedConnected = false;
       let lastDims: { cols: number; rows: number } | null = null;
@@ -160,6 +185,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
         };
       }
       ws.onopen = () => {
+        clearConnectTimer();
         reachedConnected = true;
         fitAndResize();
         terminal.focus();
@@ -172,8 +198,13 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
       ws.onclose = () => {
         if (wsRef.current !== ws) return;
         cleanup();
-        setStatus("idle");
-        if (reachedConnected) toast("info", "Console disconnected");
+        if (reachedConnected) {
+          setStatus("idle");
+          toast("info", "Console disconnected");
+        } else {
+          // The server closed the socket before the shell ever came up.
+          setStatus("error");
+        }
       };
       ws.onerror = () => {
         cleanup();

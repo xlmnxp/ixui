@@ -172,6 +172,31 @@ describe("InstanceTerminal", () => {
     expect(apiMocks.exec).toHaveBeenNthCalledWith(2, "web1", ["/bin/sh"], true);
   });
 
+  it("shows the error placeholder when the websocket closes before connecting", async () => {
+    render(<InstanceTerminal instanceName="web1" />);
+    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
+    const data = FakeWebSocket.instances[0]!;
+    // The server closes the socket without it ever opening.
+    act(() => data.onclose?.());
+    expect(screen.getByTestId("term-error")).toBeInTheDocument();
+    expect(screen.getByText("Shell unavailable")).toBeInTheDocument();
+  });
+
+  it("shows the error placeholder when the connection times out", async () => {
+    vi.useFakeTimers();
+    render(<InstanceTerminal instanceName="web1" />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(FakeWebSocket.instances).toHaveLength(2);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20_000);
+    });
+    expect(screen.getByTestId("term-error")).toBeInTheDocument();
+    expect(screen.getByText("Shell unavailable")).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
   it("shows the shell error placeholder with a danger toast when both shells fail", async () => {
     apiMocks.exec.mockRejectedValue(new Error("boom"));
     render(<InstanceTerminal instanceName="web1" />);
