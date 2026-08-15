@@ -6,6 +6,7 @@ import { Monitor, SquareTerminal, Terminal as TerminalIcon } from "lucide-react"
 import { SpiceMainConn, handle_resize } from "../../lib/spice/src/main.js";
 import { instancesApi } from "../api";
 import { registerInstanceProject } from "../api/client";
+import { createSubprotocolShim } from "../lib/ws-shim";
 import type { AsyncResponse } from "../api/types";
 import { Button } from "../components/button";
 import { toast } from "../components/toast";
@@ -37,8 +38,10 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const controlRef = useRef<WebSocket | null>(null);
   const spiceRef = useRef<{ stop?: () => void } | null>(null);
   const sessionRef = useRef(0);
+  const shimRef = useRef(createSubprotocolShim());
 
   const cleanup = () => {
+    shimRef.current.restore();
     wsRef.current?.close();
     wsRef.current = null;
     controlRef.current?.close();
@@ -87,6 +90,9 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
           toast("danger", "Console connection failed");
         };
         if (control) control.onerror = onError;
+        // spice-html5 requests the "binary" subprotocol which incusd does not
+        // negotiate; drop subprotocols while the VGA console is active.
+        shimRef.current.install();
         const conn = new SpiceMainConn({
           uri: toWsUrl(wsPath),
           password: "",
