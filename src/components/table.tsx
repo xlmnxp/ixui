@@ -21,6 +21,10 @@ export interface TableProps<T> {
   onSelectionChange?: (keys: string[]) => void;
   emptyMessage?: string;
   dataTestId?: string;
+  /** Keep the header row pinned while the surrounding container scrolls (default true). */
+  stickyHeader?: boolean;
+  /** Distance in px from the scroll container's top for the pinned header (default 0). */
+  stickyHeaderOffset?: number;
 }
 
 export function Table<T>({
@@ -32,6 +36,8 @@ export function Table<T>({
   onSelectionChange,
   emptyMessage = "No data",
   dataTestId = "table",
+  stickyHeader = true,
+  stickyHeaderOffset = 0,
 }: TableProps<T>) {
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -76,7 +82,10 @@ export function Table<T>({
         <thead className="border-b border-border bg-surface-700 text-left text-xs text-text-secondary">
           <tr>
             {onSelectionChange ? (
-              <th className="w-8 px-3 py-2">
+              <th
+                className={`w-8 px-3 py-2 ${stickyHeader ? "sticky z-[5] border-b border-border bg-surface-700" : ""}`}
+                style={stickyHeader ? { top: stickyHeaderOffset } : undefined}
+              >
                 <Checkbox data-testid="select-all" checked={allSelected} onChange={toggleAll} aria-label="Select all" />
               </th>
             ) : null}
@@ -85,8 +94,8 @@ export function Table<T>({
                 key={col.key}
                 data-testid={`th-${col.key}`}
                 onClick={() => headerClick(col)}
-                className={`px-2 py-1 ${col.align === "right" ? "text-right" : ""} ${col.sortValue ? "cursor-pointer select-none hover:text-text-primary" : ""}`}
-                style={{ width: col.width }}
+                className={`px-2 py-1 ${stickyHeader ? "sticky z-[5] border-b border-border bg-surface-700" : ""} ${col.align === "right" ? "text-right" : ""} ${col.sortValue ? "cursor-pointer select-none hover:text-text-primary" : ""}`}
+                style={stickyHeader ? { top: stickyHeaderOffset, width: col.width } : { width: col.width }}
               >
                 {col.header}
                 {sortCol === col.key ? (sortDir === "asc" ? <ChevronUp size={12} className="inline" /> : <ChevronDown size={12} className="inline" />) : null}

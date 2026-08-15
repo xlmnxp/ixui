@@ -347,7 +347,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
           <EmptyState title="Empty directory" description="No files or folders here." />
         </div>
       ) : (
-        <Table columns={columns} rows={sorted} rowKey={(e) => e} dataTestId="files-table" />
+        <Table columns={columns} rows={sorted} rowKey={(e) => e} dataTestId="files-table" stickyHeaderOffset={45} />
       )}
 
       <Dialog

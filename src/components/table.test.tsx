@@ -64,4 +64,27 @@ it("hides the checkbox column without selection", () => {
     await user.click(within(screen.getAllByTestId("row")[0]!).getByText("web1"));
     expect(onRowClick).toHaveBeenCalledWith(rows[0]);
   });
+
+  it("sticks the header by default", () => {
+    render(<Table columns={columns} rows={rows} rowKey={(r) => r.name} />);
+    expect(screen.getByTestId("th-name").className).toContain("sticky");
+    expect(screen.getByTestId("th-status").className).toContain("sticky");
+    expect(screen.getByTestId("th-name").style.top).toBe("0px");
+  });
+
+  it("applies a sticky header offset", () => {
+    render(<Table columns={columns} rows={rows} rowKey={(r) => r.name} stickyHeaderOffset={45} />);
+    expect(screen.getByTestId("th-name").style.top).toBe("45px");
+  });
+
+  it("sticks the checkbox column when selection is enabled", () => {
+    render(<Table columns={columns} rows={rows} rowKey={(r) => r.name} selectedKeys={[]} onSelectionChange={vi.fn()} />);
+    const selectAll = screen.getByTestId("select-all");
+    expect(selectAll.closest("th")?.className).toContain("sticky");
+  });
+
+  it("can disable the sticky header", () => {
+    render(<Table columns={columns} rows={rows} rowKey={(r) => r.name} stickyHeader={false} />);
+    expect(screen.getByTestId("th-name").className).not.toContain("sticky");
+  });
 });

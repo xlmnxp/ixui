@@ -197,14 +197,37 @@ export function Gallery() {
       </Section>
 
       <Section title="Table">
-        <Table
-          columns={[
-            { key: "name", header: "Name", sortValue: (r: { name: string }) => r.name, render: (r: { name: string }) => r.name },
-            { key: "status", header: "Status", render: (r: { status: string }) => r.status },
-          ]}
-          rows={[{ name: "web1", status: "Started" }, { name: "db1", status: "Stopped" }]}
-          rowKey={(r) => r.name}
-        />
+        <div className="h-48 w-full overflow-auto rounded border border-border">
+          <Table
+            columns={[
+              { key: "name", header: "Name", sortValue: (r: { name: string }) => r.name, render: (r: { name: string }) => r.name },
+              { key: "status", header: "Status", render: (r: { status: string }) => r.status },
+            ]}
+            rows={[
+              { name: "web1", status: "Started" },
+              { name: "db1", status: "Stopped" },
+              { name: "cache1", status: "Started" },
+              { name: "worker1", status: "Started" },
+              { name: "worker2", status: "Stopped" },
+              { name: "backup1", status: "Started" },
+              { name: "staging1", status: "Stopped" },
+              { name: "ci1", status: "Started" },
+            ]}
+            rowKey={(r) => r.name}
+          />
+        </div>
+        <div className="h-48 w-full overflow-auto rounded border border-border">
+          <div className="sticky top-0 z-10 bg-surface-800 px-2 py-1 text-xs text-text-secondary">Demo bar (sticky) — header sticks 32px lower</div>
+          <Table
+            stickyHeaderOffset={32}
+            columns={[
+              { key: "name", header: "Name", render: (r: { name: string }) => r.name },
+              { key: "status", header: "Status", render: (r: { status: string }) => r.status },
+            ]}
+            rows={Array.from({ length: 10 }, (_, i) => ({ name: `entry-${i}`, status: "Ready" }))}
+            rowKey={(r) => r.name}
+          />
+        </div>
       </Section>
 
       <Section title="Tree">
