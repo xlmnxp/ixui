@@ -66,7 +66,7 @@ describe("InstancesPage", () => {
     await screen.findByText("web1");
     await user.click(screen.getAllByTestId("row-select")[0]!);
     await user.click(screen.getByTestId("action-start"));
-    await waitFor(() => expect(instancesApi.setState).toHaveBeenCalledWith("web1", "start"));
+    await waitFor(() => expect(instancesApi.setState).toHaveBeenCalledWith("web1", "start", false, "default"));
   });
 
   it("bulk start fans out to all selected instances", async () => {
@@ -81,8 +81,8 @@ describe("InstancesPage", () => {
     await user.click(screen.getAllByTestId("row-select")[0]!);
     await user.click(screen.getAllByTestId("row-select")[1]!);
     await user.click(screen.getByTestId("action-start"));
-    await waitFor(() => expect(instancesApi.setState).toHaveBeenCalledWith("web1", "start"));
-    expect(instancesApi.setState).toHaveBeenCalledWith("db1", "start");
+    await waitFor(() => expect(instancesApi.setState).toHaveBeenCalledWith("web1", "start", false, "default"));
+    expect(instancesApi.setState).toHaveBeenCalledWith("db1", "start", false, "default");
   });
 
   it("bulk stop fans out to selected instances", async () => {
@@ -96,7 +96,7 @@ describe("InstancesPage", () => {
     await screen.findByText("web1");
     await user.click(screen.getAllByTestId("row-select")[0]!);
     await user.click(screen.getByTestId("action-stop"));
-    await waitFor(() => expect(instancesApi.setState).toHaveBeenCalledWith("web1", "stop"));
+    await waitFor(() => expect(instancesApi.setState).toHaveBeenCalledWith("web1", "stop", false, "default"));
   });
 
   it("deletes with confirmation", async () => {
@@ -112,7 +112,7 @@ describe("InstancesPage", () => {
     await user.click(screen.getByTestId("action-delete"));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     await user.click(screen.getByTestId("confirm-confirm"));
-    await waitFor(() => expect(instancesApi.delete).toHaveBeenCalledWith("web1"));
+    await waitFor(() => expect(instancesApi.delete).toHaveBeenCalledWith("web1", "default"));
   });
 
   it("navigates to overview from the row action", async () => {
@@ -155,6 +155,6 @@ describe("InstancesPage", () => {
     await user.click(screen.getByTestId("row-copy-web1"));
     await user.type(screen.getByTestId("copy-name"), "web2");
     await user.click(screen.getByTestId("copy-confirm"));
-    await waitFor(() => expect(instancesApi.copy).toHaveBeenCalledWith("web1", "web2", { live: false }));
+    await waitFor(() => expect(instancesApi.copy).toHaveBeenCalledWith("web1", "web2", { live: false, sourceProject: "default", targetProject: "default" }));
   });
 });

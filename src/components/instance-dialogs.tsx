@@ -16,10 +16,11 @@ export interface RenameInstanceDialogProps {
   open: boolean;
   onClose: () => void;
   name: string;
+  project?: string;
   onRenamed?: (newName: string) => void;
 }
 
-export function RenameInstanceDialog({ open, onClose, name, onRenamed }: RenameInstanceDialogProps) {
+export function RenameInstanceDialog({ open, onClose, name, project, onRenamed }: RenameInstanceDialogProps) {
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -36,7 +37,7 @@ export function RenameInstanceDialog({ open, onClose, name, onRenamed }: RenameI
     if (!valid) return;
     setBusy(true);
     try {
-      await instancesApi.rename(name, newName.trim());
+      await instancesApi.rename(name, newName.trim(), project);
       toast("success", `Renamed ${name} to ${newName.trim()}`);
       void loadInstances(currentProjectStore.getState()).catch(() => {});
       onRenamed?.(newName.trim());
@@ -68,11 +69,12 @@ export interface CopyInstanceDialogProps {
   open: boolean;
   onClose: () => void;
   name: string;
+  project?: string;
   defaultPool?: string;
 }
 
-export function CopyInstanceDialog({ open, onClose, name, defaultPool }: CopyInstanceDialogProps) {
-  const project = useStore(currentProjectStore);
+export function CopyInstanceDialog({ open, onClose, name, project, defaultPool }: CopyInstanceDialogProps) {
+  const selectedProject = useStore(currentProjectStore);
   const [target, setTarget] = useState("");
   const [live, setLive] = useState(false);
   const [pool, setPool] = useState("");
@@ -101,9 +103,9 @@ export function CopyInstanceDialog({ open, onClose, name, defaultPool }: CopyIns
     if (!valid) return;
     setBusy(true);
     try {
-      await instancesApi.copy(name, target.trim(), { live, ...(pool ? { pool } : {}) });
+      await instancesApi.copy(name, target.trim(), { live, ...(pool ? { pool } : {}), sourceProject: project, targetProject: project });
       toast("success", `Copied ${name} to ${target.trim()}`);
-      void loadInstances(project).catch(() => {});
+      void loadInstances(selectedProject).catch(() => {});
       onClose();
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Copy failed");
@@ -141,10 +143,11 @@ export interface MoveInstanceDialogProps {
   open: boolean;
   onClose: () => void;
   name: string;
+  sourceProject?: string;
   onMoved?: (project: string) => void;
 }
 
-export function MoveInstanceDialog({ open, onClose, name, onMoved }: MoveInstanceDialogProps) {
+export function MoveInstanceDialog({ open, onClose, name, sourceProject, onMoved }: MoveInstanceDialogProps) {
   const [project, setProject] = useState("");
   const [member, setMember] = useState("");
   const [live, setLive] = useState(false);
@@ -173,7 +176,7 @@ export function MoveInstanceDialog({ open, onClose, name, onMoved }: MoveInstanc
       if (live) body.live = true;
       if (project) body.project = project;
       if (member) body.target = member;
-      await instancesApi.move(name, body);
+      await instancesApi.move(name, body, sourceProject);
       toast("success", `Move of ${name} requested`);
       void loadInstances(currentProjectStore.getState()).catch(() => {});
       onMoved?.(project);

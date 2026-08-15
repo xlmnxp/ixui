@@ -122,7 +122,7 @@ describe("InstanceDetailPage", () => {
     );
     await screen.findByText("web1");
     await user.click(screen.getByTestId("detail-action-start"));
-    await waitFor(() => expect(instancesApi.setState).toHaveBeenCalledWith("web1", "start"));
+    await waitFor(() => expect(instancesApi.setState).toHaveBeenCalledWith("web1", "start", false, "default"));
   });
 
   it("renders the action strip", async () => {
@@ -175,7 +175,7 @@ describe("InstanceDetailPage", () => {
     await user.clear(screen.getByTestId("rename-name"));
     await user.type(screen.getByTestId("rename-name"), "web2");
     await user.click(screen.getByTestId("rename-confirm"));
-    await waitFor(() => expect(instancesApi.rename).toHaveBeenCalledWith("web1", "web2"));
+    await waitFor(() => expect(instancesApi.rename).toHaveBeenCalledWith("web1", "web2", "default"));
   });
 
   it("navigates to the new name after rename", async () => {
@@ -200,7 +200,7 @@ describe("InstanceDetailPage", () => {
     await user.click(screen.getByTestId("copy-live"));
     await user.selectOptions(screen.getByTestId("copy-pool"), "default");
     await user.click(screen.getByTestId("copy-confirm"));
-    await waitFor(() => expect(instancesApi.copy).toHaveBeenCalledWith("web1", "web2", { live: true, pool: "default" }));
+    await waitFor(() => expect(instancesApi.copy).toHaveBeenCalledWith("web1", "web2", { live: true, pool: "default", sourceProject: "default", targetProject: "default" }));
   });
 
   it("moves the instance with project, member, and live options", async () => {
@@ -214,7 +214,7 @@ describe("InstanceDetailPage", () => {
     await user.selectOptions(screen.getByTestId("move-member"), "incus-1");
     await user.click(screen.getByTestId("move-live"));
     await user.click(screen.getByTestId("move-confirm"));
-    await waitFor(() => expect(instancesApi.move).toHaveBeenCalledWith("web1", { project: "prod", target: "incus-1", live: true }));
+    await waitFor(() => expect(instancesApi.move).toHaveBeenCalledWith("web1", { project: "prod", target: "incus-1", live: true }, "default"));
   });
 
   it("navigates to the instances list when moved to another project", async () => {
@@ -243,7 +243,7 @@ describe("InstanceDetailPage", () => {
     await screen.findByText("web1");
     await user.click(screen.getByTestId("detail-more"));
     await user.click(screen.getByTestId("detail-more-export"));
-    await waitFor(() => expect(backupsApi.create).toHaveBeenCalledWith("web1", expect.stringMatching(/^export-\d+$/)));
+    await waitFor(() => expect(backupsApi.create).toHaveBeenCalledWith("web1", expect.stringMatching(/^export-\d+$/), undefined, "default"));
     await waitFor(() => expect(operationsApi.wait).toHaveBeenCalledWith("op-export"));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(

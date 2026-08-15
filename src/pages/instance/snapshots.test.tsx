@@ -36,7 +36,7 @@ describe("SnapshotsTab", () => {
     act(() => actions[0]!.create());
     await user.type(screen.getByTestId("snap-name"), "backup");
     await user.click(screen.getByTestId("snap-create-submit"));
-    await waitFor(() => expect(instancesApi.createSnapshot).toHaveBeenCalledWith("web1", "backup", false));
+    await waitFor(() => expect(instancesApi.createSnapshot).toHaveBeenCalledWith("web1", "backup", false, undefined));
   });
 
   it("restores with confirmation", async () => {
@@ -46,6 +46,6 @@ describe("SnapshotsTab", () => {
     await screen.findByText("snap1");
     await user.click(screen.getByTestId(`snap-restore-snap1`));
     await user.click(screen.getByTestId("confirm-confirm"));
-    await waitFor(() => expect(instancesApi.restoreSnapshot).toHaveBeenCalledWith("web1", "snap1"));
+    await waitFor(() => expect(instancesApi.restoreSnapshot).toHaveBeenCalledWith("web1", "snap1", undefined));
   });
 });

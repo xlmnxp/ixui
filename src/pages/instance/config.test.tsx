@@ -43,7 +43,7 @@ describe("ConfigTab", () => {
     const { instancesApi } = await import("../../api");
     await screen.findByTestId("kv-key-limits.memory");
     await act(async () => { await getActions()?.save(); });
-    await waitFor(() => expect(instancesApi.update).toHaveBeenCalledWith("web1", expect.objectContaining({ config: { "limits.memory": "512MiB" }, description: "old" })));
+    await waitFor(() => expect(instancesApi.update).toHaveBeenCalledWith("web1", expect.objectContaining({ config: { "limits.memory": "512MiB" }, description: "old" }), undefined));
   });
 
   it("tracks dirty state and cancels", async () => {

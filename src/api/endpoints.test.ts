@@ -481,8 +481,9 @@ describe("API endpoints", () => {
     it("copy places a source project inside the source object", async () => {
       const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
       vi.stubGlobal("fetch", fetchMock);
-      await instancesApi.copy("web1", "web2", { project: "other" });
+      await instancesApi.copy("web1", "web2", { sourceProject: "other", targetProject: "other" });
       expect(JSON.parse(fetchMock.mock.calls[0]![1]!.body as string)).toEqual({ source: { type: "copy", source: "web1", project: "other" }, name: "web2" });
+      expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/instances?project=other");
     });
 
     it("rename posts the new name", async () => {
@@ -503,13 +504,13 @@ describe("API endpoints", () => {
       expect(JSON.parse(init?.body as string)).toEqual({ migration: true, live: true });
     });
 
-    it("move uses the destination project as the query project and drops it from the body", async () => {
+    it("move keeps the destination project in the body and the source project in the query", async () => {
       const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, null));
       vi.stubGlobal("fetch", fetchMock);
-      await instancesApi.move("web1", { project: "prod", target: "incus-2" });
+      await instancesApi.move("web1", { project: "prod", target: "incus-2" }, "dev");
       const [url, init] = fetchMock.mock.calls[0]!;
-      expect(url).toBe("/1.0/instances/web1?project=prod&target=incus-2");
-      expect(JSON.parse(init?.body as string)).toEqual({ migration: true });
+      expect(url).toBe("/1.0/instances/web1?project=dev&target=incus-2");
+      expect(JSON.parse(init?.body as string)).toEqual({ migration: true, project: "prod" });
     });
 
     it("rebuild posts image source to rebuild URL", async () => {

@@ -1,7 +1,34 @@
 # ixui Feature Gap Analysis & Enterprise Roadmap
 
-**Date:** 2026-08-12
-**Status:** Research — Proposed
+**Date:** 2026-08-12 (updated 2026-08-16)
+**Status:** P0 shipped — P1/P2 proposed
+
+## Current status (2026-08-16 update)
+
+The entire P0 block (section 7) is implemented and merged on `feat/ixui-roadmap`:
+
+| P0 | Item | Status |
+|---|---|---|
+| 1 | Instance devices editor + expanded-config provenance | ✅ `src/pages/instance/devices.tsx` |
+| 2 | Image prefill picker + alias CRUD + direct create (incl. OCI tab) | ✅ `src/components/image-picker.tsx`, `src/lib/image-prefill.ts` |
+| 3 | Instance copy / rename / move / export + bulk actions | ✅ `src/components/instance-dialogs.tsx` |
+| 4 | Project config editor + quota bars | ✅ `src/components/project-editor.tsx` |
+| 5 | RBAC identities/groups/permissions + trust tokens + logout | ✅ `src/pages/certificates.tsx` (auth module removed — incusd has no `/1.0/auth/*` routes) |
+| 6 | Storage volumes CRUD + snapshots + attach + ISO import | ✅ `src/pages/storage.tsx` |
+| 7 | Network config editor + DHCP leases + forwards | ✅ `src/pages/networks.tsx` |
+| 8 | Operations + warnings + server settings pages | ✅ `src/pages/{operations,warnings,settings}.tsx` |
+| 9 | Cluster groups, evacuate/restore, join tokens, capacity | ✅ `src/pages/cluster-groups.tsx` |
+
+Some P1 items also landed early: freeze/unfreeze buttons, live-migration
+checkbox, OCI picker tab, network forwards + leases, logout.
+
+The gaps table in section 2 was written before P0 implementation; treat the
+✅ items above as the source of truth. Remaining P1 work: file browser UI
+(API module `src/api/files.ts` exists), audit/activity trail, snapshot
+schedules, network ACLs/zones/address-sets UI (API module
+`src/api/network-extras.ts` exists), storage buckets UI (API in
+`src/api/volumes.ts`), per-instance metrics history, cloud-init status
+surfacing, VM console log, Prometheus kit.
 
 ## Overview
 
@@ -244,7 +271,7 @@ browser can fetch the full simplestreams catalog directly. No proxy needed.
 
 ## 7. Implementation roadmap (full Incus coverage)
 
-### P0 — sellability blockers (target: next 2 releases)
+### P0 — sellability blockers ✅ DONE (2026-08)
 
 1. Instance devices editor + expanded-config provenance view
 2. Image prefill picker + direct-from-remote create (§5) + alias CRUD
@@ -256,7 +283,7 @@ browser can fetch the full simplestreams catalog directly. No proxy needed.
 8. Operations page (list/cancel) + warnings page + server settings editor
 9. Cluster evacuate/restore, groups, join tokens; member resources/capacity
 
-### P1 — competitive parity+
+### P1 — competitive parity+ (next up)
 
 Instance file browser; snapshot schedules; cloud-init editor + agent status;
 console log; VM live-migration UX; network ACLs, zones, peers, load

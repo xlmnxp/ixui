@@ -4,26 +4,27 @@ import { EmptyState } from "../../components/empty-state";
 
 export interface LogsTabProps {
   instanceName: string;
+  project?: string;
 }
 
-export function LogsTab({ instanceName }: LogsTabProps) {
+export function LogsTab({ instanceName, project }: LogsTabProps) {
   const [files, setFiles] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [content, setContent] = useState("");
 
   const refresh = useCallback(() => {
-    void instancesApi.listLogs(instanceName).then((list) => {
+    void instancesApi.listLogs(instanceName, project).then((list) => {
       setFiles(list);
       if (!selected && list[0]) setSelected(list[0]);
     }).catch(() => {});
-  }, [instanceName, selected]);
+  }, [instanceName, selected, project]);
 
   useEffect(refresh, [refresh]);
 
   useEffect(() => {
     if (!selected) return;
-    void instancesApi.readLog(instanceName, selected).then(setContent).catch(() => setContent("(unreadable)"));
-  }, [instanceName, selected]);
+    void instancesApi.readLog(instanceName, selected, project).then(setContent).catch(() => setContent("(unreadable)"));
+  }, [instanceName, selected, project]);
 
   if (files.length === 0) return <EmptyState title="No logs" description="This instance has no log files." />;
 

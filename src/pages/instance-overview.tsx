@@ -13,8 +13,8 @@ export function OverviewTab({ instance }: OverviewTabProps) {
   const [state, setState] = useState<InstanceStateInfo | null>(null);
 
   useEffect(() => {
-    void instancesApi.state(instance.name).then(setState).catch(() => setState(null));
-  }, [instance.name]);
+    void instancesApi.state(instance.name, instance.project).then(setState).catch(() => setState(null));
+  }, [instance.name, instance.project]);
 
   const ips = instanceIps(state);
 

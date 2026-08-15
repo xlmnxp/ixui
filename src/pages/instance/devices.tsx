@@ -15,6 +15,8 @@ const DEVICE_TYPES = ["disk", "nic", "proxy", "gpu", "usb", "pci", "tpm", "none"
 
 export interface DevicesTabProps {
   instanceName: string;
+  project?: string;
+  registerActions?: (actions: DeviceActions | null) => void;
 }
 
 function validateDevice(type: string, props: Record<string, string>): string | null {
@@ -28,7 +30,7 @@ export interface DeviceActions {
   add: () => void;
 }
 
-export function DevicesTab({ instanceName, registerActions }: DevicesTabProps & { registerActions?: (actions: DeviceActions | null) => void }) {
+export function DevicesTab({ instanceName, project, registerActions }: DevicesTabProps) {
   const [instance, setInstance] = useState<Instance | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingName, setEditingName] = useState<string | null>(null);
@@ -40,8 +42,8 @@ export function DevicesTab({ instanceName, registerActions }: DevicesTabProps & 
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
-    instancesApi.get(instanceName).then(setInstance).catch(() => {});
-  }, [instanceName]);
+    instancesApi.get(instanceName, project).then(setInstance).catch(() => {});
+  }, [instanceName, project]);
 
   useEffect(refresh, [refresh]);
 
@@ -92,7 +94,7 @@ export function DevicesTab({ instanceName, registerActions }: DevicesTabProps & 
     next[name] = { type: draftType, ...cleanProps };
     setBusy(true);
     try {
-      await instancesApi.update(instanceName, { devices: next });
+      await instancesApi.update(instanceName, { devices: next }, project);
       toast("success", editingName ? `Device ${name} updated` : `Device ${name} added`);
       setDialogOpen(false);
       refresh();
@@ -109,7 +111,7 @@ export function DevicesTab({ instanceName, registerActions }: DevicesTabProps & 
     const next = { ...instance.devices, [name]: { ...instance.devices[name], ...clean } };
     setInstance({ ...instance, devices: next });
     try {
-      await instancesApi.update(instanceName, { devices: next });
+      await instancesApi.update(instanceName, { devices: next }, project);
       toast("success", `Device ${name} updated`);
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Save failed");
@@ -125,7 +127,7 @@ export function DevicesTab({ instanceName, registerActions }: DevicesTabProps & 
     delete next[name];
     setInstance({ ...instance, devices: next });
     try {
-      await instancesApi.update(instanceName, { devices: next });
+      await instancesApi.update(instanceName, { devices: next }, project);
       toast("success", `Device ${name} removed`);
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Remove failed");

@@ -94,7 +94,7 @@ describe("DevicesTab", () => {
           eth0: { type: "nic", nictype: "bridged", parent: "br0" },
           disk1: { type: "disk", pool: "default", path: "/data" },
         },
-      })
+      }, undefined)
     );
     await waitFor(() => expect(screen.queryByTestId("dialog")).not.toBeInTheDocument());
     expect(await screen.findByTestId("device-row-disk1")).toBeInTheDocument();
@@ -117,7 +117,7 @@ describe("DevicesTab", () => {
     await waitFor(() =>
       expect(instancesApi.update).toHaveBeenCalledWith("web1", {
         devices: { eth0: { type: "nic", nictype: "bridged", parent: "br1" } },
-      })
+      }, undefined)
     );
   });
 
@@ -133,7 +133,7 @@ describe("DevicesTab", () => {
     await waitFor(() =>
       expect(instancesApi.update).toHaveBeenCalledWith("web1", {
         devices: { eth0: { type: "nic", nictype: "bridged", parent: "br1" } },
-      })
+      }, undefined)
     );
   });
 
@@ -146,7 +146,7 @@ describe("DevicesTab", () => {
     await user.click(screen.getByTestId("device-remove-eth0"));
     expect(instancesApi.update).not.toHaveBeenCalled();
     await user.click(screen.getByTestId("confirm-confirm"));
-    await waitFor(() => expect(instancesApi.update).toHaveBeenCalledWith("web1", { devices: {} }));
+    await waitFor(() => expect(instancesApi.update).toHaveBeenCalledWith("web1", { devices: {} }, undefined));
     await waitFor(() => expect(screen.queryByTestId("device-row-eth0")).not.toBeInTheDocument());
   });
 
@@ -193,7 +193,7 @@ describe("DevicesTab", () => {
           eth0: { type: "nic", nictype: "bridged", parent: "br0" },
           disk1: { type: "disk", pool: "default", path: "/data" },
         },
-      })
+      }, undefined)
     );
   });
 });

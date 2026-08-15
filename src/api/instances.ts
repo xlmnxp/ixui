@@ -45,29 +45,31 @@ export class InstancesApi {
       description?: string;
       ephemeral?: boolean;
       devices?: Record<string, Record<string, string>>;
-    }
+    },
+    project?: string
   ): Promise<AsyncResponse | SyncResponse | null> {
-    return this.client.put(`/instances/${name}${projectQueryFor(name)}`, body);
+    return this.client.put(`/instances/${name}${projectQueryFor(name, project)}`, body);
   }
 
-  delete(name: string): Promise<void> {
-    return this.client.delete(`/instances/${name}${projectQueryFor(name)}`);
+  delete(name: string, project?: string): Promise<void> {
+    return this.client.delete(`/instances/${name}${projectQueryFor(name, project)}`);
   }
 
   setState(
     name: string,
     action: "start" | "stop" | "restart" | "freeze" | "unfreeze",
-    force = false
+    force = false,
+    project?: string
   ): Promise<AsyncResponse | null> {
-    return this.client.put(`/instances/${name}/state${projectQueryFor(name)}`, { action, force });
+    return this.client.put(`/instances/${name}/state${projectQueryFor(name, project)}`, { action, force });
   }
 
-  state(name: string): Promise<InstanceStateInfo> {
-    return this.client.get<InstanceStateInfo>(`/instances/${name}/state${projectQueryFor(name)}`);
+  state(name: string, project?: string): Promise<InstanceStateInfo> {
+    return this.client.get<InstanceStateInfo>(`/instances/${name}/state${projectQueryFor(name, project)}`);
   }
 
-  exec(name: string, command: string[], interactive: boolean): Promise<AsyncResponse | null> {
-    return this.client.post(`/instances/${name}/exec${projectQueryFor(name)}`, {
+  exec(name: string, command: string[], interactive: boolean, project?: string): Promise<AsyncResponse | null> {
+    return this.client.post(`/instances/${name}/exec${projectQueryFor(name, project)}`, {
       command,
       interactive,
       environment: { TERM: "xterm" },
@@ -75,82 +77,92 @@ export class InstancesApi {
     });
   }
 
-  console(name: string, width: number, height: number): Promise<AsyncResponse | null> {
-    return this.client.post(`/instances/${name}/console${projectQueryFor(name)}`, { width, height, type: "vga", force: true });
+  console(name: string, width: number, height: number, project?: string): Promise<AsyncResponse | null> {
+    return this.client.post(`/instances/${name}/console${projectQueryFor(name, project)}`, { width, height, type: "vga", force: true });
   }
 
-  listSnapshots(name: string): Promise<Instance[]> {
-    return this.client.list<Instance>(`/instances/${name}/snapshots`, { project: projectFor(name) });
+  listSnapshots(name: string, project?: string): Promise<Instance[]> {
+    return this.client.list<Instance>(`/instances/${name}/snapshots`, { project: project ?? projectFor(name) });
   }
 
-  createSnapshot(name: string, snapName: string, stateful = false): Promise<AsyncResponse | null> {
-    return this.client.post(`/instances/${name}/snapshots${projectQueryFor(name)}`, { name: snapName, stateful });
+  createSnapshot(name: string, snapName: string, stateful = false, project?: string): Promise<AsyncResponse | null> {
+    return this.client.post(`/instances/${name}/snapshots${projectQueryFor(name, project)}`, { name: snapName, stateful });
   }
 
-  restoreSnapshot(name: string, snapName: string): Promise<AsyncResponse | null> {
-    return this.client.put(`/instances/${name}/snapshots/${snapName}${projectQueryFor(name)}`, { restore: true });
+  restoreSnapshot(name: string, snapName: string, project?: string): Promise<AsyncResponse | null> {
+    return this.client.put(`/instances/${name}/snapshots/${snapName}${projectQueryFor(name, project)}`, { restore: true });
   }
 
-  deleteSnapshot(name: string, snapName: string): Promise<void> {
-    return this.client.delete(`/instances/${name}/snapshots/${snapName}${projectQueryFor(name)}`);
+  deleteSnapshot(name: string, snapName: string, project?: string): Promise<void> {
+    return this.client.delete(`/instances/${name}/snapshots/${snapName}${projectQueryFor(name, project)}`);
   }
 
-  listLogs(name: string): Promise<string[]> {
-    return this.client.get<string[]>(`/instances/${name}/logs${projectQueryFor(name)}`);
+  listLogs(name: string, project?: string): Promise<string[]> {
+    return this.client.get<string[]>(`/instances/${name}/logs${projectQueryFor(name, project)}`);
   }
 
-  readLog(name: string, file: string): Promise<string> {
-    return this.client.get<string>(`/instances/${name}/logs/${file}${projectQueryFor(name)}`);
+  readLog(name: string, file: string, project?: string): Promise<string> {
+    return this.client.get<string>(`/instances/${name}/logs/${file}${projectQueryFor(name, project)}`);
   }
 
   copy(
     name: string,
     target: string,
-    options?: { live?: boolean; pool?: string; project?: string }
+    options?: { live?: boolean; pool?: string; sourceProject?: string; targetProject?: string }
   ): Promise<AsyncResponse | SyncResponse | null> {
     const source: { type: "copy"; source: string; project?: string } = { type: "copy", source: name };
-    if (options?.project !== undefined) source.project = options.project;
+    if (options?.sourceProject !== undefined) source.project = options.sourceProject;
     const body: { source: typeof source; name: string; live?: boolean; pool?: string } = {
       source,
       name: target,
     };
     if (options?.live !== undefined) body.live = options.live;
     if (options?.pool !== undefined) body.pool = options.pool;
-    return this.client.post(`/instances${projectQuery()}`, body);
+    const query = options?.targetProject !== undefined
+      ? `?project=${encodeURIComponent(options.targetProject)}`
+      : projectQuery();
+    return this.client.post(`/instances${query}`, body);
   }
 
-  rename(name: string, newName: string): Promise<AsyncResponse | SyncResponse | null> {
-    return this.client.post(`/instances/${name}${projectQueryFor(name)}`, { name: newName });
+  rename(name: string, newName: string, project?: string): Promise<AsyncResponse | SyncResponse | null> {
+    return this.client.post(`/instances/${name}${projectQueryFor(name, project)}`, { name: newName });
   }
 
-  move(name: string, body: { live?: boolean; pool?: string; project?: string; target?: string }): Promise<AsyncResponse | SyncResponse | null> {
-    const { target, project, ...rest } = body;
-    const projectQueryString = project ? `?project=${encodeURIComponent(project)}` : projectQueryFor(name);
+  move(
+    name: string,
+    body: { live?: boolean; pool?: string; project?: string; target?: string },
+    sourceProject?: string
+  ): Promise<AsyncResponse | SyncResponse | null> {
+    const { target, ...rest } = body;
+    // The query project addresses the SOURCE instance; body.project is the TARGET project.
+    const projectQueryString = sourceProject !== undefined
+      ? `?project=${encodeURIComponent(sourceProject)}`
+      : projectQueryFor(name);
     const targetQuery = target ? `&target=${encodeURIComponent(target)}` : "";
     return this.client.post(`/instances/${name}${projectQueryString}${targetQuery}`, { migration: true, ...rest });
   }
 
-  rebuild(name: string, body: { source: InstanceImageSource }): Promise<AsyncResponse | SyncResponse | null> {
-    return this.client.post(`/instances/${name}/rebuild${projectQueryFor(name)}`, body);
+  rebuild(name: string, body: { source: InstanceImageSource }, project?: string): Promise<AsyncResponse | SyncResponse | null> {
+    return this.client.post(`/instances/${name}/rebuild${projectQueryFor(name, project)}`, body);
   }
 
-  freeze(name: string): Promise<AsyncResponse | null> {
-    return this.setState(name, "freeze");
+  freeze(name: string, project?: string): Promise<AsyncResponse | null> {
+    return this.setState(name, "freeze", false, project);
   }
 
-  unfreeze(name: string): Promise<AsyncResponse | null> {
-    return this.setState(name, "unfreeze");
+  unfreeze(name: string, project?: string): Promise<AsyncResponse | null> {
+    return this.setState(name, "unfreeze", false, project);
   }
 
-  listBackups(name: string): Promise<InstanceBackup[]> {
-    return this.client.list<InstanceBackup>(`/instances/${name}/backups`, { project: projectFor(name) });
+  listBackups(name: string, project?: string): Promise<InstanceBackup[]> {
+    return this.client.list<InstanceBackup>(`/instances/${name}/backups`, { project: project ?? projectFor(name) });
   }
 
-  createBackup(name: string, backupName: string): Promise<AsyncResponse | null> {
-    return this.client.post(`/instances/${name}/backups${projectQueryFor(name)}`, { name: backupName });
+  createBackup(name: string, backupName: string, project?: string): Promise<AsyncResponse | null> {
+    return this.client.post(`/instances/${name}/backups${projectQueryFor(name, project)}`, { name: backupName });
   }
 
-  deleteBackup(name: string, backupName: string): Promise<void> {
-    return this.client.delete(`/instances/${name}/backups/${backupName}${projectQueryFor(name)}`);
+  deleteBackup(name: string, backupName: string, project?: string): Promise<void> {
+    return this.client.delete(`/instances/${name}/backups/${backupName}${projectQueryFor(name, project)}`);
   }
 }

@@ -18,21 +18,50 @@ export function projectQuery(): string {
   return project === undefined ? "" : `?project=${encodeURIComponent(project)}`;
 }
 
-const instanceProjects: Record<string, string> = {};
+// One name can exist in several projects (e.g. "web1" in dev and prod), so the
+// registry keeps a list per name. In all-projects mode a lookup only resolves when
+// the name is unambiguous; callers that know the project must pass it explicitly.
+const instanceProjects: Record<string, string[]> = {};
 
 export function registerInstanceProject(name: string, project: string): void {
-  instanceProjects[name] = project;
+  const projects = instanceProjects[name];
+  if (projects === undefined) instanceProjects[name] = [project];
+  else if (!projects.includes(project)) projects.push(project);
+}
+
+export function unregisterInstanceProject(name: string, project?: string): void {
+  const projects = instanceProjects[name];
+  if (projects === undefined) return;
+  if (project === undefined) {
+    delete instanceProjects[name];
+    return;
+  }
+  const next = projects.filter((p) => p !== project);
+  if (next.length === 0) delete instanceProjects[name];
+  else instanceProjects[name] = next;
+}
+
+/** Drop one project from every name's registry entry (used before re-registering a reloaded list). */
+export function removeInstanceProject(project: string): void {
+  for (const name of Object.keys(instanceProjects)) unregisterInstanceProject(name, project);
+}
+
+export function resetInstanceProjects(): void {
+  for (const name of Object.keys(instanceProjects)) delete instanceProjects[name];
 }
 
 export function projectFor(name: string): string | undefined {
   const current = currentProject();
   if (current !== undefined) return current;
-  return instanceProjects[name];
+  const projects = instanceProjects[name];
+  if (projects === undefined || projects.length === 0) return undefined;
+  if (projects.length === 1) return projects[0];
+  return undefined; // ambiguous — caller must pass an explicit project
 }
 
-export function projectQueryFor(name: string): string {
-  const project = projectFor(name);
-  return project === undefined ? "" : `?project=${encodeURIComponent(project)}`;
+export function projectQueryFor(name: string, project?: string): string {
+  const resolved = project ?? projectFor(name);
+  return resolved === undefined ? "" : `?project=${encodeURIComponent(resolved)}`;
 }
 
 export function projectListParam(): { project?: string; allProjects?: boolean } {
@@ -56,6 +85,15 @@ interface ErrorBody {
   error_code?: number;
 }
 
+const DEFAULT_TIMEOUT_MS = 30_000;
+
+interface SendOptions {
+  method: string;
+  body?: BodyInit;
+  headers?: Record<string, string>;
+  timeoutMs?: number;
+}
+
 export class ApiClient {
   private forbiddenHandler: (() => void) | null = null;
 
@@ -65,34 +103,54 @@ export class ApiClient {
     this.forbiddenHandler = handler;
   }
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const res = await fetch(`${this.basePath}${path}`, {
+  private async send<T>(path: string, options: SendOptions): Promise<T> {
+    const controller = new AbortController();
+    const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${this.basePath}${path}`, {
+        method: options.method,
+        headers: options.headers ?? (options.body !== undefined ? { "Content-Type": "application/json" } : undefined),
+        body: options.body,
+        signal: controller.signal,
+      });
+
+      if (res.status === 401) this.forbiddenHandler?.();
+
+      const text = await res.text();
+      let json: unknown = null;
+      if (text) {
+        try {
+          json = JSON.parse(text);
+        } catch {
+          json = text;
+        }
+      }
+
+      if (!res.ok) {
+        const err = json as ErrorBody | null;
+        throw new ApiError(res.status, err?.error_code, err?.error ?? res.statusText);
+      }
+      markAuthenticated();
+      if (json && typeof json === "object" && (json as { type?: unknown }).type === "sync") {
+        json = (json as { metadata: unknown }).metadata;
+      }
+      return json as T;
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new ApiError(0, undefined, `Request timed out after ${Math.round(timeoutMs / 1000)}s`);
+      }
+      throw err;
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
+  private request<T>(method: string, path: string, body?: unknown): Promise<T> {
+    return this.send<T>(path, {
       method,
-      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
-
-    if (res.status === 401) this.forbiddenHandler?.();
-
-    const text = await res.text();
-    let json: unknown = null;
-    if (text) {
-      try {
-        json = JSON.parse(text);
-      } catch {
-        json = text;
-      }
-    }
-
-    if (!res.ok) {
-      const err = json as ErrorBody | null;
-      throw new ApiError(res.status, err?.error_code, err?.error ?? res.statusText);
-    }
-    markAuthenticated();
-    if (json && typeof json === "object" && (json as { type?: unknown }).type === "sync") {
-      json = (json as { metadata: unknown }).metadata;
-    }
-    return json as T;
   }
 
   get<T>(path: string): Promise<T> {
@@ -114,34 +172,12 @@ export class ApiClient {
     return this.request<T>("POST", path, body);
   }
 
-  async postRaw<T>(path: string, body: BodyInit, headers?: Record<string, string>): Promise<T> {
-    const res = await fetch(`${this.basePath}${path}`, {
+  postRaw<T>(path: string, body: BodyInit, headers?: Record<string, string>): Promise<T> {
+    return this.send<T>(path, {
       method: "POST",
-      headers: headers ?? { "Content-Type": "application/octet-stream" },
       body,
+      headers: headers ?? { "Content-Type": "application/octet-stream" },
     });
-
-    if (res.status === 401) this.forbiddenHandler?.();
-
-    const text = await res.text();
-    let json: unknown = null;
-    if (text) {
-      try {
-        json = JSON.parse(text);
-      } catch {
-        json = text;
-      }
-    }
-
-    if (!res.ok) {
-      const err = json as ErrorBody | null;
-      throw new ApiError(res.status, err?.error_code, err?.error ?? res.statusText);
-    }
-    markAuthenticated();
-    if (json && typeof json === "object" && (json as { type?: unknown }).type === "sync") {
-      json = (json as { metadata: unknown }).metadata;
-    }
-    return json as T;
   }
 
   put<T>(path: string, body: unknown): Promise<T> {

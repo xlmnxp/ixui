@@ -11,5 +11,11 @@ export default defineConfig({
     globals: true,
     setupFiles: "./vitest.setup.ts",
     exclude: ["**/node_modules/**", "**/dist/**", ".worktrees/**", "**/.superpowers/**"],
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/vite-env.d.ts", "src/main.tsx", "src/App.tsx", "src/app-init.ts"],
+      reporter: ["text", "html"],
+    },
   },
 });

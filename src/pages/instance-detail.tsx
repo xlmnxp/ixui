@@ -84,7 +84,7 @@ export function InstanceDetailPage() {
 
   const setState = async (action: "start" | "stop" | "restart") => {
     try {
-      await instancesApi.setState(name, action);
+      await instancesApi.setState(name, action, false, instance?.project);
       toast("info", `Requested ${action} for ${name}`);
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : `${action} failed`);
@@ -94,7 +94,7 @@ export function InstanceDetailPage() {
   const confirmDelete = async () => {
     setDeleting(true);
     try {
-      await instancesApi.delete(name);
+      await instancesApi.delete(name, instance?.project);
       toast("success", `Deleted ${name}`);
       navigate("/instances");
     } catch (err) {
@@ -109,12 +109,12 @@ export function InstanceDetailPage() {
     setExporting(true);
     try {
       const backupName = `export-${Date.now()}`;
-      const result = await backupsApi.create(name, backupName);
+      const result = await backupsApi.create(name, backupName, undefined, instance?.project);
       if (result && "type" in result && result.type === "async") {
         const op = await operationsApi.wait(result.operation);
         if (op.status !== "Success") throw new Error(op.err ?? "Export failed");
       }
-      const res = await fetch(backupsApi.exportUrl(name, backupName), { credentials: "include" });
+      const res = await fetch(backupsApi.exportUrl(name, backupName, instance?.project), { credentials: "include" });
       if (!res.ok) throw new Error(`Export failed (${res.status})`);
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
@@ -209,10 +209,10 @@ export function InstanceDetailPage() {
           right={
             <div className="h-full overflow-auto">
               {activeTab === "overview" && <OverviewTab instance={instance} />}
-              {activeTab === "snapshots" && <SnapshotsTab instanceName={name} registerActions={setSnapshotsActions} />}
-              {activeTab === "config" && <ConfigTab instanceName={name} registerActions={setConfigActions} />}
-              {activeTab === "devices" && <DevicesTab instanceName={name} registerActions={setDeviceActions} />}
-              {activeTab === "logs" && <LogsTab instanceName={name} />}
+              {activeTab === "snapshots" && <SnapshotsTab instanceName={name} project={instance.project} registerActions={setSnapshotsActions} />}
+              {activeTab === "config" && <ConfigTab instanceName={name} project={instance.project} registerActions={setConfigActions} />}
+              {activeTab === "devices" && <DevicesTab instanceName={name} project={instance.project} registerActions={setDeviceActions} />}
+              {activeTab === "logs" && <LogsTab instanceName={name} project={instance.project} />}
             </div>
           }
         />
@@ -229,12 +229,13 @@ export function InstanceDetailPage() {
         onCancel={() => setDeleteOpen(false)}
       />
 
-      <RenameInstanceDialog open={renameOpen} onClose={() => setRenameOpen(false)} name={name} onRenamed={(newName) => navigate(`/instances/${newName}`)} />
-      <CopyInstanceDialog open={copyOpen} onClose={() => setCopyOpen(false)} name={name} defaultPool={instance.devices.root?.pool} />
+      <RenameInstanceDialog open={renameOpen} onClose={() => setRenameOpen(false)} name={name} project={instance.project} onRenamed={(newName) => navigate(`/instances/${newName}`)} />
+      <CopyInstanceDialog open={copyOpen} onClose={() => setCopyOpen(false)} name={name} project={instance.project} defaultPool={instance.devices.root?.pool} />
       <MoveInstanceDialog
         open={moveOpen}
         onClose={() => setMoveOpen(false)}
         name={name}
+        sourceProject={instance.project}
         onMoved={(project) => {
           void loadInstances(currentProjectStore.getState()).catch(() => {});
           if (project && project !== instance.project) navigate("/instances");

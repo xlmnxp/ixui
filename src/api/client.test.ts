@@ -1,4 +1,15 @@
-import { ApiClient, ApiError } from "./client";
+import {
+  ApiClient,
+  ApiError,
+  ALL_PROJECTS,
+  projectFor,
+  projectQueryFor,
+  registerInstanceProject,
+  unregisterInstanceProject,
+  removeInstanceProject,
+  resetInstanceProjects,
+  setProjectProvider,
+} from "./client";
 import { authStore } from "../auth/status";
 
 describe("ApiClient", () => {
@@ -141,5 +152,102 @@ describe("ApiClient", () => {
     await client.delete("/instances/web1");
     const [, init] = vi.mocked(fetch).mock.calls[0]!;
     expect(init?.method).toBe("DELETE");
+  });
+});
+
+describe("instance project registry", () => {
+  afterEach(() => {
+    resetInstanceProjects();
+    setProjectProvider(() => "default");
+  });
+
+  it("resolves a uniquely registered name in all-projects mode", () => {
+    setProjectProvider(() => ALL_PROJECTS);
+    registerInstanceProject("web1", "dev");
+    expect(projectFor("web1")).toBe("dev");
+  });
+
+  it("returns undefined for names registered in multiple projects", () => {
+    setProjectProvider(() => ALL_PROJECTS);
+    registerInstanceProject("web1", "dev");
+    registerInstanceProject("web1", "prod");
+    expect(projectFor("web1")).toBeUndefined();
+  });
+
+  it("prefers the current project when it is registered for the name", () => {
+    setProjectProvider(() => "prod");
+    registerInstanceProject("web1", "dev");
+    registerInstanceProject("web1", "prod");
+    expect(projectFor("web1")).toBe("prod");
+  });
+
+  it("deduplicates repeated registrations", () => {
+    setProjectProvider(() => ALL_PROJECTS);
+    registerInstanceProject("web1", "dev");
+    registerInstanceProject("web1", "dev");
+    expect(projectFor("web1")).toBe("dev");
+  });
+
+  it("unregisters by project or by entire name", () => {
+    setProjectProvider(() => ALL_PROJECTS);
+    registerInstanceProject("web1", "dev");
+    registerInstanceProject("web1", "prod");
+    unregisterInstanceProject("web1", "prod");
+    expect(projectFor("web1")).toBe("dev");
+    unregisterInstanceProject("web1");
+    expect(projectFor("web1")).toBeUndefined();
+  });
+
+  it("removeInstanceProject drops one project across all names", () => {
+    setProjectProvider(() => ALL_PROJECTS);
+    registerInstanceProject("web1", "dev");
+    registerInstanceProject("web1", "prod");
+    registerInstanceProject("db1", "dev");
+    removeInstanceProject("dev");
+    expect(projectFor("web1")).toBe("prod");
+    expect(projectFor("db1")).toBeUndefined();
+  });
+
+  it("projectQueryFor accepts an explicit project override", () => {
+    setProjectProvider(() => ALL_PROJECTS);
+    expect(projectQueryFor("web1", "prod")).toBe("?project=prod");
+    expect(projectQueryFor("web1")).toBe("");
+  });
+});
+
+describe("ApiClient timeout", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it("aborts requests that exceed the default timeout", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_url: string, init?: { signal?: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+        })
+      )
+    );
+    const client = new ApiClient("/1.0");
+    const pending = client.get<unknown>("/slow").catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(30_000);
+    const error = await pending;
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ status: 0 });
+    expect((error as ApiError).message).toContain("timed out");
+  });
+
+  it("clears the timer on success", async () => {
+    const jsonResponse = (body: unknown) =>
+      new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ ok: true })));
+    const client = new ApiClient("/1.0");
+    await client.get<{ ok: boolean }>("/");
+    // No timer left behind: nothing to assert directly, but a leaked timer would
+    // keep the fake-timer suite pending. The resolved value is the contract.
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

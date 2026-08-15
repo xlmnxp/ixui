@@ -1,5 +1,5 @@
 import { operationsStore, applyOperationEvent, dismissOperation } from "./operations";
-import { instancesStore, applyInstanceLifecycle } from "./instances";
+import { instancesStore, applyInstanceLifecycle, instanceNameFromSource, projectFromSource } from "./instances";
 import { currentProjectStore, setCurrentProject } from "./projects";
 import type { Operation } from "../api/types";
 
@@ -52,6 +52,36 @@ describe("instances store", () => {
     expect((started as unknown as { "default/web1": { status: string } })["default/web1"].status).toBe("Started");
     const stopped = applyInstanceLifecycle(started, { action: "instance-stopped", source: "/1.0/instances/web1" });
     expect((stopped as unknown as { "default/web1": { status: string } })["default/web1"].status).toBe("Stopped");
+  });
+
+  it("matches sources that carry a project query", () => {
+    const state = { "dev/web1": { name: "web1", project: "dev", status: "Stopped" } } as never;
+    const next = applyInstanceLifecycle(state, { action: "instance-started", source: "/1.0/instances/web1?project=dev" });
+    expect((next as unknown as { "dev/web1": { status: string } })["dev/web1"].status).toBe("Started");
+  });
+
+  it("updates every project entry with a duplicate name", () => {
+    const state = {
+      "dev/web1": { name: "web1", project: "dev", status: "Stopped" },
+      "prod/web1": { name: "web1", project: "prod", status: "Stopped" },
+    } as never;
+    const next = applyInstanceLifecycle(state, { action: "instance-stopped", source: "/1.0/instances/web1" });
+    expect((next as unknown as { "dev/web1": { status: string }; "prod/web1": { status: string } })["dev/web1"].status).toBe("Stopped");
+    const del = applyInstanceLifecycle(state, { action: "instance-deleted", source: "/1.0/instances/web1?project=dev" });
+    expect(Object.keys(del)).toEqual(["prod/web1"]);
+  });
+
+  it("ignores sources it cannot parse", () => {
+    const state = { "default/web1": { name: "web1", project: "default", status: "Stopped" } } as never;
+    expect(applyInstanceLifecycle(state, { action: "instance-started", source: "" })).toBe(state);
+  });
+
+  it("parses instance names and projects from sources", () => {
+    expect(instanceNameFromSource("/1.0/instances/web1?project=dev")).toBe("web1");
+    expect(instanceNameFromSource("/1.0/instances/web1")).toBe("web1");
+    expect(instanceNameFromSource("/1.0/instances/")).toBeNull();
+    expect(projectFromSource("/1.0/instances/web1?project=dev")).toBe("dev");
+    expect(projectFromSource("/1.0/instances/web1")).toBeNull();
   });
 });
 

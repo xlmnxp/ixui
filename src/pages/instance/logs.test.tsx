@@ -22,6 +22,6 @@ describe("LogsTab", () => {
     render(<LogsTab instanceName="web1" />);
     await screen.findByText("config.json");
     await user.click(screen.getByTestId("log-file-config.json"));
-    expect(instancesApi.readLog).toHaveBeenCalledWith("web1", "config.json");
+    expect(instancesApi.readLog).toHaveBeenCalledWith("web1", "config.json", undefined);
   });
 });

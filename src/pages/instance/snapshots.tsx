@@ -14,6 +14,7 @@ import { toast } from "../../components/toast";
 
 export interface SnapshotsTabProps {
   instanceName: string;
+  project?: string;
   registerActions?: (actions: SnapshotsActions | null) => void;
 }
 
@@ -21,7 +22,7 @@ export interface SnapshotsActions {
   create: () => void;
 }
 
-export function SnapshotsTab({ instanceName, registerActions }: SnapshotsTabProps) {
+export function SnapshotsTab({ instanceName, project, registerActions }: SnapshotsTabProps) {
   const [snapshots, setSnapshots] = useState<Instance[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [restoreName, setRestoreName] = useState<string | null>(null);
@@ -35,15 +36,15 @@ export function SnapshotsTab({ instanceName, registerActions }: SnapshotsTabProp
   }, [registerActions]);
 
   const refresh = useCallback(() => {
-    void instancesApi.listSnapshots(instanceName).then(setSnapshots).catch(() => {});
-  }, [instanceName]);
+    void instancesApi.listSnapshots(instanceName, project).then(setSnapshots).catch(() => {});
+  }, [instanceName, project]);
 
   useEffect(refresh, [refresh]);
 
   const create = async () => {
     setBusy(true);
     try {
-      await instancesApi.createSnapshot(instanceName, name.trim(), stateful);
+      await instancesApi.createSnapshot(instanceName, name.trim(), stateful, project);
       toast("success", `Snapshot ${name} created`);
       setCreateOpen(false);
       setName("");
@@ -59,7 +60,7 @@ export function SnapshotsTab({ instanceName, registerActions }: SnapshotsTabProp
     if (!restoreName) return;
     setBusy(true);
     try {
-      await instancesApi.restoreSnapshot(instanceName, restoreName);
+      await instancesApi.restoreSnapshot(instanceName, restoreName, project);
       toast("success", `Restored ${restoreName}`);
       refresh();
       setRestoreName(null);
@@ -72,7 +73,7 @@ export function SnapshotsTab({ instanceName, registerActions }: SnapshotsTabProp
 
   const remove = async (snapName: string) => {
     try {
-      await instancesApi.deleteSnapshot(instanceName, snapName);
+      await instancesApi.deleteSnapshot(instanceName, snapName, project);
       toast("success", `Deleted snapshot ${snapName}`);
       refresh();
     } catch (err) {

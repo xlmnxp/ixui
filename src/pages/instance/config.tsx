@@ -15,10 +15,11 @@ export interface ConfigActions {
 
 export interface ConfigTabProps {
   instanceName: string;
+  project?: string;
   registerActions?: (actions: ConfigActions | null) => void;
 }
 
-export function ConfigTab({ instanceName, registerActions }: ConfigTabProps) {
+export function ConfigTab({ instanceName, project, registerActions }: ConfigTabProps) {
   const [instance, setInstance] = useState<Instance | null>(null);
   const [config, setConfig] = useState<Record<string, string>>({});
   const [description, setDescription] = useState("");
@@ -29,7 +30,7 @@ export function ConfigTab({ instanceName, registerActions }: ConfigTabProps) {
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
   const refresh = useCallback(() => {
-    instancesApi.get(instanceName).then((i) => {
+    instancesApi.get(instanceName, project).then((i) => {
       setInstance(i);
       setConfig(i.config);
       setDescription(i.description);
@@ -38,7 +39,7 @@ export function ConfigTab({ instanceName, registerActions }: ConfigTabProps) {
       setErrors({});
       setSelectedKeys([]);
     }).catch(() => {});
-  }, [instanceName]);
+  }, [instanceName, project]);
 
   useEffect(refresh, [refresh]);
 
@@ -67,14 +68,14 @@ export function ConfigTab({ instanceName, registerActions }: ConfigTabProps) {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
     try {
-      await instancesApi.update(instanceName, { config, description });
+      await instancesApi.update(instanceName, { config, description }, project);
       toast("success", "Configuration saved");
       setInitialConfig(config);
       setInitialDescription(description);
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Save failed");
     }
-  }, [instanceName, config, description]);
+  }, [instanceName, config, description, project]);
 
   const cancel = useCallback(() => {
     setConfig(initialConfig);

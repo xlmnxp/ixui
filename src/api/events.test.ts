@@ -2,6 +2,7 @@ import { EventStream } from "./events";
 
 class FakeWebSocket {
   static instances: FakeWebSocket[] = [];
+  onopen: (() => void) | null = null;
   onmessage: ((msg: { data: string }) => void) | null = null;
   onclose: (() => void) | null = null;
   onerror: (() => void) | null = null;
@@ -81,5 +82,35 @@ describe("EventStream", () => {
     stream.close();
     vi.advanceTimersByTime(2000);
     expect(FakeWebSocket.instances.length).toBe(1);
+  });
+
+  it("backs off between repeated failures and resets on open", () => {
+    const stream = new EventStream("ws://x");
+    stream.connect();
+    // First drop: reconnect within ~1s.
+    FakeWebSocket.instances[0]!.onclose?.();
+    vi.advanceTimersByTime(1000);
+    expect(FakeWebSocket.instances.length).toBe(2);
+    // Open the reconnected socket, then drop it: backoff must have reset,
+    // so the next reconnect also lands within ~1s.
+    FakeWebSocket.instances[1]!.onopen?.();
+    FakeWebSocket.instances[1]!.onclose?.();
+    vi.advanceTimersByTime(1000);
+    expect(FakeWebSocket.instances.length).toBe(3);
+    stream.close();
+  });
+
+  it("caps the reconnect delay at 30s", () => {
+    const stream = new EventStream("ws://x");
+    stream.connect();
+    let closed = FakeWebSocket.instances[0]!;
+    // Repeated failures with no successful open: delays grow but stay ≤ 30s.
+    for (let i = 0; i < 10; i++) {
+      closed.onclose?.();
+      vi.advanceTimersByTime(31_000);
+      closed = FakeWebSocket.instances[FakeWebSocket.instances.length - 1]!;
+      expect(FakeWebSocket.instances.length).toBe(i + 2);
+    }
+    stream.close();
   });
 });

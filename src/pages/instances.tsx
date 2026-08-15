@@ -47,15 +47,14 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
 
   useEffect(() => {
     let cancelled = false;
-    const names = scoped.map((i) => i.name);
     void Promise.all(
-      names.map(async (n) => {
+      scoped.map(async (instance) => {
         try {
-          const state = await instancesApi.state(n);
+          const state = await instancesApi.state(instance.name, instance.project);
           const { ipv4, ipv6, extra } = ipSummary(state as InstanceStateInfo | null);
           const parts = [ipv4, ipv6].filter((ip): ip is string => ip !== undefined);
           const label = parts.length > 0 ? parts.join(", ") + (extra > 0 ? ` +${extra} more` : "") : "—";
-          return [n, label] as const;
+          return [instance.name, label] as const;
         } catch {
           return null;
         }
@@ -70,20 +69,22 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
   }, [instanceNames]);
 
   const runAction = useCallback(async (action: Action, names: string[]) => {
+    const projectByName = new Map(scoped.map((i) => [i.name, i.project]));
     setBusy(() => Object.fromEntries(names.map((n) => [n, true])));
     try {
-      await Promise.all(names.map((n) => instancesApi.setState(n, action)));
+      await Promise.all(names.map((n) => instancesApi.setState(n, action, false, projectByName.get(n))));
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Action failed");
     } finally {
       setBusy(() => Object.fromEntries(names.map((n) => [n, false])));
     }
-  }, []);
+  }, [scoped]);
 
   const confirmDelete = async () => {
+    const projectByName = new Map(scoped.map((i) => [i.name, i.project]));
     setDeleting(true);
     try {
-      await Promise.all(selectedKeys.map((n) => instancesApi.delete(n)));
+      await Promise.all(selectedKeys.map((n) => instancesApi.delete(n, projectByName.get(n))));
       toast("success", `Deleted ${selectedKeys.length} instance(s)`);
       setSelectedKeys([]);
     } catch (err) {
@@ -184,7 +185,7 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
         onCancel={() => setDeleteOpen(false)}
       />
 
-      <CopyInstanceDialog open={copySource !== null} onClose={() => setCopySource(null)} name={copySource?.name ?? ""} defaultPool={copySource?.devices.root?.pool} />
+      <CopyInstanceDialog open={copySource !== null} onClose={() => setCopySource(null)} name={copySource?.name ?? ""} project={copySource?.project} defaultPool={copySource?.devices.root?.pool} />
     </div>
   );
 }
