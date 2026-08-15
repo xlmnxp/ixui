@@ -217,7 +217,7 @@ export function Gallery() {
           />
         </div>
         <div className="h-48 w-full overflow-auto rounded border border-border">
-          <div className="sticky top-0 z-10 bg-surface-800 px-2 py-1 text-xs text-text-secondary">Demo bar (sticky) — header sticks 32px lower</div>
+          <div className="sticky top-0 z-10 flex h-8 items-center bg-surface-800 px-2 text-xs text-text-secondary">Demo bar (sticky, 32px) — header pins right below it</div>
           <Table
             stickyHeaderOffset={32}
             columns={[
