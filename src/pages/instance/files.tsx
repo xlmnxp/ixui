@@ -14,7 +14,7 @@ import { toast } from "../../components/toast";
 import { ExplorerNavbar } from "../../components/explorer-nav";
 import { FileEntryIcon, fileTypeLabel } from "../../components/file-entry-icon";
 import { formatBytes } from "../../lib/format";
-import { basenameOf, joinPath, parentOf } from "../../lib/path";
+import { basenameOf, joinPath, parentOf, resolveLinkTarget } from "../../lib/path";
 
 export { basenameOf, joinPath, normalizeTypedPath, parentOf } from "../../lib/path";
 
@@ -123,7 +123,14 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
 
   const openEntry = async (name: string) => {
     const path = joinPath(cwd, name);
-    if (stats[name]?.type === "directory") {
+    let type = stats[name]?.type ?? null;
+    // Unknown entries (stat sweep failures or beyond the cap): stat on demand.
+    if (type === null) {
+      const stat = await filesApi.stat(instanceName, path, project).catch(() => null);
+      type = stat?.type ?? null;
+      setStats((prev) => ({ ...prev, [name]: { ...(prev[name] ?? UNKNOWN_STAT), type } }));
+    }
+    if (type === "directory") {
       navigateTo(path);
       return;
     }
@@ -131,10 +138,22 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
       const result = await filesApi.read(instanceName, path, project);
       if (Array.isArray(result)) {
         navigateTo(path);
-      } else {
-        setEditPath(path);
-        setEditContent(result);
+        return;
       }
+      if (type === "symlink") {
+        // The read returned the link target as text; follow it to the real path.
+        const target = resolveLinkTarget(path, result);
+        const targetResult = await filesApi.read(instanceName, target, project);
+        if (Array.isArray(targetResult)) {
+          navigateTo(target);
+        } else {
+          setEditPath(target);
+          setEditContent(targetResult);
+        }
+        return;
+      }
+      setEditPath(path);
+      setEditContent(result);
     } catch {
       toast("danger", `Cannot read ${name}`);
     }

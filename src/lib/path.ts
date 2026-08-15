@@ -23,3 +23,19 @@ export function normalizeTypedPath(raw: string): string {
   while (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
   return path;
 }
+
+/** Resolve a symlink target (relative or absolute) against the link's own path. */
+export function resolveLinkTarget(linkPath: string, target: string): string {
+  const trimmed = target.trim();
+  if (!trimmed) return linkPath;
+  const raw = trimmed.startsWith("/")
+    ? trimmed
+    : joinPath(parentOf(linkPath), trimmed);
+  const stack: string[] = [];
+  for (const part of raw.split("/")) {
+    if (part === "" || part === ".") continue;
+    if (part === "..") stack.pop();
+    else stack.push(part);
+  }
+  return "/" + stack.join("/");
+}

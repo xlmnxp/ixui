@@ -298,6 +298,62 @@ describe("FilesTab", () => {
     expect(screen.queryByTestId("files-path-error")).not.toBeInTheDocument();
   });
 
+  it("follows a symlink to a directory", async () => {
+    const user = userEvent.setup();
+    vi.mocked(filesApi.stat).mockImplementation(() =>
+      Promise.resolve({ type: "symlink", size: null, modified: null })
+    );
+    vi.mocked(filesApi.read).mockImplementation((_i, path) => {
+      if (path === "/") return Promise.resolve(["run"]);
+      if (path === "/run") return Promise.resolve("/var/run-target");
+      if (path === "/var/run-target") return Promise.resolve(["lock"]);
+      return Promise.resolve([]);
+    });
+    renderTab();
+    await user.click(await screen.findByTestId("file-row-run"));
+    expect(await screen.findByTestId("file-row-lock")).toBeInTheDocument();
+    expect(filesApi.read).toHaveBeenCalledWith("web1", "/run", "default");
+    expect(filesApi.read).toHaveBeenCalledWith("web1", "/var/run-target", "default");
+    // The cwd is the resolved target, not the link path.
+    expect(screen.getByTestId("crumb-0")).toHaveTextContent("var");
+    expect(screen.getByTestId("crumb-1")).toHaveTextContent("run-target");
+  });
+
+  it("follows a symlink to a file and opens the target in the editor", async () => {
+    const user = userEvent.setup();
+    vi.mocked(filesApi.stat).mockImplementation(() =>
+      Promise.resolve({ type: "symlink", size: null, modified: null })
+    );
+    vi.mocked(filesApi.read).mockImplementation((_i, path) => {
+      if (path === "/") return Promise.resolve(["conf"]);
+      if (path === "/conf") return Promise.resolve("/etc/motd");
+      if (path === "/etc/motd") return Promise.resolve("hello");
+      return Promise.resolve([]);
+    });
+    renderTab();
+    await user.click(await screen.findByTestId("file-row-conf"));
+    expect(await screen.findByTestId("file-content")).toHaveValue("hello");
+  });
+
+  it("stats unknown entries on click and navigates directories", async () => {
+    const user = userEvent.setup();
+    let statCalls = 0;
+    vi.mocked(filesApi.stat).mockImplementation(async () => {
+      statCalls += 1;
+      if (statCalls === 1) throw new Error("sweep failure");
+      return { type: "directory", size: null, modified: null };
+    });
+    vi.mocked(filesApi.read).mockImplementation((_i, path) =>
+      Promise.resolve(path === "/" ? ["etc"] : ["nginx.conf"])
+    );
+    renderTab();
+    await user.click(await screen.findByTestId("file-row-etc"));
+    expect(await screen.findByTestId("crumb-0")).toHaveTextContent("etc");
+    expect(await screen.findByTestId("file-row-nginx.conf")).toBeInTheDocument();
+    // The click path ran the lazy stat (the sweep failed on call 1).
+    expect(statCalls).toBeGreaterThanOrEqual(2);
+  });
+
   it("opens a file in the editor and saves via put", async () => {
     const user = userEvent.setup();
     vi.mocked(filesApi.read).mockImplementation((_i, path) =>
