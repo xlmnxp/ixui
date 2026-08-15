@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
-import { Monitor, SquareTerminal, Terminal as TerminalIcon } from "lucide-react";
+import { Monitor, RotateCw, SquareTerminal, Terminal as TerminalIcon } from "lucide-react";
 import { SpiceMainConn, handle_resize } from "../../lib/spice/src/main.js";
 import { instancesApi } from "../api";
 import { registerInstanceProject } from "../api/client";
@@ -284,7 +284,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
               action={
                 <div className="flex items-center justify-center gap-2">
                   <Button size="sm" data-testid="term-retry" onClick={() => void connect(kind)}>
-                    Retry
+                    <RotateCw size={14} /> Retry
                   </Button>
                   <Button size="sm" variant="secondary" data-testid="term-switch" onClick={() => switchKind(kind === "console" ? "exec" : "console")}>
                     {kind === "console" ? <SquareTerminal size={14} /> : <Monitor size={14} />} Switch to {kind === "console" ? "Shell" : "VGA"}
