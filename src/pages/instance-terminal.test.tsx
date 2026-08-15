@@ -284,4 +284,23 @@ describe("InstanceTerminal", () => {
     render(<InstanceTerminal instanceName="web1" />);
     expect(screen.getByText("web1")).toBeInTheDocument();
   });
+
+  it("refits and resizes the shell when the window resizes", async () => {
+    render(<InstanceTerminal instanceName="web1" />);
+    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
+    const data = FakeWebSocket.instances[0]!;
+    const control = FakeWebSocket.instances[1]!;
+    data.readyState = FakeWebSocket.OPEN;
+    act(() => data.onopen?.());
+    control.readyState = FakeWebSocket.OPEN;
+    act(() => control.onopen?.());
+    expect(control.send).toHaveBeenCalledTimes(1);
+    act(() => {
+      window.dispatchEvent(new Event("resize"));
+    });
+    expect(control.send).toHaveBeenCalledTimes(2);
+    expect(control.send.mock.calls[1]![0]).toBe(
+      JSON.stringify({ command: "window-resize", args: { width: "80", height: "24" } })
+    );
+  });
 });

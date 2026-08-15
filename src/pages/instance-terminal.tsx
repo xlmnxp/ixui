@@ -48,6 +48,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const sessionRef = useRef(0);
   const shimRef = useRef(createSubprotocolShim());
   const connectTimerRef = useRef<number | null>(null);
+  const fitResizeRef = useRef<(() => void) | null>(null);
 
   const clearConnectTimer = () => {
     if (connectTimerRef.current !== null) {
@@ -79,6 +80,10 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
     spiceRef.current = null;
     (window as { spice_connection?: unknown }).spice_connection = undefined;
     window.removeEventListener("resize", handle_resize);
+    if (fitResizeRef.current) {
+      window.removeEventListener("resize", fitResizeRef.current);
+      fitResizeRef.current = null;
+    }
   };
 
   const disconnect = () => {
@@ -218,6 +223,9 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
         if (ws.readyState === WebSocket.OPEN) ws.send(textEncoder.encode(data));
       });
       terminal.onResize(fitAndResize);
+      // Refit the terminal when the window itself resizes.
+      fitResizeRef.current = fitAndResize;
+      window.addEventListener("resize", fitAndResize);
     } catch (err) {
       if (session !== sessionRef.current) return;
       cleanup();
