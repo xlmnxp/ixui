@@ -113,9 +113,11 @@ describe("InstanceTerminal", () => {
     vi.unstubAllGlobals();
   });
 
-  it("auto-connects a shell and wires binary io", async () => {
+  it("auto-connects a shell with bash by default and wires binary io", async () => {
     render(<InstanceTerminal instanceName="web1" />);
     await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
+    expect(apiMocks.exec).toHaveBeenCalledTimes(1);
+    expect(apiMocks.exec).toHaveBeenCalledWith("web1", ["/bin/bash"], true);
     const data = FakeWebSocket.instances[0]!;
     expect(data.url).toContain("/1.0/operations/op1/websocket?secret=secret0");
     expect(data.binaryType).toBe("arraybuffer");
@@ -159,12 +161,54 @@ describe("InstanceTerminal", () => {
     expect(firstTerminal.dispose).toHaveBeenCalled();
   });
 
-  it("shows the error state and a danger toast when exec fails", async () => {
+  it("falls back to sh when bash fails", async () => {
+    apiMocks.exec
+      .mockRejectedValueOnce(new Error("no bash"))
+      .mockResolvedValueOnce(execResponse());
+    render(<InstanceTerminal instanceName="web1" />);
+    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
+    expect(apiMocks.exec).toHaveBeenCalledTimes(2);
+    expect(apiMocks.exec).toHaveBeenNthCalledWith(1, "web1", ["/bin/bash"], true);
+    expect(apiMocks.exec).toHaveBeenNthCalledWith(2, "web1", ["/bin/sh"], true);
+  });
+
+  it("shows the shell error placeholder with a danger toast when both shells fail", async () => {
     apiMocks.exec.mockRejectedValue(new Error("boom"));
     render(<InstanceTerminal instanceName="web1" />);
     expect(await screen.findByTestId("term-error")).toBeInTheDocument();
+    expect(screen.getByText("Shell unavailable")).toBeInTheDocument();
+    expect(screen.getByText(/instance is running/)).toBeInTheDocument();
+    expect(screen.getByTestId("term-retry")).toBeInTheDocument();
+    expect(screen.getByTestId("term-switch")).toHaveTextContent("Switch to VGA");
+    // Both shell candidates were attempted.
+    expect(apiMocks.exec).toHaveBeenCalledTimes(2);
     const toasts = toastStore.getState();
     expect(toasts.some((t) => t.tone === "danger" && t.message === "boom")).toBe(true);
+  });
+
+  it("offers to switch to VGA from the shell error state", async () => {
+    const user = userEvent.setup();
+    apiMocks.exec.mockRejectedValue(new Error("boom"));
+    render(<InstanceTerminal instanceName="web1" />);
+    await screen.findByTestId("term-error");
+    await user.click(screen.getByTestId("term-switch"));
+    expect(apiMocks.console).toHaveBeenCalledWith("web1", 80, 24);
+  });
+
+  it("shows the VGA error placeholder and offers to switch to Shell", async () => {
+    const user = userEvent.setup();
+    apiMocks.console.mockRejectedValue(new Error("vga down"));
+    render(<InstanceTerminal instanceName="web1" />);
+    // Let the initial shell connect, then switch to the failing VGA console.
+    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
+    const data = FakeWebSocket.instances[0]!;
+    data.readyState = FakeWebSocket.OPEN;
+    act(() => data.onopen?.());
+    await user.click(screen.getByTestId("term-vga"));
+    expect(await screen.findByText("VGA console unavailable")).toBeInTheDocument();
+    expect(screen.getByTestId("term-switch")).toHaveTextContent("Switch to Shell");
+    await user.click(screen.getByTestId("term-switch"));
+    expect(apiMocks.exec).toHaveBeenCalledWith("web1", ["/bin/bash"], true);
   });
 
   it("flushes the latest window-resize over the control socket on open", async () => {

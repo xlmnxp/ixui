@@ -9,6 +9,8 @@ import { registerInstanceProject } from "../api/client";
 import { createSubprotocolShim } from "../lib/ws-shim";
 import type { AsyncResponse } from "../api/types";
 import { Button } from "../components/button";
+import { EmptyState } from "../components/empty-state";
+import { Spinner } from "../components/spinner";
 import { toast } from "../components/toast";
 
 export interface InstanceTerminalProps {
@@ -22,6 +24,9 @@ function toWsUrl(path: string): string {
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
+
+/** Shells to try for the exec console, in order: bash first, then sh. */
+const SHELL_CANDIDATES: string[][] = [["/bin/bash"], ["/bin/sh"]];
 
 export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const project = new URLSearchParams(window.location.search).get("project") ?? undefined;
@@ -67,7 +72,17 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
     setStatus("connecting");
     try {
       const result = await (nextKind === "exec"
-        ? instancesApi.exec(instanceName, ["/bin/sh"], true)
+        ? (async () => {
+            let lastError: unknown = null;
+            for (const command of SHELL_CANDIDATES) {
+              try {
+                return await instancesApi.exec(instanceName, command, true);
+              } catch (err) {
+                lastError = err;
+              }
+            }
+            throw lastError ?? new Error("Exec failed");
+          })()
         : instancesApi.console(instanceName, 80, 24));
       if (session !== sessionRef.current) return;
 
@@ -213,12 +228,39 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
           </Button>
         </div>
       </div>
-      <div ref={containerRef} id="spice-screen" className="min-h-0 flex-1 bg-surface-950" />
-      {status === "error" && (
-        <p className="px-3 pb-2 text-xs text-red-300" data-testid="term-error">
-          Connection failed. Is the instance running?
-        </p>
-      )}
+      <div ref={containerRef} id="spice-screen" className="relative min-h-0 flex-1 bg-surface-950">
+        {status === "connecting" && (
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-surface-950/80 text-sm text-text-secondary"
+            data-testid="term-connecting"
+          >
+            <Spinner size="sm" /> Connecting…
+          </div>
+        )}
+        {status === "error" && (
+          <div className="flex h-full items-center justify-center p-6" data-testid="term-error">
+            <EmptyState
+              icon={kind === "console" ? <Monitor size={28} className="text-text-tertiary" /> : <SquareTerminal size={28} className="text-text-tertiary" />}
+              title={kind === "console" ? "VGA console unavailable" : "Shell unavailable"}
+              description={
+                kind === "console"
+                  ? "The VGA console could not connect. Check that the instance is running, then retry or switch to the Shell."
+                  : "The shell could not connect. Check that the instance is running, then retry or switch to the VGA console."
+              }
+              action={
+                <div className="flex items-center justify-center gap-2">
+                  <Button size="sm" data-testid="term-retry" onClick={() => void connect(kind)}>
+                    Retry
+                  </Button>
+                  <Button size="sm" variant="secondary" data-testid="term-switch" onClick={() => switchKind(kind === "console" ? "exec" : "console")}>
+                    {kind === "console" ? <SquareTerminal size={14} /> : <Monitor size={14} />} Switch to {kind === "console" ? "Shell" : "VGA"}
+                  </Button>
+                </div>
+              }
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
