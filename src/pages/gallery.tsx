@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Maximize2, Plus, ShieldAlert } from "lucide-react";
+import { Bell, FilePlus2, FolderPlus, Maximize2, Plus, ShieldAlert } from "lucide-react";
 import { Button } from "../components/button";
 import { Badge } from "../components/badge";
 import { StatusDot } from "../components/status-dot";
@@ -26,6 +26,9 @@ import { Window } from "../components/window";
 import { VerticalTabs } from "../components/vertical-tabs";
 import { ProjectDropdown } from "../components/project-dropdown";
 import { InstanceIcon } from "../shell/instance-icon";
+import { ExplorerNavbar } from "../components/explorer-nav";
+import { FileEntryIcon } from "../components/file-entry-icon";
+import { parentOf } from "../lib/path";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -44,6 +47,31 @@ export function Gallery() {
   const [vtab, setVtab] = useState("a");
   const [kvValues, setKvValues] = useState<Record<string, string>>({ "limits.memory": "512MiB", "server.name": "ix" });
   const [kvSelected, setKvSelected] = useState<string[]>([]);
+  const [explorerCwd, setExplorerCwd] = useState("/srv/www");
+  const [explorerHistory, setExplorerHistory] = useState<string[]>(["/srv/www"]);
+  const [explorerIndex, setExplorerIndex] = useState(0);
+
+  const explorerNavigate = (path: string) => {
+    setExplorerCwd(path);
+    setExplorerHistory((prev) => [...prev.slice(0, explorerIndex + 1), path]);
+    setExplorerIndex((i) => i + 1);
+  };
+  const explorerGoBack = () => {
+    if (explorerIndex <= 0) return;
+    const idx = explorerIndex - 1;
+    setExplorerIndex(idx);
+    setExplorerCwd(explorerHistory[idx] ?? "/");
+  };
+  const explorerGoForward = () => {
+    if (explorerIndex >= explorerHistory.length - 1) return;
+    const idx = explorerIndex + 1;
+    setExplorerIndex(idx);
+    setExplorerCwd(explorerHistory[idx] ?? "/");
+  };
+  const explorerCommit = (path: string) => {
+    if (path.includes("nope")) throw new Error(`Path not found: ${path}`);
+    explorerNavigate(path);
+  };
 
   return (
     <div className="space-y-4 p-6" data-testid="gallery">
@@ -114,6 +142,43 @@ export function Gallery() {
         <InstanceIcon status="Running" type="container" />
         <InstanceIcon status="Stopped" type="virtual-machine" />
         <InstanceIcon status="Error" type="container" />
+      </Section>
+
+      <Section title="FileEntryIcon">
+        <span className="flex items-center gap-2"><FileEntryIcon type="directory" /> Directory</span>
+        <span className="flex items-center gap-2"><FileEntryIcon type="file" /> File</span>
+        <span className="flex items-center gap-2"><FileEntryIcon type="symlink" /> Symlink</span>
+        <span className="flex items-center gap-2"><FileEntryIcon type={null} /> Unknown</span>
+        <span className="flex items-center gap-2"><FileEntryIcon type="directory" size={18} /> size 18</span>
+      </Section>
+
+      <Section title="ExplorerNav">
+        <div className="w-full">
+          <div className="h-56 w-full overflow-auto rounded border border-border">
+            <ExplorerNavbar
+              cwd={explorerCwd}
+              canBack={explorerIndex > 0}
+              canForward={explorerIndex < explorerHistory.length - 1}
+              onBack={explorerGoBack}
+              onForward={explorerGoForward}
+              onUp={() => explorerNavigate(parentOf(explorerCwd))}
+              onNavigate={explorerNavigate}
+              onCommitPath={explorerCommit}
+              actions={
+                <>
+                  <Button size="sm" variant="ghost"><FilePlus2 size={14} /> New file</Button>
+                  <Button size="sm" variant="ghost"><FolderPlus size={14} /> New folder</Button>
+                </>
+              }
+            />
+            <div className="p-3 text-xs text-text-secondary">
+              <p className="mb-2">Click the breadcrumb bar to type a path. Paths containing "nope" demonstrate the inline error state. Scroll this box to see the bar stay pinned.</p>
+              {Array.from({ length: 14 }, (_, i) => (
+                <div key={i} className="border-b border-border py-1.5 font-mono">entry-{i}.log</div>
+              ))}
+            </div>
+          </div>
+        </div>
       </Section>
 
       <Section title="Progress">

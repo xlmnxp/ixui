@@ -1,7 +1,7 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, ArrowUp, Check, ChevronRight, Download, File, FilePlus2, FileText, Folder, FolderPlus, Link2, Pencil, RefreshCw, Trash2, Upload, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Check, Download, FilePlus2, FolderPlus, Pencil, RefreshCw, Trash2, Upload, X } from "lucide-react";
 import { filesApi } from "../../api";
-import type { FileEntryType, FileStat } from "../../api/files";
+import type { FileStat } from "../../api/files";
 import { Table } from "../../components/table";
 import type { Column } from "../../components/table";
 import { Button } from "../../components/button";
@@ -11,65 +11,27 @@ import { Input } from "../../components/input";
 import { Textarea } from "../../components/textarea";
 import { EmptyState } from "../../components/empty-state";
 import { toast } from "../../components/toast";
+import { ExplorerNavbar } from "../../components/explorer-nav";
+import { FileEntryIcon, fileTypeLabel } from "../../components/file-entry-icon";
 import { formatBytes } from "../../lib/format";
+import { basenameOf, joinPath, parentOf } from "../../lib/path";
+
+export { basenameOf, joinPath, normalizeTypedPath, parentOf } from "../../lib/path";
 
 /** Cap the per-refresh stat sweep so huge directories don't fan out too far. */
 const MAX_STAT_SWEEP = 200;
 
 const UNKNOWN_STAT: FileStat = { type: null, size: null, modified: null };
 
-function entryIcon(type: FileEntryType | null) {
-  if (type === "directory") return <Folder size={14} className="text-amber-300" />;
-  if (type === "file") return <FileText size={14} className="text-text-tertiary" />;
-  if (type === "symlink") return <Link2 size={14} className="text-sky-300" />;
-  return <File size={14} className="text-text-tertiary" />;
-}
-
-function typeLabel(type: FileEntryType | null): string {
-  if (type === "directory") return "Directory";
-  if (type === "file") return "File";
-  if (type === "symlink") return "Symlink";
-  return "—";
-}
-
 export interface FilesTabProps {
   instanceName: string;
   project?: string;
-}
-
-export function joinPath(dir: string, name: string): string {
-  return dir === "/" ? `/${name}` : `${dir}/${name}`;
-}
-
-export function parentOf(path: string): string {
-  const trimmed = path.replace(/\/+$/, "");
-  if (trimmed === "" || trimmed === "/") return "/";
-  const idx = trimmed.lastIndexOf("/");
-  return idx <= 0 ? "/" : trimmed.slice(0, idx);
-}
-
-export function basenameOf(path: string): string {
-  const trimmed = path.replace(/\/+$/, "");
-  return trimmed.split("/").pop() ?? "";
-}
-
-/** Normalize a user-typed path: absolute, no trailing slashes except root. */
-export function normalizeTypedPath(raw: string): string {
-  const trimmed = raw.trim();
-  if (!trimmed) return "/";
-  let path = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-  path = path.replace(/\\+/g, "/").replace(/\/+/g, "/");
-  while (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
-  return path;
 }
 
 export function FilesTab({ instanceName, project }: FilesTabProps) {
   const [cwd, setCwd] = useState("/");
   const [history, setHistory] = useState<string[]>(["/"]);
   const [historyIndex, setHistoryIndex] = useState(0);
-  const [editingPath, setEditingPath] = useState(false);
-  const [pathDraft, setPathDraft] = useState("");
-  const [pathError, setPathError] = useState<string | null>(null);
   const [entries, setEntries] = useState<string[] | null>(null);
   const [stats, setStats] = useState<Record<string, FileStat>>({});
   const [editPath, setEditPath] = useState<string | null>(null);
@@ -81,7 +43,6 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const uploadRef = useRef<HTMLInputElement>(null);
-  const pathBusyRef = useRef(false);
 
   const navigateTo = useCallback((path: string) => {
     if (history[historyIndex] === path) return;
@@ -105,15 +66,8 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
     setCwd(history[idx] ?? "/");
   }, [history, historyIndex]);
 
-  const commitPath = useCallback(async () => {
-    const path = normalizeTypedPath(pathDraft);
-    if (path === cwd) {
-      setEditingPath(false);
-      setPathError(null);
-      return;
-    }
-    pathBusyRef.current = true;
-    setPathError(null);
+  const commitPath = useCallback(async (path: string) => {
+    if (path === cwd) return;
     try {
       const result = await filesApi.read(instanceName, path, project);
       if (Array.isArray(result)) {
@@ -124,14 +78,10 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
         setEditPath(path);
         setEditContent(result);
       }
-      setEditingPath(false);
-      setPathError(null);
     } catch {
-      setPathError(`Path not found: ${path}`);
-    } finally {
-      pathBusyRef.current = false;
+      throw new Error(`Path not found: ${path}`);
     }
-  }, [pathDraft, cwd, navigateTo, instanceName, project]);
+  }, [cwd, navigateTo, instanceName, project]);
 
   const sweepStats = useCallback((dir: string, names: string[]) => {
     void Promise.all(
@@ -295,7 +245,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
       sortValue: (e) => e,
       render: (name) => (
         <span className="flex items-center gap-2">
-          <span data-testid={`entry-icon-${name}`} data-type={stats[name]?.type ?? "unknown"}>{entryIcon(stats[name]?.type ?? null)}</span>
+          <span data-testid={`entry-icon-${name}`} data-type={stats[name]?.type ?? "unknown"}><FileEntryIcon type={stats[name]?.type ?? null} /></span>
           <button
             type="button"
             data-testid={`file-row-${name}`}
@@ -311,7 +261,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
       key: "type",
       header: "Type",
       sortValue: (e) => stats[e]?.type ?? "",
-      render: (name) => typeLabel(stats[name]?.type ?? null),
+      render: (name) => fileTypeLabel(stats[name]?.type ?? null),
     },
     {
       key: "size",
@@ -351,106 +301,27 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
     },
   ];
 
-  const crumbs = cwd === "/" ? [] : cwd.split("/").slice(1);
-
   return (
     <div data-testid="files-tab">
-      <div className="sticky top-0 z-10 bg-surface-900" data-testid="files-navbar">
-      <div className="flex items-center gap-1.5 border-b border-border px-3 py-2">
-        <Button size="sm" variant="ghost" aria-label="Back" data-testid="files-back" disabled={historyIndex <= 0} onClick={goBack}><ArrowLeft size={14} /></Button>
-        <Button size="sm" variant="ghost" aria-label="Forward" data-testid="files-forward" disabled={historyIndex >= history.length - 1} onClick={goForward}><ArrowRight size={14} /></Button>
-        <Button size="sm" variant="ghost" data-testid="files-up" disabled={cwd === "/"} onClick={() => navigateTo(parentOf(cwd))}><ArrowUp size={14} /></Button>
-
-        {editingPath ? (
-          <input
-            autoFocus
-            data-testid="files-path-input"
-            aria-invalid={pathError !== null}
-            value={pathDraft}
-            onChange={(e) => {
-              setPathDraft(e.target.value);
-              if (pathError) setPathError(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") void commitPath();
-              else if (e.key === "Escape") {
-                setEditingPath(false);
-                setPathError(null);
-              }
-            }}
-            onBlur={() => {
-              if (!pathBusyRef.current) {
-                setEditingPath(false);
-                setPathError(null);
-              }
-            }}
-            placeholder="/path/to/directory"
-            className={`min-w-0 flex-1 rounded border bg-surface-700 px-2 py-1.5 font-mono text-xs text-text-primary outline-none placeholder:text-text-tertiary ${pathError ? "border-danger focus:border-danger" : "border-accent-500"}`}
-          />
-        ) : (
-          <div
-            className="flex min-w-0 flex-1 cursor-text items-center gap-1 overflow-hidden rounded border border-border bg-surface-700 px-2 py-1.5 hover:border-surface-500"
-            data-testid="files-breadcrumbs"
-            title="Click to edit path"
-            onClick={() => {
-              setPathDraft(cwd);
-              setEditingPath(true);
-            }}
-          >
-            <button
-              type="button"
-              data-testid="crumb-root"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigateTo("/");
-              }}
-              className="shrink-0 rounded px-1 font-mono text-xs text-text-secondary hover:bg-surface-600 hover:text-text-primary"
-            >
-              /
-            </button>
-            {crumbs.map((segment, i) => {
-              const path = "/" + crumbs.slice(0, i + 1).join("/");
-              return (
-                <Fragment key={path}>
-                  <ChevronRight size={12} className="shrink-0 text-text-tertiary" />
-                  <button
-                    type="button"
-                    data-testid={
-                      `crumb-${i}`
-                    }
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigateTo(path);
-                    }}
-                    className={
-                      `shrink-0 rounded px-1 font-mono text-xs ${i === crumbs.length - 1 ? "text-text-primary" : "text-text-secondary hover:bg-surface-600 hover:text-text-primary"}`
-                    }
-                  >
-                    {segment}
-                  </button>
-                </Fragment>
-              );
-            })}
-          </div>
-        )}
-
-        <Button size="sm" variant="ghost" data-testid="files-new-file" onClick={() => { setNewOpen(true); setNewName(""); setEditContent(""); setEditPath(""); }}><FilePlus2 size={14} /> New file</Button>
-        <Button size="sm" variant="ghost" data-testid="files-new-dir" onClick={() => { setMkdirOpen(true); setMkdirName(""); }}><FolderPlus size={14} /> New folder</Button>
-        <Button size="sm" variant="ghost" data-testid="files-upload" onClick={() => uploadRef.current?.click()}><Upload size={14} /> Upload</Button>
-        <Button size="sm" variant="ghost" data-testid="files-refresh" onClick={refresh}><RefreshCw size={14} /></Button>
-        <input ref={uploadRef} type="file" data-testid="files-upload-input" className="hidden" onChange={(e) => void upload(e.target.files?.[0])} />
-      </div>
-
-      {pathError && (
-        <div
-          role="alert"
-          data-testid="files-path-error"
-          className="border-b border-danger/40 bg-danger/10 px-3 py-1.5 text-xs text-red-300"
-        >
-          {pathError}
-        </div>
-      )}
-      </div>
+      <ExplorerNavbar
+        cwd={cwd}
+        canBack={historyIndex > 0}
+        canForward={historyIndex < history.length - 1}
+        onBack={goBack}
+        onForward={goForward}
+        onUp={() => navigateTo(parentOf(cwd))}
+        onNavigate={navigateTo}
+        onCommitPath={commitPath}
+        actions={
+          <>
+            <Button size="sm" variant="ghost" data-testid="files-new-file" onClick={() => { setNewOpen(true); setNewName(""); setEditContent(""); setEditPath(""); }}><FilePlus2 size={14} /> New file</Button>
+            <Button size="sm" variant="ghost" data-testid="files-new-dir" onClick={() => { setMkdirOpen(true); setMkdirName(""); }}><FolderPlus size={14} /> New folder</Button>
+            <Button size="sm" variant="ghost" data-testid="files-upload" onClick={() => uploadRef.current?.click()}><Upload size={14} /> Upload</Button>
+            <Button size="sm" variant="ghost" data-testid="files-refresh" onClick={refresh}><RefreshCw size={14} /></Button>
+            <input ref={uploadRef} type="file" data-testid="files-upload-input" className="hidden" onChange={(e) => void upload(e.target.files?.[0])} />
+          </>
+        }
+      />
 
       {sorted.length === 0 ? (
         <div className="px-3 pb-3">
