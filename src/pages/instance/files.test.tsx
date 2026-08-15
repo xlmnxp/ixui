@@ -14,9 +14,6 @@ vi.mock("../../api", () => ({
   },
 }));
 
-const entry = (name: string, type: "file" | "directory" | "symlink", size?: number) =>
-  ({ name, type, size }) as import("../../api/files").FileEntry;
-
 describe("path helpers", () => {
   it("joins paths", () => {
     expect(joinPath("/", "etc")).toBe("/etc");
@@ -38,15 +35,12 @@ describe("path helpers", () => {
 describe("FilesTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(filesApi.read).mockResolvedValue([
-      entry("etc", "directory"),
-      entry("motd", "file", 12),
-    ]);
+    vi.mocked(filesApi.read).mockResolvedValue(["etc", "motd"]);
   });
 
   const renderTab = () => render(<FilesTab instanceName="web1" project="default" />);
 
-  it("lists entries with directories and file actions", async () => {
+  it("lists entries with row actions", async () => {
     renderTab();
     expect(await screen.findByTestId("file-row-etc")).toBeInTheDocument();
     expect(screen.getByTestId("file-row-motd")).toBeInTheDocument();
@@ -58,10 +52,9 @@ describe("FilesTab", () => {
 
   it("navigates into a directory", async () => {
     const user = userEvent.setup();
-    vi.mocked(filesApi.read).mockResolvedValueOnce([
-      entry("etc", "directory"),
-      entry("motd", "file", 12),
-    ]).mockResolvedValueOnce([entry("nginx.conf", "file", 100)]);
+    vi.mocked(filesApi.read).mockImplementation((_i, path) =>
+      Promise.resolve(path === "/" ? ["etc", "motd"] : ["nginx.conf"])
+    );
     renderTab();
     await user.click(await screen.findByTestId("file-row-etc"));
     expect(await screen.findByTestId("file-row-nginx.conf")).toBeInTheDocument();
@@ -70,7 +63,9 @@ describe("FilesTab", () => {
 
   it("moves up to the parent directory", async () => {
     const user = userEvent.setup();
-    vi.mocked(filesApi.read).mockResolvedValue([entry("etc", "directory")]);
+    vi.mocked(filesApi.read).mockImplementation((_i, path) =>
+      Promise.resolve(path === "/" ? ["etc"] : [])
+    );
     renderTab();
     await user.click(await screen.findByTestId("file-row-etc"));
     await waitFor(() => expect(screen.getByTestId("files-cwd")).toHaveTextContent("/etc"));
@@ -80,9 +75,9 @@ describe("FilesTab", () => {
 
   it("opens a file in the editor and saves via put", async () => {
     const user = userEvent.setup();
-    vi.mocked(filesApi.read).mockResolvedValueOnce([
-      entry("motd", "file", 12),
-    ]).mockResolvedValueOnce("hello");
+    vi.mocked(filesApi.read).mockImplementation((_i, path) =>
+      Promise.resolve(path === "/" ? ["motd"] : "hello")
+    );
     renderTab();
     await user.click(await screen.findByTestId("file-row-motd"));
     await user.clear(await screen.findByTestId("file-content"));

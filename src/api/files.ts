@@ -1,12 +1,5 @@
 import { projectFor, type ApiClient } from "./client";
 
-export interface FileEntry {
-  type: "file" | "directory" | "symlink";
-  name: string;
-  size?: number;
-  modify_time?: string;
-}
-
 function filesUrl(instance: string, path: string, project?: string): string {
   const resolved = project ?? projectFor(instance);
   const projectPart = resolved !== undefined ? `project=${encodeURIComponent(resolved)}&` : "";
@@ -17,14 +10,14 @@ export class FilesApi {
   constructor(private client: ApiClient) {}
 
   /**
-   * Returns the directory listing (FileEntry[]) when path is a directory, or
-   * the raw file contents (string) when it is a file.
+   * Returns the directory listing (array of entry name strings) when path is
+   * a directory, or the raw file contents (string) when it is a file.
    */
-  read(instance: string, path: string, project?: string): Promise<string | FileEntry[]> {
-    return this.client.get<string | FileEntry[]>(filesUrl(instance, path, project));
+  read(instance: string, path: string, project?: string): Promise<string | string[]> {
+    return this.client.get<string | string[]>(filesUrl(instance, path, project));
   }
 
-  get(instance: string, path: string, project?: string): Promise<string | FileEntry[]> {
+  get(instance: string, path: string, project?: string): Promise<string | string[]> {
     return this.read(instance, path, project);
   }
 

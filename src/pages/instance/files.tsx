@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUp, Check, Download, FilePlus2, FolderPlus, Pencil, RefreshCw, Trash2, Upload, X } from "lucide-react";
 import { filesApi } from "../../api";
-import type { FileEntry } from "../../api/files";
 import { Table } from "../../components/table";
 import type { Column } from "../../components/table";
 import { Button } from "../../components/button";
@@ -11,7 +10,6 @@ import { Input } from "../../components/input";
 import { Textarea } from "../../components/textarea";
 import { EmptyState } from "../../components/empty-state";
 import { toast } from "../../components/toast";
-import { formatBytes } from "../../lib/format";
 
 export interface FilesTabProps {
   instanceName: string;
@@ -36,7 +34,7 @@ export function basenameOf(path: string): string {
 
 export function FilesTab({ instanceName, project }: FilesTabProps) {
   const [cwd, setCwd] = useState("/");
-  const [entries, setEntries] = useState<FileEntry[] | null>(null);
+  const [entries, setEntries] = useState<string[] | null>(null);
   const [editPath, setEditPath] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [newName, setNewName] = useState("");
@@ -67,18 +65,18 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
 
   useEffect(refresh, [refresh]);
 
-  const openFile = async (entry: FileEntry) => {
-    const path = joinPath(cwd, entry.name);
-    if (entry.type === "directory") {
-      setCwd(path);
-      return;
-    }
+  const openEntry = async (name: string) => {
+    const path = joinPath(cwd, name);
     try {
       const result = await filesApi.read(instanceName, path, project);
-      setEditPath(path);
-      setEditContent(typeof result === "string" ? result : JSON.stringify(result, null, 2));
+      if (Array.isArray(result)) {
+        setCwd(path);
+      } else {
+        setEditPath(path);
+        setEditContent(result);
+      }
     } catch {
-      toast("danger", `Cannot read ${entry.name}`);
+      toast("danger", `Cannot read ${name}`);
     }
   };
 
@@ -107,8 +105,8 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
     }
   };
 
-  const download = async (entry: FileEntry) => {
-    const path = joinPath(cwd, entry.name);
+  const download = async (name: string) => {
+    const path = joinPath(cwd, name);
     try {
       const res = await fetch(filesApi.downloadUrl(instanceName, path, project), { credentials: "include" });
       if (!res.ok) throw new Error(`Download failed (${res.status})`);
@@ -116,7 +114,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = objectUrl;
-      a.download = entry.name;
+      a.download = name;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -173,53 +171,33 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
     }
   };
 
-  const sorted = [...(entries ?? [])].sort((a, b) => {
-    if (a.type === "directory" && b.type !== "directory") return -1;
-    if (b.type === "directory" && a.type !== "directory") return 1;
-    return a.name.localeCompare(b.name);
-  });
+  const sorted = [...(entries ?? [])].sort((a, b) => a.localeCompare(b));
 
-  const columns: Column<FileEntry>[] = [
+  const columns: Column<string>[] = [
     {
       key: "name",
       header: "Name",
-      sortValue: (e) => e.name,
-      render: (e) => (
+      sortValue: (e) => e,
+      render: (name) => (
         <button
           type="button"
-          data-testid={`file-row-${e.name}`}
-          onClick={() => void openFile(e)}
+          data-testid={`file-row-${name}`}
+          onClick={() => void openEntry(name)}
           className="font-mono text-xs text-accent-300 hover:underline"
         >
-          {e.name}
+          {name}
         </button>
       ),
-    },
-    { key: "type", header: "Type", sortValue: (e) => e.type, render: (e) => e.type },
-    {
-      key: "size",
-      header: "Size",
-      sortValue: (e) => e.size ?? 0,
-      render: (e) => (e.size !== undefined ? formatBytes(e.size) : "—"),
-    },
-    {
-      key: "modified",
-      header: "Modified",
-      render: (e) => (e.modify_time ? new Date(e.modify_time).toLocaleString() : "—"),
     },
     {
       key: "actions",
       header: "",
       align: "right",
-      render: (e) => (
+      render: (name) => (
         <div className="flex justify-end gap-1">
-          {e.type !== "directory" && (
-            <>
-              <Button size="sm" variant="ghost" data-testid={`file-edit-${e.name}`} onClick={() => void openFile(e)}><Pencil size={14} /> Edit</Button>
-              <Button size="sm" variant="ghost" data-testid={`file-download-${e.name}`} onClick={() => void download(e)}><Download size={14} /> Download</Button>
-            </>
-          )}
-          <Button size="sm" variant="ghost" data-testid={`file-delete-${e.name}`} onClick={() => setDeleteTarget(joinPath(cwd, e.name))}><Trash2 size={14} /></Button>
+          <Button size="sm" variant="ghost" data-testid={`file-edit-${name}`} onClick={() => void openEntry(name)}><Pencil size={14} /> Edit</Button>
+          <Button size="sm" variant="ghost" data-testid={`file-download-${name}`} onClick={() => void download(name)}><Download size={14} /> Download</Button>
+          <Button size="sm" variant="ghost" data-testid={`file-delete-${name}`} onClick={() => setDeleteTarget(joinPath(cwd, name))}><Trash2 size={14} /></Button>
         </div>
       ),
     },
@@ -241,7 +219,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
       {sorted.length === 0 ? (
         <EmptyState title="Empty directory" description="No files or folders here." />
       ) : (
-        <Table columns={columns} rows={sorted} rowKey={(e) => e.name} dataTestId="files-table" />
+        <Table columns={columns} rows={sorted} rowKey={(e) => e} dataTestId="files-table" />
       )}
 
       <Dialog

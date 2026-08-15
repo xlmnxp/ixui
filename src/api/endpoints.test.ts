@@ -230,12 +230,18 @@ describe("API endpoints", () => {
     });
   });
 
-  it("files read returns directory listings as parsed JSON", async () => {
-    const entries = [{ type: "directory", name: "etc" }, { type: "file", name: "motd", size: 12 }];
-    const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, entries)));
+  it("files read returns directory listings as name strings", async () => {
+    const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, { type: "sync", status_code: 200, metadata: ["etc", "motd"] })));
     vi.stubGlobal("fetch", fetchMock);
     const result = await filesApi.read("web1", "/");
-    expect(result).toEqual(entries);
+    expect(result).toEqual(["etc", "motd"]);
+  });
+
+  it("files read returns raw content for files", async () => {
+    const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(new Response("hello world", { status: 200 })));
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await filesApi.read("web1", "/etc/motd");
+    expect(result).toBe("hello world");
   });
 
   it("files downloadUrl builds an absolute path with the project", () => {
