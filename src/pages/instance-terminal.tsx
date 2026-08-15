@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
-import { Monitor, SquareTerminal, Terminal as TerminalIcon } from "lucide-react";
+import { Monitor, RotateCw, SquareTerminal, Terminal as TerminalIcon } from "lucide-react";
 import { SpiceMainConn, handle_resize } from "../../lib/spice/src/main.js";
 import { instancesApi } from "../api";
 import { registerInstanceProject } from "../api/client";
@@ -28,8 +28,8 @@ const textDecoder = new TextDecoder();
 /** Shells to try for the exec console, in order: bash first, then sh. */
 const SHELL_CANDIDATES: string[][] = [["/bin/bash"], ["/bin/sh"]];
 
-/** How long a connection may take to reach "connected" before we give up. */
-const CONNECT_TIMEOUT_MS = 20_000;
+/** Fallback for sockets that hang instead of closing. */
+const CONNECT_TIMEOUT_MS = 10_000;
 
 export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const project = new URLSearchParams(window.location.search).get("project") ?? undefined;
@@ -162,6 +162,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
       armConnectTimer();
 
       let reachedConnected = false;
+      let receivedData = false;
       let lastDims: { cols: number; rows: number } | null = null;
 
       const sendResize = (cols: number, rows: number) => {
@@ -192,17 +193,19 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
         setStatus("connected");
       };
       ws.onmessage = (msg) => {
+        receivedData = true;
         const data = typeof msg.data === "string" ? msg.data : textDecoder.decode(msg.data);
         if (data) terminal.write(data);
       };
       ws.onclose = () => {
         if (wsRef.current !== ws) return;
         cleanup();
-        if (reachedConnected) {
+        if (reachedConnected && receivedData) {
+          // A session that produced output and then ended: clean disconnect.
           setStatus("idle");
           toast("info", "Console disconnected");
         } else {
-          // The server closed the socket before the shell ever came up.
+          // No shell ever came up (e.g. VM without a running agent): fail fast.
           setStatus("error");
         }
       };
@@ -231,6 +234,15 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const switchKind = (nextKind: "exec" | "console") => {
     setKind(nextKind);
     void connect(nextKind);
+  };
+
+  const restartInstance = async () => {
+    try {
+      await instancesApi.setState(instanceName, "restart");
+      toast("info", `Restart requested for ${instanceName}`);
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Restart failed");
+    }
   };
 
   return (
@@ -275,8 +287,8 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
               title={kind === "console" ? "VGA console unavailable" : "Shell unavailable"}
               description={
                 kind === "console"
-                  ? "The VGA console could not connect. Check that the instance is running, then retry or switch to the Shell."
-                  : "The shell could not connect. Check that the instance is running, then retry or switch to the VGA console."
+                  ? "The VGA console could not connect. Check that the instance is running — restarting it may help — then retry or switch to the Shell."
+                  : "The shell could not connect. Check that the instance is running — restarting it may help (e.g. to start the guest agent) — then retry or switch to the VGA console."
               }
               action={
                 <div className="flex items-center justify-center gap-2">
@@ -285,6 +297,9 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                   </Button>
                   <Button size="sm" variant="secondary" data-testid="term-switch" onClick={() => switchKind(kind === "console" ? "exec" : "console")}>
                     {kind === "console" ? <SquareTerminal size={14} /> : <Monitor size={14} />} Switch to {kind === "console" ? "Shell" : "VGA"}
+                  </Button>
+                  <Button size="sm" variant="danger" data-testid="term-restart" onClick={() => void restartInstance()}>
+                    <RotateCw size={14} /> Restart instance
                   </Button>
                 </div>
               }

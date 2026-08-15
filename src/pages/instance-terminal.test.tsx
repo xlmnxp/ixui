@@ -15,6 +15,7 @@ const terminalState = vi.hoisted(() => ({
 const apiMocks = vi.hoisted(() => ({
   exec: vi.fn(),
   console: vi.fn(),
+  setState: vi.fn(),
 }));
 
 vi.mock("xterm", () => ({
@@ -57,6 +58,7 @@ vi.mock("../api", () => ({
   instancesApi: {
     exec: apiMocks.exec,
     console: apiMocks.console,
+    setState: apiMocks.setState,
   },
 }));
 
@@ -104,6 +106,8 @@ describe("InstanceTerminal", () => {
     terminalState.disposes = 0;
     apiMocks.exec.mockReset();
     apiMocks.console.mockReset();
+    apiMocks.setState.mockReset();
+    apiMocks.setState.mockResolvedValue(null);
     apiMocks.exec.mockResolvedValue(execResponse());
     apiMocks.console.mockResolvedValue(consoleResponse());
     toastStore.setState([]);
@@ -182,6 +186,43 @@ describe("InstanceTerminal", () => {
     expect(screen.getByText("Shell unavailable")).toBeInTheDocument();
   });
 
+  it("shows the placeholder instead of Console disconnected when no data ever arrives", async () => {
+    render(<InstanceTerminal instanceName="web1" />);
+    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
+    const data = FakeWebSocket.instances[0]!;
+    // The websocket opens, but the server closes it without a single byte of
+    // shell output (e.g. a VM without a running agent).
+    data.readyState = FakeWebSocket.OPEN;
+    act(() => data.onopen?.());
+    act(() => data.onclose?.());
+    expect(screen.getByTestId("term-error")).toBeInTheDocument();
+    expect(screen.getByText("Shell unavailable")).toBeInTheDocument();
+    const toasts = toastStore.getState();
+    expect(toasts.some((t) => t.message === "Console disconnected")).toBe(false);
+  });
+
+  it("keeps the clean disconnect behavior after a session produced data", async () => {
+    render(<InstanceTerminal instanceName="web1" />);
+    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
+    const data = FakeWebSocket.instances[0]!;
+    data.readyState = FakeWebSocket.OPEN;
+    act(() => data.onopen?.());
+    act(() => data.onmessage?.({ data: new Uint8Array([112, 114, 111, 109, 112, 116]) }));
+    act(() => data.onclose?.());
+    expect(screen.queryByTestId("term-error")).not.toBeInTheDocument();
+    const toasts = toastStore.getState();
+    expect(toasts.some((t) => t.message === "Console disconnected")).toBe(true);
+  });
+
+  it("offers to restart the instance from the error placeholder", async () => {
+    const user = userEvent.setup();
+    apiMocks.exec.mockRejectedValue(new Error("boom"));
+    render(<InstanceTerminal instanceName="web1" />);
+    await screen.findByTestId("term-error");
+    await user.click(screen.getByTestId("term-restart"));
+    expect(apiMocks.setState).toHaveBeenCalledWith("web1", "restart");
+  });
+
   it("shows the error placeholder when the connection times out", async () => {
     vi.useFakeTimers();
     render(<InstanceTerminal instanceName="web1" />);
@@ -190,7 +231,7 @@ describe("InstanceTerminal", () => {
     });
     expect(FakeWebSocket.instances).toHaveLength(2);
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(20_000);
+      await vi.advanceTimersByTimeAsync(10_000);
     });
     expect(screen.getByTestId("term-error")).toBeInTheDocument();
     expect(screen.getByText("Shell unavailable")).toBeInTheDocument();
