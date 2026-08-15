@@ -42,7 +42,8 @@ describe("OverviewTab console preview", () => {
     render(<OverviewTab instance={instance("virtual-machine")} />);
     expect(await screen.findByTestId("screenshot-image")).toHaveAttribute("src", "blob:mock");
     expect(screen.getByText("Console preview")).toBeInTheDocument();
-    expect(screen.getByTestId("screenshot-open-console")).toBeInTheDocument();
+    expect(screen.getByTestId("screenshot-refresh")).toBeInTheDocument();
+    expect(screen.queryByTestId("screenshot-open-console")).not.toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith(
       "/1.0/instances/web1/console?project=default&type=vga",
       { credentials: "include" }
@@ -57,18 +58,6 @@ describe("OverviewTab console preview", () => {
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
     const url = vi.mocked(fetch).mock.calls[1]![0] as string;
     expect(url).toContain("type=vga&_=");
-  });
-
-  it("opens the terminal popup on VGA from the preview", async () => {
-    const user = userEvent.setup();
-    render(<OverviewTab instance={instance("virtual-machine")} />);
-    await screen.findByTestId("screenshot-image");
-    await user.click(screen.getByTestId("screenshot-open-console"));
-    expect(window.open).toHaveBeenCalledWith(
-      "/ui/terminal/web1?project=default",
-      "terminal-web1",
-      "width=1000,height=640"
-    );
   });
 
   it("shows an error message when the screenshot fails", async () => {

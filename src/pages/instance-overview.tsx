@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Monitor, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { instancesApi } from "../api";
 import type { Instance, InstanceStateInfo } from "../api/types";
 import { Badge } from "../components/badge";
@@ -78,24 +78,10 @@ export function OverviewTab({ instance }: OverviewTabProps) {
               <Button size="sm" variant="ghost" data-testid="screenshot-refresh" onClick={() => void loadScreenshot(true)}>
                 <RefreshCw size={14} /> Refresh
               </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                data-testid="screenshot-open-console"
-                onClick={() =>
-                  window.open(
-                    `/ui/terminal/${instance.name}?project=${encodeURIComponent(instance.project)}`,
-                    `terminal-${instance.name}`,
-                    "width=1000,height=640"
-                  )
-                }
-              >
-                <Monitor size={14} /> Open console
-              </Button>
             </div>
           </div>
           <div
-            className="flex min-h-40 items-center justify-center rounded border border-border bg-surface-950 p-2"
+            className="flex min-h-20 items-center justify-center rounded border border-border bg-surface-950 p-2"
             data-testid="screenshot-area"
           >
             {screenshotState === "loading" && (
@@ -108,7 +94,7 @@ export function OverviewTab({ instance }: OverviewTabProps) {
                 src={screenshot.url}
                 alt={`${instance.name} console`}
                 data-testid="screenshot-image"
-                className="max-h-72 w-auto max-w-full rounded"
+                className="max-h-36 w-auto max-w-full rounded"
               />
             )}
             {screenshotState === "error" && (
