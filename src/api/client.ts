@@ -184,6 +184,14 @@ export class ApiClient {
     return this.request<T>("PUT", path, body);
   }
 
+  putRaw<T>(path: string, body: BodyInit, headers?: Record<string, string>): Promise<T> {
+    return this.send<T>(path, {
+      method: "PUT",
+      body,
+      headers: headers ?? { "Content-Type": "application/octet-stream" },
+    });
+  }
+
   patch<T>(path: string, body: unknown): Promise<T> {
     return this.request<T>("PATCH", path, body);
   }

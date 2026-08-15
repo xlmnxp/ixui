@@ -33,9 +33,15 @@ Activity page (`src/pages/activity.tsx`, route `/activity`, sidebar
 (`src/pages/instance/activity.tsx`) surface time/action/instance/project/
 user/address with filtering and clearing.
 
-Remaining P1 work: file browser UI (API module `src/api/files.ts` exists),
-snapshot schedules, network ACLs/zones/address-sets UI (API module
-`src/api/network-extras.ts` exists), storage buckets UI (API in
+**Instance file browser landed 2026-08-16:** a Files tab
+(`src/pages/instance/files.tsx`) over the expanded `FilesApi`
+(`src/api/files.ts`: read/put/create/mkdir/remove/downloadUrl, PUT for
+overwrite, POST with `X-Incus-Type`/`X-Incus-Name` for creation) with
+breadcrumb-style navigation, edit-in-dialog, download, upload, new-file and
+new-folder actions.
+
+Remaining P1 work: snapshot schedules, network ACLs/zones/address-sets UI
+(API module `src/api/network-extras.ts` exists), storage buckets UI (API in
 `src/api/volumes.ts`), per-instance metrics history, cloud-init status
 surfacing, VM console log, Prometheus kit.
 
