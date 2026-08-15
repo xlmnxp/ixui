@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { FilesTab, joinPath, parentOf, basenameOf } from "./files";
+import { FilesTab, joinPath, parentOf, basenameOf, normalizeTypedPath } from "./files";
 import { filesApi } from "../../api";
 
 vi.mock("../../api", () => ({
@@ -30,6 +30,17 @@ describe("path helpers", () => {
   it("computes basenames", () => {
     expect(basenameOf("/etc/nginx/nginx.conf")).toBe("nginx.conf");
     expect(basenameOf("/")).toBe("");
+  });
+
+  it("normalizes typed paths", () => {
+    expect(normalizeTypedPath("/etc")).toBe("/etc");
+    expect(normalizeTypedPath("etc/nginx")).toBe("/etc/nginx");
+    expect(normalizeTypedPath("/etc/")).toBe("/etc");
+    expect(normalizeTypedPath("\\etc\\nginx")).toBe("/etc/nginx");
+    expect(normalizeTypedPath("//etc///nginx/")).toBe("/etc/nginx");
+    expect(normalizeTypedPath("")).toBe("/");
+    expect(normalizeTypedPath("   ")).toBe("/");
+    expect(normalizeTypedPath("/")).toBe("/");
   });
 });
 
@@ -171,6 +182,60 @@ describe("FilesTab", () => {
     await user.click(screen.getByTestId("crumb-root"));
     await waitFor(() => expect(screen.queryByTestId("crumb-0")).not.toBeInTheDocument());
     expect(await screen.findByTestId("file-row-etc")).toBeInTheDocument();
+  });
+
+  it("clicking the address bar switches to a path input", async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByTestId("files-table");
+    await user.click(screen.getByTestId("files-breadcrumbs"));
+    const input = screen.getByTestId("files-path-input");
+    expect(input).toHaveValue("/");
+    expect(screen.queryByTestId("files-breadcrumbs")).not.toBeInTheDocument();
+  });
+
+  it("entering a custom path navigates on Enter", async () => {
+    const user = userEvent.setup();
+    vi.mocked(filesApi.read).mockImplementation((_i, path) =>
+      Promise.resolve(path === "/" ? ["etc"] : ["nginx.conf"])
+    );
+    renderTab();
+    await screen.findByTestId("files-table");
+    await user.click(screen.getByTestId("files-breadcrumbs"));
+    const input = screen.getByTestId("files-path-input");
+    await user.clear(input);
+    await user.type(input, "/etc{Enter}");
+    await waitFor(() => expect(filesApi.read).toHaveBeenCalledWith("web1", "/etc", "default"));
+    expect(await screen.findByTestId("crumb-0")).toHaveTextContent("etc");
+    expect(screen.queryByTestId("files-path-input")).not.toBeInTheDocument();
+  });
+
+  it("normalizes a path typed without a leading slash", async () => {
+    const user = userEvent.setup();
+    vi.mocked(filesApi.read).mockImplementation((_i, path) =>
+      Promise.resolve(path === "/" ? ["etc"] : ["nginx.conf"])
+    );
+    renderTab();
+    await screen.findByTestId("files-table");
+    await user.click(screen.getByTestId("files-breadcrumbs"));
+    const input = screen.getByTestId("files-path-input");
+    await user.clear(input);
+    await user.type(input, "etc/nginx/{Enter}");
+    await waitFor(() => expect(filesApi.read).toHaveBeenCalledWith("web1", "/etc/nginx", "default"));
+    expect(await screen.findByTestId("crumb-1")).toHaveTextContent("nginx");
+  });
+
+  it("escape cancels path editing without navigating", async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByTestId("files-table");
+    await user.click(screen.getByTestId("files-breadcrumbs"));
+    const input = screen.getByTestId("files-path-input");
+    await user.clear(input);
+    await user.type(input, "/etc{Escape}");
+    expect(screen.queryByTestId("files-path-input")).not.toBeInTheDocument();
+    expect(await screen.findByTestId("files-breadcrumbs")).toBeInTheDocument();
+    expect(filesApi.read).not.toHaveBeenCalledWith("web1", "/etc", "default");
   });
 
   it("opens a file in the editor and saves via put", async () => {

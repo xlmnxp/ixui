@@ -53,10 +53,22 @@ export function basenameOf(path: string): string {
   return trimmed.split("/").pop() ?? "";
 }
 
+/** Normalize a user-typed path: absolute, no trailing slashes except root. */
+export function normalizeTypedPath(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "/";
+  let path = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  path = path.replace(/\\+/g, "/").replace(/\/+/g, "/");
+  while (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
+  return path;
+}
+
 export function FilesTab({ instanceName, project }: FilesTabProps) {
   const [cwd, setCwd] = useState("/");
   const [history, setHistory] = useState<string[]>(["/"]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const [editingPath, setEditingPath] = useState(false);
+  const [pathDraft, setPathDraft] = useState("");
   const [entries, setEntries] = useState<string[] | null>(null);
   const [stats, setStats] = useState<Record<string, FileStat>>({});
   const [editPath, setEditPath] = useState<string | null>(null);
@@ -90,6 +102,12 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
     setHistoryIndex(idx);
     setCwd(history[idx] ?? "/");
   }, [history, historyIndex]);
+
+  const commitPath = useCallback(() => {
+    setEditingPath(false);
+    const path = normalizeTypedPath(pathDraft);
+    if (path !== cwd) navigateTo(path);
+  }, [pathDraft, cwd, navigateTo]);
 
   const sweepStats = useCallback((dir: string, names: string[]) => {
     void Promise.all(
@@ -318,32 +336,66 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
         <Button size="sm" variant="ghost" aria-label="Forward" data-testid="files-forward" disabled={historyIndex >= history.length - 1} onClick={goForward}><ArrowRight size={14} /></Button>
         <Button size="sm" variant="ghost" data-testid="files-up" disabled={cwd === "/"} onClick={() => navigateTo(parentOf(cwd))}><ArrowUp size={14} /></Button>
 
-        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden rounded border border-border bg-surface-700 px-2 py-1.5" data-testid="files-breadcrumbs">
-          <button
-            type="button"
-            data-testid="crumb-root"
-            onClick={() => navigateTo("/")}
-            className="shrink-0 rounded px-1 font-mono text-xs text-text-secondary hover:bg-surface-600 hover:text-text-primary"
+        {editingPath ? (
+          <input
+            autoFocus
+            data-testid="files-path-input"
+            value={pathDraft}
+            onChange={(e) => setPathDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitPath();
+              else if (e.key === "Escape") setEditingPath(false);
+            }}
+            onBlur={() => setEditingPath(false)}
+            placeholder="/path/to/directory"
+            className="min-w-0 flex-1 rounded border border-accent-500 bg-surface-700 px-2 py-1.5 font-mono text-xs text-text-primary outline-none placeholder:text-text-tertiary"
+          />
+        ) : (
+          <div
+            className="flex min-w-0 flex-1 cursor-text items-center gap-1 overflow-hidden rounded border border-border bg-surface-700 px-2 py-1.5 hover:border-surface-500"
+            data-testid="files-breadcrumbs"
+            title="Click to edit path"
+            onClick={() => {
+              setPathDraft(cwd);
+              setEditingPath(true);
+            }}
           >
-            /
-          </button>
-          {crumbs.map((segment, i) => {
-            const path = "/" + crumbs.slice(0, i + 1).join("/");
-            return (
-              <Fragment key={path}>
-                <ChevronRight size={12} className="shrink-0 text-text-tertiary" />
-                <button
-                  type="button"
-                  data-testid={`crumb-${i}`}
-                  onClick={() => navigateTo(path)}
-                  className={`shrink-0 rounded px-1 font-mono text-xs ${i === crumbs.length - 1 ? "text-text-primary" : "text-text-secondary hover:bg-surface-600 hover:text-text-primary"}`}
-                >
-                  {segment}
-                </button>
-              </Fragment>
-            );
-          })}
-        </div>
+            <button
+              type="button"
+              data-testid="crumb-root"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigateTo("/");
+              }}
+              className="shrink-0 rounded px-1 font-mono text-xs text-text-secondary hover:bg-surface-600 hover:text-text-primary"
+            >
+              /
+            </button>
+            {crumbs.map((segment, i) => {
+              const path = "/" + crumbs.slice(0, i + 1).join("/");
+              return (
+                <Fragment key={path}>
+                  <ChevronRight size={12} className="shrink-0 text-text-tertiary" />
+                  <button
+                    type="button"
+                    data-testid={
+                      `crumb-${i}`
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigateTo(path);
+                    }}
+                    className={
+                      `shrink-0 rounded px-1 font-mono text-xs ${i === crumbs.length - 1 ? "text-text-primary" : "text-text-secondary hover:bg-surface-600 hover:text-text-primary"}`
+                    }
+                  >
+                    {segment}
+                  </button>
+                </Fragment>
+              );
+            })}
+          </div>
+        )}
 
         <Button size="sm" variant="ghost" data-testid="files-new-file" onClick={() => { setNewOpen(true); setNewName(""); setEditContent(""); setEditPath(""); }}><FilePlus2 size={14} /> New file</Button>
         <Button size="sm" variant="ghost" data-testid="files-new-dir" onClick={() => { setMkdirOpen(true); setMkdirName(""); }}><FolderPlus size={14} /> New folder</Button>
