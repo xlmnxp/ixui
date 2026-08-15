@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, Check, Download, FilePlus2, FolderPlus, Pencil, RefreshCw, Trash2, Upload, X } from "lucide-react";
+import { ArrowUp, Check, Download, File, FilePlus2, FileText, Folder, FolderPlus, Link2, Pencil, RefreshCw, Trash2, Upload, X } from "lucide-react";
 import { filesApi } from "../../api";
+import type { FileEntryType, FileStat } from "../../api/files";
 import { Table } from "../../components/table";
 import type { Column } from "../../components/table";
 import { Button } from "../../components/button";
@@ -10,6 +11,26 @@ import { Input } from "../../components/input";
 import { Textarea } from "../../components/textarea";
 import { EmptyState } from "../../components/empty-state";
 import { toast } from "../../components/toast";
+import { formatBytes } from "../../lib/format";
+
+/** Cap the per-refresh stat sweep so huge directories don't fan out too far. */
+const MAX_STAT_SWEEP = 200;
+
+const UNKNOWN_STAT: FileStat = { type: null, size: null, modified: null };
+
+function entryIcon(type: FileEntryType | null) {
+  if (type === "directory") return <Folder size={14} className="text-amber-300" />;
+  if (type === "file") return <FileText size={14} className="text-text-tertiary" />;
+  if (type === "symlink") return <Link2 size={14} className="text-sky-300" />;
+  return <File size={14} className="text-text-tertiary" />;
+}
+
+function typeLabel(type: FileEntryType | null): string {
+  if (type === "directory") return "Directory";
+  if (type === "file") return "File";
+  if (type === "symlink") return "Symlink";
+  return "—";
+}
 
 export interface FilesTabProps {
   instanceName: string;
@@ -35,6 +56,7 @@ export function basenameOf(path: string): string {
 export function FilesTab({ instanceName, project }: FilesTabProps) {
   const [cwd, setCwd] = useState("/");
   const [entries, setEntries] = useState<string[] | null>(null);
+  const [stats, setStats] = useState<Record<string, FileStat>>({});
   const [editPath, setEditPath] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [newName, setNewName] = useState("");
@@ -45,12 +67,30 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
   const [busy, setBusy] = useState(false);
   const uploadRef = useRef<HTMLInputElement>(null);
 
+  const sweepStats = useCallback((dir: string, names: string[]) => {
+    void Promise.all(
+      names.slice(0, MAX_STAT_SWEEP).map(async (name) => {
+        try {
+          return [name, await filesApi.stat(instanceName, joinPath(dir, name), project)] as const;
+        } catch {
+          return [name, UNKNOWN_STAT] as const;
+        }
+      })
+    ).then((pairs) => {
+      const next: Record<string, FileStat> = {};
+      for (const [name, stat] of pairs) next[name] = stat;
+      setStats(next);
+    });
+  }, [instanceName, project]);
+
   const refresh = useCallback(() => {
     void filesApi
       .read(instanceName, cwd, project)
       .then((result) => {
-        if (Array.isArray(result)) setEntries(result);
-        else {
+        if (Array.isArray(result)) {
+          setEntries(result);
+          sweepStats(cwd, result);
+        } else {
           // Path turned out to be a file — open it for editing.
           setEditPath(cwd);
           setEditContent(result);
@@ -61,12 +101,16 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
         setEntries([]);
         toast("danger", `Cannot list ${cwd}`);
       });
-  }, [instanceName, cwd, project]);
+  }, [instanceName, cwd, project, sweepStats]);
 
   useEffect(refresh, [refresh]);
 
   const openEntry = async (name: string) => {
     const path = joinPath(cwd, name);
+    if (stats[name]?.type === "directory") {
+      setCwd(path);
+      return;
+    }
     try {
       const result = await filesApi.read(instanceName, path, project);
       if (Array.isArray(result)) {
@@ -171,7 +215,12 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
     }
   };
 
-  const sorted = [...(entries ?? [])].sort((a, b) => a.localeCompare(b));
+  const sorted = [...(entries ?? [])].sort((a, b) => {
+    const aDir = stats[a]?.type === "directory";
+    const bDir = stats[b]?.type === "directory";
+    if (aDir !== bDir) return aDir ? -1 : 1;
+    return a.localeCompare(b);
+  });
 
   const columns: Column<string>[] = [
     {
@@ -179,27 +228,60 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
       header: "Name",
       sortValue: (e) => e,
       render: (name) => (
-        <button
-          type="button"
-          data-testid={`file-row-${name}`}
-          onClick={() => void openEntry(name)}
-          className="font-mono text-xs text-accent-300 hover:underline"
-        >
-          {name}
-        </button>
+        <span className="flex items-center gap-2">
+          <span data-testid={`entry-icon-${name}`} data-type={stats[name]?.type ?? "unknown"}>{entryIcon(stats[name]?.type ?? null)}</span>
+          <button
+            type="button"
+            data-testid={`file-row-${name}`}
+            onClick={() => void openEntry(name)}
+            className="font-mono text-xs text-accent-300 hover:underline"
+          >
+            {name}
+          </button>
+        </span>
       ),
+    },
+    {
+      key: "type",
+      header: "Type",
+      sortValue: (e) => stats[e]?.type ?? "",
+      render: (name) => typeLabel(stats[name]?.type ?? null),
+    },
+    {
+      key: "size",
+      header: "Size",
+      sortValue: (e) => stats[e]?.size ?? -1,
+      render: (name) => {
+        const size = stats[name]?.size;
+        return size !== null && size !== undefined ? formatBytes(size) : "—";
+      },
+    },
+    {
+      key: "modified",
+      header: "Modified",
+      render: (name) => {
+        const modified = stats[name]?.modified;
+        return modified ? new Date(modified).toLocaleString() : "—";
+      },
     },
     {
       key: "actions",
       header: "",
       align: "right",
-      render: (name) => (
-        <div className="flex justify-end gap-1">
-          <Button size="sm" variant="ghost" data-testid={`file-edit-${name}`} onClick={() => void openEntry(name)}><Pencil size={14} /> Edit</Button>
-          <Button size="sm" variant="ghost" data-testid={`file-download-${name}`} onClick={() => void download(name)}><Download size={14} /> Download</Button>
-          <Button size="sm" variant="ghost" data-testid={`file-delete-${name}`} onClick={() => setDeleteTarget(joinPath(cwd, name))}><Trash2 size={14} /></Button>
-        </div>
-      ),
+      render: (name) => {
+        const isDir = stats[name]?.type === "directory";
+        return (
+          <div className="flex justify-end gap-1">
+            {!isDir && (
+              <>
+                <Button size="sm" variant="ghost" data-testid={`file-edit-${name}`} onClick={() => void openEntry(name)}><Pencil size={14} /> Edit</Button>
+                <Button size="sm" variant="ghost" data-testid={`file-download-${name}`} onClick={() => void download(name)}><Download size={14} /> Download</Button>
+              </>
+            )}
+            <Button size="sm" variant="ghost" data-testid={`file-delete-${name}`} onClick={() => setDeleteTarget(joinPath(cwd, name))}><Trash2 size={14} /></Button>
+          </div>
+        );
+      },
     },
   ];
 

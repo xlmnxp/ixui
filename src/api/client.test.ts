@@ -153,6 +153,24 @@ describe("ApiClient", () => {
     const [, init] = vi.mocked(fetch).mock.calls[0]!;
     expect(init?.method).toBe("DELETE");
   });
+
+  it("HEAD returns response headers without parsing a body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(null, { status: 200, headers: { "x-incus-type": "file" } }))
+    );
+    const client = new ApiClient("/1.0");
+    const headers = await client.head("/instances/web1/files?path=%2Fetc");
+    expect(headers.get("x-incus-type")).toBe("file");
+    const [, init] = vi.mocked(fetch).mock.calls[0]!;
+    expect(init?.method).toBe("HEAD");
+  });
+
+  it("HEAD throws ApiError on failure", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("", { status: 404, statusText: "Not Found" })));
+    const client = new ApiClient("/1.0");
+    await expect(client.head("/nope")).rejects.toMatchObject({ status: 404 });
+  });
 });
 
 describe("instance project registry", () => {

@@ -255,6 +255,32 @@ describe("API endpoints", () => {
     expect(fetchMock).toHaveBeenCalledWith("/1.0/instances/web1/files?project=prod&path=%2Fetc%2Fmotd", expect.anything());
   });
 
+  it("files stat reads type, size, and modified from HEAD headers", async () => {
+    const fetchMock = vi.fn<typeof fetch>(() =>
+      Promise.resolve(
+        new Response(null, {
+          status: 200,
+          headers: { "x-incus-type": "file", "content-length": "42", "x-incus-modified": "2026-01-01T00:00:00Z" },
+        })
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const stat = await filesApi.stat("web1", "/etc/motd");
+    expect(stat).toEqual({ type: "file", size: 42, modified: "2026-01-01T00:00:00Z" });
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("/1.0/instances/web1/files?project=default&path=%2Fetc%2Fmotd");
+    expect(init?.method).toBe("HEAD");
+  });
+
+  it("files stat normalizes unknown types and missing headers", async () => {
+    const fetchMock = vi.fn<typeof fetch>(() =>
+      Promise.resolve(new Response(null, { status: 200, headers: { "x-incus-type": "weird" } }))
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const stat = await filesApi.stat("web1", "/etc/motd");
+    expect(stat).toEqual({ type: null, size: null, modified: null });
+  });
+
   it("files remove deletes with path and project", async () => {
     const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
     vi.stubGlobal("fetch", fetchMock);

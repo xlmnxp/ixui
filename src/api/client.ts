@@ -153,6 +153,30 @@ export class ApiClient {
     });
   }
 
+  /** HEAD request returning the response headers (no body parsing). */
+  async head(path: string): Promise<Headers> {
+    const controller = new AbortController();
+    const timeoutMs = DEFAULT_TIMEOUT_MS;
+    const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${this.basePath}${path}`, {
+        method: "HEAD",
+        signal: controller.signal,
+      });
+      if (res.status === 401) this.forbiddenHandler?.();
+      if (!res.ok) throw new ApiError(res.status, undefined, res.statusText);
+      markAuthenticated();
+      return res.headers;
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new ApiError(0, undefined, `Request timed out after ${Math.round(timeoutMs / 1000)}s`);
+      }
+      throw err;
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
   get<T>(path: string): Promise<T> {
     return this.request<T>("GET", path);
   }

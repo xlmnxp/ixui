@@ -6,6 +6,18 @@ function filesUrl(instance: string, path: string, project?: string): string {
   return `/instances/${instance}/files?${projectPart}path=${encodeURIComponent(path)}`;
 }
 
+export type FileEntryType = "file" | "directory" | "symlink";
+
+export interface FileStat {
+  type: FileEntryType | null;
+  size: number | null;
+  modified: string | null;
+}
+
+function normalizeType(value: string | null): FileEntryType | null {
+  return value === "file" || value === "directory" || value === "symlink" ? value : null;
+}
+
 export class FilesApi {
   constructor(private client: ApiClient) {}
 
@@ -19,6 +31,17 @@ export class FilesApi {
 
   get(instance: string, path: string, project?: string): Promise<string | string[]> {
     return this.read(instance, path, project);
+  }
+
+  /** Cheap per-entry metadata via HEAD (type, size, modified). */
+  async stat(instance: string, path: string, project?: string): Promise<FileStat> {
+    const headers = await this.client.head(filesUrl(instance, path, project));
+    const length = headers.get("content-length");
+    return {
+      type: normalizeType(headers.get("x-incus-type")),
+      size: length !== null && length !== "" && !Number.isNaN(Number(length)) ? Number(length) : null,
+      modified: headers.get("x-incus-modified") ?? headers.get("last-modified"),
+    };
   }
 
   /** Overwrite the contents of an existing file (PUT). */
