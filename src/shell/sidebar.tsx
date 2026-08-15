@@ -29,6 +29,7 @@ export function Sidebar() {
   else if (p.startsWith("/instances/")) selectedId = `instance-${p.split("/")[2] ?? ""}`;
   else if (p === "/gallery") selectedId = "gallery";
   else if (p === "/operations") selectedId = "admin-operations";
+  else if (p === "/activity") selectedId = "admin-activity";
   else if (p === "/warnings") selectedId = "admin-warnings";
   else if (p === "/settings") selectedId = "admin-settings";
   else if (p === "/cluster-groups") selectedId = "admin-cluster-groups";
@@ -38,6 +39,7 @@ export function Sidebar() {
     if (id === "dashboard") return "/dashboard";
     if (id === "gallery") return "/gallery";
     if (id === "admin-operations") return "/operations";
+    if (id === "admin-activity") return "/activity";
     if (id === "admin-warnings") return "/warnings";
     if (id === "admin-settings") return "/settings";
     if (id === "admin-cluster-groups") return "/cluster-groups";

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Folder, Server, Palette, Gauge, Plus, FolderCog } from "lucide-react";
+import { Folder, Server, Palette, Gauge, Plus, FolderCog, History } from "lucide-react";
 import type { ReactNode } from "react";
 import type { TreeNode } from "../components/tree";
 import { ALL_PROJECTS } from "../api/client";
@@ -107,6 +107,15 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
           label: (
             <span className="flex items-center gap-2">
               <Link to="/operations">Operations</Link>
+            </span>
+          ),
+        },
+        {
+          id: "admin-activity",
+          label: (
+            <span className="flex items-center gap-2">
+              <History size={14} className="text-text-secondary" />
+              <Link to="/activity">Activity</Link>
             </span>
           ),
         },

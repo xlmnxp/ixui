@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Camera, Check, Copy as CopyIcon, Cpu, Download, FileText, Gauge, MoreHorizontal, Plus, MoveRight, Pencil, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
+import { Camera, Check, Copy as CopyIcon, Cpu, Download, FileText, Gauge, History, MoreHorizontal, Plus, MoveRight, Pencil, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
 import { backupsApi, instancesApi, operationsApi } from "../api";
 import type { Instance } from "../api/types";
 import { instancesStore, loadInstances } from "../state/instances";
@@ -23,6 +23,7 @@ import type { DeviceActions } from "./instance/devices";
 import { ConfigTab } from "./instance/config";
 import type { ConfigActions } from "./instance/config";
 import { LogsTab } from "./instance/logs";
+import { ActivityTab } from "./instance/activity";
 
 export function InstanceDetailPage() {
   const { name = "", tab = "overview" } = useParams();
@@ -148,6 +149,7 @@ export function InstanceDetailPage() {
     { key: "config", label: "Config", icon: <Settings size={14} /> },
     { key: "devices", label: "Devices", icon: <Cpu size={14} /> },
     { key: "logs", label: "Logs", icon: <FileText size={14} /> },
+    { key: "activity", label: "Activity", icon: <History size={14} /> },
   ];
   const activeTab = tabs.some((t) => t.key === tab) ? tab : "overview";
 
@@ -213,6 +215,7 @@ export function InstanceDetailPage() {
               {activeTab === "config" && <ConfigTab instanceName={name} project={instance.project} registerActions={setConfigActions} />}
               {activeTab === "devices" && <DevicesTab instanceName={name} project={instance.project} registerActions={setDeviceActions} />}
               {activeTab === "logs" && <LogsTab instanceName={name} project={instance.project} />}
+              {activeTab === "activity" && <ActivityTab instanceName={name} project={instance.project} />}
             </div>
           }
         />

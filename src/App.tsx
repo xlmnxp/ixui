@@ -14,6 +14,7 @@ import { ProjectOverview } from "./pages/project-overview";
 import { MemberView } from "./pages/member-view";
 import { CertificatesPage } from "./pages/certificates";
 import { OperationsPage } from "./pages/operations";
+import { ActivityPage } from "./pages/activity";
 import { WarningsPage } from "./pages/warnings";
 import { SettingsPage } from "./pages/settings";
 import { ClusterGroupsPage } from "./pages/cluster-groups";
@@ -48,6 +49,7 @@ export function App() {
           <Route path="instances/:name/:tab?" element={<InstanceDetailPage />} />
           <Route path="gallery" element={<Gallery />} />
           <Route path="operations" element={<OperationsPage />} />
+          <Route path="activity" element={<ActivityPage />} />
           <Route path="warnings" element={<WarningsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="cluster-groups" element={<ClusterGroupsPage />} />

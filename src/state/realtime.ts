@@ -1,5 +1,6 @@
 import { operationsStore, applyOperationEvent } from "./operations";
 import { instancesStore, applyInstanceLifecycle, instanceNameFromSource, projectFromSource } from "./instances";
+import { recordActivity } from "./activity";
 import { instancesApi } from "../api";
 import { registerInstanceProject, unregisterInstanceProject } from "../api/client";
 import type { EventStream } from "../api/events";
@@ -37,13 +38,14 @@ export function initRealtime(stream: EventStream): () => void {
         }
       }
     } else if (event.type === "lifecycle") {
-      const meta = event.metadata as { action: string; source: string };
+      const meta = event.metadata as { action: string; source: string; requestor?: { username?: string; address?: string } | null };
       const name = instanceNameFromSource(meta.source);
       const project = projectFromSource(meta.source);
       if (name) {
         if (meta.action === "instance-deleted") unregisterInstanceProject(name, project ?? undefined);
         else if (project) registerInstanceProject(name, project);
       }
+      recordActivity(meta, event.timestamp);
       instancesStore.setState((prev) => applyInstanceLifecycle(prev, meta));
     }
   });

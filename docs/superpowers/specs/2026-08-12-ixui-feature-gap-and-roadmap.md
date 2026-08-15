@@ -23,9 +23,18 @@ Some P1 items also landed early: freeze/unfreeze buttons, live-migration
 checkbox, OCI picker tab, network forwards + leases, logout.
 
 The gaps table in section 2 was written before P0 implementation; treat the
-✅ items above as the source of truth. Remaining P1 work: file browser UI
-(API module `src/api/files.ts` exists), audit/activity trail, snapshot
-schedules, network ACLs/zones/address-sets UI (API module
+✅ items above as the source of truth.
+
+**Audit/activity trail (enterprise §4.3) landed 2026-08-16:** lifecycle events
+from the existing websocket are persisted into a localStorage ring buffer
+(500 entries, `ixui.activity.v1`) via `src/state/activity.ts`; a global
+Activity page (`src/pages/activity.tsx`, route `/activity`, sidebar
+"Administration → Activity") and a per-instance Activity tab
+(`src/pages/instance/activity.tsx`) surface time/action/instance/project/
+user/address with filtering and clearing.
+
+Remaining P1 work: file browser UI (API module `src/api/files.ts` exists),
+snapshot schedules, network ACLs/zones/address-sets UI (API module
 `src/api/network-extras.ts` exists), storage buckets UI (API in
 `src/api/volumes.ts`), per-instance metrics history, cloud-init status
 surfacing, VM console log, Prometheus kit.
