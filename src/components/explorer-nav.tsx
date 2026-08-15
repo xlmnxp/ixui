@@ -1,5 +1,5 @@
 import { Fragment, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { ArrowLeft, ArrowRight, ArrowUp, ChevronRight } from "lucide-react";
 import { Button } from "./button";
 import { normalizeTypedPath } from "../lib/path";
@@ -20,6 +20,8 @@ export interface ExplorerNavbarProps {
   actions?: ReactNode;
   /** Pin the bar to the top of the nearest scroll container (default true). */
   sticky?: boolean;
+  /** Ref to the bar's root element (e.g. to measure its height). */
+  rootRef?: Ref<HTMLDivElement>;
 }
 
 export function ExplorerNavbar({
@@ -33,6 +35,7 @@ export function ExplorerNavbar({
   onCommitPath,
   actions,
   sticky = true,
+  rootRef,
 }: ExplorerNavbarProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -68,7 +71,7 @@ export function ExplorerNavbar({
   };
 
   return (
-    <div className={`top-0 z-10 bg-surface-900 ${sticky ? "sticky" : ""}`} data-testid="files-navbar">
+    <div ref={rootRef} className={`top-0 z-10 bg-surface-900 ${sticky ? "sticky" : ""}`} data-testid="files-navbar">
       <div className="flex items-center gap-1.5 border-b border-border px-3 py-2">
         <Button size="sm" variant="ghost" aria-label="Back" data-testid="files-back" disabled={!canBack} onClick={onBack}><ArrowLeft size={14} /></Button>
         <Button size="sm" variant="ghost" aria-label="Forward" data-testid="files-forward" disabled={!canForward} onClick={onForward}><ArrowRight size={14} /></Button>

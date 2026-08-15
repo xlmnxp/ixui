@@ -1,3 +1,4 @@
+import { createRef } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ExplorerNavbar } from "./explorer-nav";
@@ -92,5 +93,11 @@ describe("ExplorerNavbar", () => {
     expect(screen.getByTestId("files-navbar").className).toContain("sticky");
     rerender(<ExplorerNavbar {...base} sticky={false} />);
     expect(screen.getByTestId("files-navbar").className).not.toContain("sticky");
+  });
+
+  it("forwards rootRef to the sticky root element", () => {
+    const ref = createRef<HTMLDivElement>();
+    render(<ExplorerNavbar {...base} rootRef={ref} />);
+    expect(ref.current).toBe(screen.getByTestId("files-navbar"));
   });
 });

@@ -336,27 +336,26 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
 
   return (
     <div data-testid="files-tab">
-      <div ref={navbarWrapRef}>
-        <ExplorerNavbar
-          cwd={cwd}
-          canBack={historyIndex > 0}
-          canForward={historyIndex < history.length - 1}
-          onBack={goBack}
-          onForward={goForward}
-          onUp={() => navigateTo(parentOf(cwd))}
-          onNavigate={navigateTo}
-          onCommitPath={commitPath}
-          actions={
-            <>
-              <Button size="sm" variant="ghost" data-testid="files-new-file" onClick={() => { setNewOpen(true); setNewName(""); setEditContent(""); setEditPath(""); }}><FilePlus2 size={14} /> New file</Button>
-              <Button size="sm" variant="ghost" data-testid="files-new-dir" onClick={() => { setMkdirOpen(true); setMkdirName(""); }}><FolderPlus size={14} /> New folder</Button>
-              <Button size="sm" variant="ghost" data-testid="files-upload" onClick={() => uploadRef.current?.click()}><Upload size={14} /> Upload</Button>
-              <Button size="sm" variant="ghost" data-testid="files-refresh" onClick={refresh}><RefreshCw size={14} /></Button>
-              <input ref={uploadRef} type="file" data-testid="files-upload-input" className="hidden" onChange={(e) => void upload(e.target.files?.[0])} />
-            </>
-          }
-        />
-      </div>
+      <ExplorerNavbar
+        rootRef={navbarWrapRef}
+        cwd={cwd}
+        canBack={historyIndex > 0}
+        canForward={historyIndex < history.length - 1}
+        onBack={goBack}
+        onForward={goForward}
+        onUp={() => navigateTo(parentOf(cwd))}
+        onNavigate={navigateTo}
+        onCommitPath={commitPath}
+        actions={
+          <>
+            <Button size="sm" variant="ghost" data-testid="files-new-file" onClick={() => { setNewOpen(true); setNewName(""); setEditContent(""); setEditPath(""); }}><FilePlus2 size={14} /> New file</Button>
+            <Button size="sm" variant="ghost" data-testid="files-new-dir" onClick={() => { setMkdirOpen(true); setMkdirName(""); }}><FolderPlus size={14} /> New folder</Button>
+            <Button size="sm" variant="ghost" data-testid="files-upload" onClick={() => uploadRef.current?.click()}><Upload size={14} /> Upload</Button>
+            <Button size="sm" variant="ghost" data-testid="files-refresh" onClick={refresh}><RefreshCw size={14} /></Button>
+            <input ref={uploadRef} type="file" data-testid="files-upload-input" className="hidden" onChange={(e) => void upload(e.target.files?.[0])} />
+          </>
+        }
+      />
 
       {sorted.length === 0 ? (
         <div className="px-3 pb-3">
