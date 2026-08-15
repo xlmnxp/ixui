@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
-import { Monitor, RotateCw, SquareTerminal, Terminal as TerminalIcon } from "lucide-react";
+import { Monitor, SquareTerminal, Terminal as TerminalIcon } from "lucide-react";
 import { SpiceMainConn, handle_resize } from "../../lib/spice/src/main.js";
 import { instancesApi } from "../api";
 import { registerInstanceProject } from "../api/client";
@@ -236,15 +236,6 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
     void connect(nextKind);
   };
 
-  const restartInstance = async () => {
-    try {
-      await instancesApi.setState(instanceName, "restart");
-      toast("info", `Restart requested for ${instanceName}`);
-    } catch (err) {
-      toast("danger", err instanceof Error ? err.message : "Restart failed");
-    }
-  };
-
   return (
     <div className="flex h-screen flex-col" data-testid="instance-terminal">
       <div className="flex h-10 items-center gap-2 border-b border-border bg-surface-900 px-3">
@@ -287,8 +278,8 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
               title={kind === "console" ? "VGA console unavailable" : "Shell unavailable"}
               description={
                 kind === "console"
-                  ? "The VGA console could not connect. Check that the instance is running — restarting it may help — then retry or switch to the Shell."
-                  : "The shell could not connect. Check that the instance is running — restarting it may help (e.g. to start the guest agent) — then retry or switch to the VGA console."
+                  ? "The VGA console could not connect. Check that the instance is running, then retry or switch to the Shell."
+                  : "The shell could not connect. Check that the instance is running, then retry or switch to the VGA console."
               }
               action={
                 <div className="flex items-center justify-center gap-2">
@@ -297,9 +288,6 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                   </Button>
                   <Button size="sm" variant="secondary" data-testid="term-switch" onClick={() => switchKind(kind === "console" ? "exec" : "console")}>
                     {kind === "console" ? <SquareTerminal size={14} /> : <Monitor size={14} />} Switch to {kind === "console" ? "Shell" : "VGA"}
-                  </Button>
-                  <Button size="sm" variant="danger" data-testid="term-restart" onClick={() => void restartInstance()}>
-                    <RotateCw size={14} /> Restart instance
                   </Button>
                 </div>
               }

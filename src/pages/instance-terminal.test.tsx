@@ -15,7 +15,6 @@ const terminalState = vi.hoisted(() => ({
 const apiMocks = vi.hoisted(() => ({
   exec: vi.fn(),
   console: vi.fn(),
-  setState: vi.fn(),
 }));
 
 vi.mock("xterm", () => ({
@@ -58,7 +57,6 @@ vi.mock("../api", () => ({
   instancesApi: {
     exec: apiMocks.exec,
     console: apiMocks.console,
-    setState: apiMocks.setState,
   },
 }));
 
@@ -106,8 +104,6 @@ describe("InstanceTerminal", () => {
     terminalState.disposes = 0;
     apiMocks.exec.mockReset();
     apiMocks.console.mockReset();
-    apiMocks.setState.mockReset();
-    apiMocks.setState.mockResolvedValue(null);
     apiMocks.exec.mockResolvedValue(execResponse());
     apiMocks.console.mockResolvedValue(consoleResponse());
     toastStore.setState([]);
@@ -212,15 +208,6 @@ describe("InstanceTerminal", () => {
     expect(screen.queryByTestId("term-error")).not.toBeInTheDocument();
     const toasts = toastStore.getState();
     expect(toasts.some((t) => t.message === "Console disconnected")).toBe(true);
-  });
-
-  it("offers to restart the instance from the error placeholder", async () => {
-    const user = userEvent.setup();
-    apiMocks.exec.mockRejectedValue(new Error("boom"));
-    render(<InstanceTerminal instanceName="web1" />);
-    await screen.findByTestId("term-error");
-    await user.click(screen.getByTestId("term-restart"));
-    expect(apiMocks.setState).toHaveBeenCalledWith("web1", "restart");
   });
 
   it("shows the error placeholder when the connection times out", async () => {
