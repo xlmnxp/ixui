@@ -77,8 +77,7 @@ export function Table<T>({
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-separate border-spacing-0 text-[13px]" data-testid={dataTestId}>
+    <table className="w-full border-separate border-spacing-0 text-[13px]" data-testid={dataTestId}>
         <thead className="border-b border-border bg-surface-700 text-left text-xs text-text-secondary">
           <tr>
             {onSelectionChange ? (
@@ -138,6 +137,5 @@ export function Table<T>({
           )}
         </tbody>
       </table>
-    </div>
   );
 }

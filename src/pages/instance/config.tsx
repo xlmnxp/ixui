@@ -120,6 +120,7 @@ export function ConfigTab({ instanceName, project, registerActions }: ConfigTabP
         selectedKeys={selectedKeys}
         onSelectionChange={setSelectedKeys}
         showToolbar={false}
+        stickyHeader
       />
       {Object.values(errors)[0] && <p className="px-3 py-2 text-xs text-red-300">{Object.values(errors)[0]}</p>}
     </div>

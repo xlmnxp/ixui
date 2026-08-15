@@ -94,4 +94,9 @@ it("hides the checkbox column without selection", () => {
     expect(table.className).toContain("border-separate");
     expect(table.className).not.toContain("border-collapse");
   });
+
+  it("renders without an overflow wrapper that would break sticky", () => {
+    render(<Table columns={columns} rows={rows} rowKey={(r) => r.name} />);
+    expect(screen.getByTestId("table").closest(".overflow-x-auto")).toBeNull();
+  });
 });

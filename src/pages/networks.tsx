@@ -277,7 +277,7 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
             {configLoading ? (
               <div className="py-4 text-center text-sm text-text-tertiary">Loading config…</div>
             ) : (
-              <KeyValueEditor values={config} onChange={setConfig} dataTestId="network-config-editor" descriptions={descriptions} />
+              <KeyValueEditor values={config} onChange={setConfig} dataTestId="network-config-editor" descriptions={descriptions} stickyHeader />
             )}
           </div>
         </div>

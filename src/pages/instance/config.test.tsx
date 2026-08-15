@@ -38,6 +38,16 @@ describe("ConfigTab", () => {
     expect(getActions()?.selectedCount).toBe(0);
   });
 
+  it("sticks the config editor header", async () => {
+    renderTab();
+    await screen.findByTestId("kv-key-limits.memory");
+    const table = screen.getByTestId("config-editor").querySelector("table");
+    expect(table?.className).toContain("border-separate");
+    for (const th of table?.querySelectorAll("thead > tr > th") ?? []) {
+      expect(th.className).toContain("sticky");
+    }
+  });
+
   it("saves via the exposed action", async () => {
     const { getActions } = renderTab();
     const { instancesApi } = await import("../../api");

@@ -15,6 +15,27 @@ describe("KeyValueEditor", () => {
     expect(screen.getByTestId("kv-value-limits.memory")).toHaveTextContent("512MiB");
   });
 
+  it("keeps the header non-sticky by default", () => {
+    render(<KeyValueEditor values={{ a: "1" }} onChange={() => {}} />);
+    const editor = screen.getByTestId("kv-editor");
+    const table = editor.querySelector("table");
+    expect(table?.className).toContain("border-collapse");
+    for (const th of table?.querySelectorAll("thead > tr > th") ?? []) {
+      expect(th.className).not.toContain("sticky");
+    }
+  });
+
+  it("sticks the header when stickyHeader is set", () => {
+    render(<KeyValueEditor values={{ a: "1" }} onChange={() => {}} stickyHeader />);
+    const editor = screen.getByTestId("kv-editor");
+    const table = editor.querySelector("table");
+    expect(table?.className).toContain("border-separate");
+    for (const th of table?.querySelectorAll("thead > tr > th") ?? []) {
+      expect(th.className).toContain("sticky");
+      expect(th.className).toContain("bg-surface-700");
+    }
+  });
+
   it("edits values", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

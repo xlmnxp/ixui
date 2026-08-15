@@ -165,7 +165,7 @@ export function ProfilesPage({ registerBar }: { registerBar?: (bar: BarState | n
       }>
         <div className="space-y-3">
           <Input label="Description" name="profile-description" data-testid="profile-description" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <KeyValueEditor values={config} onChange={setConfig} dataTestId="profile-editor" descriptions={descriptions} />
+          <KeyValueEditor values={config} onChange={setConfig} dataTestId="profile-editor" descriptions={descriptions} stickyHeader />
         </div>
       </Dialog>
 

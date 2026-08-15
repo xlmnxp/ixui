@@ -15,6 +15,8 @@ export interface KeyValueEditorProps {
   selectedKeys?: string[];
   onSelectionChange?: (keys: string[]) => void;
   showToolbar?: boolean;
+  /** Pin the Key/Value header while the surrounding container scrolls (default false). */
+  stickyHeader?: boolean;
 }
 
 export function KeyValueEditor({
@@ -27,6 +29,7 @@ export function KeyValueEditor({
   selectedKeys: controlledSelected,
   onSelectionChange: onControlledSelection,
   showToolbar = true,
+  stickyHeader = false,
 }: KeyValueEditorProps) {
   const [internalSelected, setInternalSelected] = useState<string[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
@@ -195,14 +198,14 @@ export function KeyValueEditor({
           <Button variant="secondary" size="sm" data-testid="kv-remove" onClick={removeSelected} disabled={selectedKeys.length === 0}><Trash2 size={13} /> Remove</Button>
         </div>
       )}
-      <table className="w-full border-collapse text-[13px]">
-        <thead className="border-b border-border bg-surface-700 text-left text-xs text-text-secondary">
+      <table className={`w-full text-[13px] ${stickyHeader ? "border-separate border-spacing-0" : "border-collapse"}`}>
+        <thead className={`bg-surface-700 text-left text-xs text-text-secondary ${stickyHeader ? "" : "border-b border-border"}`}>
           <tr>
-            <th className="w-8 px-2 py-1">
+            <th className={`w-8 px-2 py-1 ${stickyHeader ? "sticky top-0 z-[5] border-b border-border bg-surface-700" : ""}`}>
               <Checkbox data-testid="kv-select-all" checked={allSelected} onChange={toggleAll} aria-label="Select all" />
             </th>
-            <th className="px-2 py-1">Key</th>
-            <th className="px-2 py-1">Value</th>
+            <th className={`px-2 py-1 ${stickyHeader ? "sticky top-0 z-[5] border-b border-border bg-surface-700" : ""}`}>Key</th>
+            <th className={`px-2 py-1 ${stickyHeader ? "sticky top-0 z-[5] border-b border-border bg-surface-700" : ""}`}>Value</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border bg-surface-800">
