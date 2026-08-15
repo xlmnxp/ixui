@@ -41,6 +41,17 @@ describe("DevicesTab", () => {
     expect(screen.getByTestId("kv-value-parent")).toHaveTextContent("br0");
   });
 
+  it("keeps the devices table header sticky", async () => {
+    renderTab();
+    await screen.findByTestId("device-row-eth0");
+    const table = screen.getByTestId("devices-table");
+    expect(table.className).toContain("border-separate");
+    for (const th of table.querySelectorAll(":scope > thead > tr > th")) {
+      expect(th.className).toContain("sticky");
+      expect(th.className).toContain("bg-surface-700");
+    }
+  });
+
   it("shows a validation error for a nic without nictype", async () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../../api");

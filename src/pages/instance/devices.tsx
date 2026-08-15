@@ -144,13 +144,13 @@ export function DevicesTab({ instanceName, project, registerActions }: DevicesTa
       {entries.length === 0 ? (
         <EmptyState title="No devices" description="Devices attach storage, networking, and hardware to this instance." />
       ) : (
-        <table className="w-full border-collapse text-[13px]" data-testid="devices-table">
-          <thead className="border-b border-border bg-surface-700 text-left text-xs text-text-secondary">
+        <table className="w-full border-separate border-spacing-0 text-[13px]" data-testid="devices-table">
+          <thead className="bg-surface-700 text-left text-xs text-text-secondary">
             <tr>
-              <th className="px-2 py-1">Name</th>
-              <th className="px-2 py-1">Type</th>
-              <th className="px-2 py-1">Properties</th>
-              <th className="px-2 py-1" />
+              <th className="sticky top-0 z-[5] border-b border-border bg-surface-700 px-2 py-1">Name</th>
+              <th className="sticky top-0 z-[5] border-b border-border bg-surface-700 px-2 py-1">Type</th>
+              <th className="sticky top-0 z-[5] border-b border-border bg-surface-700 px-2 py-1">Properties</th>
+              <th className="sticky top-0 z-[5] border-b border-border bg-surface-700 px-2 py-1" />
             </tr>
           </thead>
           <tbody className="divide-y divide-border bg-surface-800">

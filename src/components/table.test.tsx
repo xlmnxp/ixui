@@ -87,4 +87,11 @@ it("hides the checkbox column without selection", () => {
     render(<Table columns={columns} rows={rows} rowKey={(r) => r.name} stickyHeader={false} />);
     expect(screen.getByTestId("th-name").className).not.toContain("sticky");
   });
+
+  it("uses border-separate so sticky headers work in Chrome", () => {
+    render(<Table columns={columns} rows={rows} rowKey={(r) => r.name} />);
+    const table = screen.getByTestId("table");
+    expect(table.className).toContain("border-separate");
+    expect(table.className).not.toContain("border-collapse");
+  });
 });
