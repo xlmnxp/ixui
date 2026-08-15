@@ -14,7 +14,7 @@ import { PageBar } from "../components/page-bar";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { RenameInstanceDialog, CopyInstanceDialog, MoveInstanceDialog } from "../components/instance-dialogs";
 import { toast } from "../components/toast";
-import { InstanceStatusIcon } from "../shell/instance-icon";
+import { InstanceIcon } from "../shell/instance-icon";
 import { OverviewTab } from "./instance-overview";
 import { SnapshotsTab } from "./instance/snapshots";
 import type { SnapshotsActions } from "./instance/snapshots";
@@ -161,8 +161,8 @@ export function InstanceDetailPage() {
         dataTestId="instance-strip"
         title={
           <span className="flex items-center gap-2">
+            <InstanceIcon status={instance.status} type={instance.type} />
             {instance.name}
-            <InstanceStatusIcon status={instance.status} />
           </span>
         }
         actions={[

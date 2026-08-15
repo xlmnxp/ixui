@@ -10,6 +10,7 @@ import type { Column } from "../components/table";
 import { Badge } from "../components/badge";
 import { StatusDot } from "../components/status-dot";
 import { instanceStatusTone } from "../lib/instance-status";
+import { InstanceIcon } from "../shell/instance-icon";
 import { Button } from "../components/button";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { EmptyState } from "../components/empty-state";
@@ -101,7 +102,12 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
       : []),
     {
       key: "name", header: "Name", sortValue: (i) => i.name,
-      render: (i) => <span className="font-medium">{i.name}</span>,
+      render: (i) => (
+        <span className="flex items-center gap-2 font-medium">
+          <InstanceIcon status={i.status} type={i.type} />
+          {i.name}
+        </span>
+      ),
     },
     {
       key: "status", header: "Status", sortValue: (i) => i.status,

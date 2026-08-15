@@ -135,6 +135,7 @@ describe("InstanceDetailPage", () => {
     );
     await screen.findByText("web1");
     expect(screen.getByTestId("instance-strip")).toBeInTheDocument();
+    expect(screen.getByTestId("instance-strip").querySelector('[data-testid="instance-icon"]')).toBeInTheDocument();
   });
 
   it("opens the terminal popup", async () => {

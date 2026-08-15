@@ -37,6 +37,8 @@ describe("InstancesPage", () => {
     );
     expect(await screen.findByText("web1")).toBeInTheDocument();
     expect(screen.getByText("db1")).toBeInTheDocument();
+    // Each row shows the instance icon with its status dot.
+    expect(screen.getAllByTestId("instance-icon").length).toBe(2);
   });
 
   it("shows the project column in all-projects mode", async () => {
