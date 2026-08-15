@@ -20,6 +20,14 @@ export function incusProxy(options: IncusProxyOptions = {}): Plugin {
     key: readFileSync(join(certDir, "client.key")),
   });
 
+  // Select the first subprotocol the browser requests (e.g. spice-html5's
+  // "binary") for the client handshake. It is NOT forwarded upstream: incusd
+  // does not select subprotocols, and the upstream handshake would fail.
+  const wss = new WebSocketServer({
+    noServer: true,
+    handleProtocols: (protocols: Set<string>) => protocols.values().next().value ?? false,
+  });
+
   return {
     name: "incus-proxy",
     configureServer(server) {
@@ -47,10 +55,9 @@ export function incusProxy(options: IncusProxyOptions = {}): Plugin {
         if (!req.url?.startsWith("/1.0/")) return;
         const upstream = new WebSocket(`wss://${target.host}${req.url}`, { agent });
         upstream.on("open", () => {
-          const wss = new WebSocketServer({ noServer: true });
           wss.handleUpgrade(req, socket, head, (client) => {
-            client.on("message", (data) => upstream.send(data));
-            upstream.on("message", (data) => client.send(String(data)));
+            client.on("message", (data, isBinary) => upstream.send(data, { binary: isBinary }));
+            upstream.on("message", (data, isBinary) => client.send(data, { binary: isBinary }));
             client.on("close", () => upstream.close());
             upstream.on("close", () => client.close());
             upstream.on("error", () => client.close());
