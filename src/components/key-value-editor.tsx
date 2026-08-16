@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
-import { metadataStore, loadMetadata, configDescription } from "../state/metadata";
+import { metadataStore, metadataTypesStore, loadMetadata, configDescription } from "../state/metadata";
 import { useStore } from "../state/store";
 
 const DESCRIPTION_ROW = "__description__";
@@ -44,11 +44,36 @@ export function KeyValueEditor({
   const editingRef = useRef<string | null>(null);
 
   const metadataDescriptions = useStore(metadataStore);
+  const metadataTypes = useStore(metadataTypesStore);
   const effectiveDescriptions = descriptions ?? metadataDescriptions;
+  const [suggestionIndex, setSuggestionIndex] = useState(-1);
 
   useEffect(() => {
     if (descriptions === undefined) loadMetadata();
   }, [descriptions]);
+
+  const suggestions = useMemo(() => {
+    const needle = draftKey.trim().toLowerCase();
+    if (!needle) return [];
+    return Object.keys(effectiveDescriptions)
+      .filter((key) => !key.includes("<") && key.toLowerCase().includes(needle) && key !== draftKey)
+      .sort((a, b) => {
+        const aPrefix = a.toLowerCase().startsWith(needle) ? 0 : 1;
+        const bPrefix = b.toLowerCase().startsWith(needle) ? 0 : 1;
+        return aPrefix - bPrefix || a.localeCompare(b);
+      })
+      .slice(0, 8);
+  }, [draftKey, effectiveDescriptions]);
+
+  const selectSuggestion = (rowKey: string, key: string) => {
+    setDraftKey(key);
+    setSuggestionIndex(-1);
+    const type = metadataTypes[key];
+    if (type === "bool" && draftValue === "") setDraftValue("true");
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLInputElement>(`[data-testid="kv-value-edit-${rowKey}"]`)?.focus();
+    });
+  };
 
   const selectedKeys = controlledSelected ?? internalSelected;
   const setSelectedKeys: (keys: string[] | ((prev: string[]) => string[])) => void = controlledSelected !== undefined && onControlledSelection
@@ -159,47 +184,116 @@ export function KeyValueEditor({
     input?.select();
   }, [editing]);
 
-  const keyInput = (rowKey: string) => (
-    <input
-      data-testid={`kv-key-edit-${rowKey}`}
-      data-kv-edit-row={rowKey}
-      className="w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary focus:border-accent-500 focus:outline-none"
-      value={draftKey}
-      onChange={(e) => setDraftKey(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") commitEdit(rowKey, draftKey, draftValue);
-        if (e.key === "Escape") cancelEdit();
-      }}
-      onBlur={(e) => {
-        if (editingRef.current !== rowKey) return;
-        const next = e.relatedTarget;
-        if (next instanceof HTMLElement && next.dataset.kvEditRow === rowKey) return;
-        commitEdit(rowKey, draftKey, draftValue);
-      }}
-      aria-label={`Edit key ${rowKey}`}
-    />
-  );
+  const keyInput = (rowKey: string) => {
+    const knownDesc = configDescription(effectiveDescriptions, draftKey);
+    const knownType = metadataTypes[draftKey];
+    const showSuggestions = suggestions.length > 0 && !effectiveDescriptions[draftKey];
+    return (
+      <div className="relative">
+        <input
+          data-testid={`kv-key-edit-${rowKey}`}
+          data-kv-edit-row={rowKey}
+          className="w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary focus:border-accent-500 focus:outline-none"
+          value={draftKey}
+          onChange={(e) => {
+            setDraftKey(e.target.value);
+            setSuggestionIndex(-1);
+          }}
+          onKeyDown={(e) => {
+            if (showSuggestions && e.key === "ArrowDown") {
+              e.preventDefault();
+              setSuggestionIndex((i) => Math.min(i + 1, suggestions.length - 1));
+              return;
+            }
+            if (showSuggestions && e.key === "ArrowUp") {
+              e.preventDefault();
+              setSuggestionIndex((i) => Math.max(i - 1, -1));
+              return;
+            }
+            if (showSuggestions && e.key === "Enter" && suggestionIndex >= 0 && suggestionIndex < suggestions.length) {
+              e.preventDefault();
+              const key = suggestions[suggestionIndex];
+              if (key) selectSuggestion(rowKey, key);
+              return;
+            }
+            if (e.key === "Enter") commitEdit(rowKey, draftKey, draftValue);
+            if (e.key === "Escape") cancelEdit();
+          }}
+          onBlur={(e) => {
+            if (editingRef.current !== rowKey) return;
+            const next = e.relatedTarget;
+            if (next instanceof HTMLElement && next.dataset.kvEditRow === rowKey) return;
+            commitEdit(rowKey, draftKey, draftValue);
+          }}
+          aria-label={`Edit key ${rowKey}`}
+        />
+        {knownDesc && (
+          <div className="mt-0.5 text-[11px] text-text-tertiary" data-testid="kv-key-hint">
+            {knownDesc}
+            {knownType && <span className="ml-1 rounded bg-surface-600 px-1 text-[10px]">{knownType}</span>}
+          </div>
+        )}
+        {showSuggestions && (
+          <div
+            className="absolute left-0 top-full z-20 mt-1 w-80 overflow-hidden rounded border border-border bg-surface-700 shadow-xl"
+            data-testid="kv-suggestions"
+          >
+            {suggestions.map((key, i) => (
+              <button
+                type="button"
+                key={key}
+                data-testid={`kv-suggest-${key}`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  selectSuggestion(rowKey, key);
+                }}
+                className={`flex w-full flex-col items-start gap-0.5 px-2 py-1.5 text-left ${i === suggestionIndex ? "bg-surface-600" : "hover:bg-surface-600"}`}
+              >
+                <span className="flex items-center gap-1.5 font-mono text-xs text-text-primary">
+                  {key}
+                  {metadataTypes[key] && <span className="rounded bg-surface-500 px-1 text-[10px] text-text-tertiary">{metadataTypes[key]}</span>}
+                </span>
+                <span className="w-full truncate text-[11px] text-text-tertiary">{effectiveDescriptions[key]}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
-  const valueInput = (rowKey: string) => (
-    <input
-      data-testid={`kv-value-edit-${rowKey}`}
-      data-kv-edit-row={rowKey}
-      className="w-full rounded border border-border bg-surface-500 px-1.5 text-sm text-text-primary focus:border-accent-500 focus:outline-none"
-      value={draftValue}
-      onChange={(e) => setDraftValue(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") commitEdit(rowKey, draftKey, draftValue);
-        if (e.key === "Escape") cancelEdit();
-      }}
-      onBlur={(e) => {
-        if (editingRef.current !== rowKey) return;
-        const next = e.relatedTarget;
-        if (next instanceof HTMLElement && next.dataset.kvEditRow === rowKey) return;
-        commitEdit(rowKey, draftKey, draftValue);
-      }}
-      aria-label={`Edit value ${rowKey}`}
-    />
-  );
+  const valueInput = (rowKey: string) => {
+    const valueType = metadataTypes[draftKey];
+    return (
+      <div className="flex items-center gap-1.5">
+        <input
+          data-testid={`kv-value-edit-${rowKey}`}
+          data-kv-edit-row={rowKey}
+          inputMode={valueType === "integer" ? "numeric" : undefined}
+          className="w-full rounded border border-border bg-surface-500 px-1.5 text-sm text-text-primary focus:border-accent-500 focus:outline-none"
+          value={draftValue}
+          onChange={(e) => setDraftValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commitEdit(rowKey, draftKey, draftValue);
+            if (e.key === "Escape") cancelEdit();
+          }}
+          onBlur={(e) => {
+            if (editingRef.current !== rowKey) return;
+            const next = e.relatedTarget;
+            if (next instanceof HTMLElement && next.dataset.kvEditRow === rowKey) return;
+            commitEdit(rowKey, draftKey, draftValue);
+          }}
+          aria-label={`Edit value ${rowKey}`}
+        />
+        {valueType === "bool" && (
+          <div className="flex shrink-0 gap-1">
+            <button type="button" data-testid="kv-bool-true" data-kv-edit-row={rowKey} onClick={() => setDraftValue("true")} className={`rounded border px-1.5 text-xs ${draftValue === "true" ? "border-accent-500 bg-accent-600/20 text-text-primary" : "border-border text-text-secondary hover:text-text-primary"}`}>true</button>
+            <button type="button" data-testid="kv-bool-false" data-kv-edit-row={rowKey} onClick={() => setDraftValue("false")} className={`rounded border px-1.5 text-xs ${draftValue === "false" ? "border-accent-500 bg-accent-600/20 text-text-primary" : "border-border text-text-secondary hover:text-text-primary"}`}>false</button>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-2" data-testid={dataTestId}>

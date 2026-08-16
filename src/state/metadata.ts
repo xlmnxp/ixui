@@ -4,6 +4,9 @@ import { serverApi } from "../api";
 /** Config-key → description map from GET /1.0/metadata/configuration (shared, fetched once). */
 export const metadataStore = createStore<Record<string, string>>({});
 
+/** Config-key → value type map ("string", "bool", "integer", …). */
+export const metadataTypesStore = createStore<Record<string, string>>({});
+
 /** Client-side fallbacks for keys the daemon does not document (e.g. image.*). */
 const FALLBACK_DESCRIPTIONS: Record<string, string> = {
   "image.architecture": "CPU architecture of the image",
@@ -22,12 +25,12 @@ const FALLBACK_DESCRIPTIONS: Record<string, string> = {
 
 let started = false;
 
-/** Collect every key description from the nested group/entity/keys shape.
+/** Collect every key description and type from the nested group/entity/keys shape.
     The keys listed inside each "keys" array are full config-key names. */
-function collectKeys(node: unknown, map: Record<string, string>): void {
+function collectKeys(node: unknown, descriptions: Record<string, string>, types: Record<string, string>): void {
   if (typeof node !== "object" || node === null) return;
   if (Array.isArray(node)) {
-    for (const item of node) collectKeys(item, map);
+    for (const item of node) collectKeys(item, descriptions, types);
     return;
   }
   const obj = node as Record<string, unknown>;
@@ -35,12 +38,13 @@ function collectKeys(node: unknown, map: Record<string, string>): void {
     for (const item of obj.keys) {
       if (typeof item !== "object" || item === null) continue;
       for (const [key, value] of Object.entries(item)) {
-        const desc = (value as { shortdesc?: string } | null)?.shortdesc;
-        if (desc) map[key] = desc;
+        const entry = value as { shortdesc?: string; type?: string } | null;
+        if (entry?.shortdesc) descriptions[key] = entry.shortdesc;
+        if (entry?.type) types[key] = entry.type;
       }
     }
   }
-  for (const [, child] of Object.entries(obj)) collectKeys(child, map);
+  for (const [, child] of Object.entries(obj)) collectKeys(child, descriptions, types);
 }
 
 /** Matches placeholder patterns like "volatile.<name>.hwaddr" against a real key. */
@@ -73,8 +77,10 @@ export function loadMetadata(): void {
       .metadata()
       .then((m) => {
         const map: Record<string, string> = {};
-        collectKeys(m.configs, map);
+        const types: Record<string, string> = {};
+        collectKeys(m.configs, map, types);
         metadataStore.setState({ ...FALLBACK_DESCRIPTIONS, ...map });
+        metadataTypesStore.setState(types);
       })
       .catch(() => {
         // Metadata may be unavailable; descriptions just stay empty.

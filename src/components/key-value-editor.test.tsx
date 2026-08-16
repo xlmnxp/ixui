@@ -6,7 +6,16 @@ import { KeyValueEditor } from "./key-value-editor";
 vi.mock("../api", () => ({
   serverApi: {
     metadata: vi.fn().mockResolvedValue({
-      configs: { instance: { instance: { keys: [{ "limits.memory": { shortdesc: "Memory limit in bytes" } }] } } },
+      configs: {
+        instance: {
+          instance: {
+            keys: [
+              { "limits.memory": { shortdesc: "Memory limit in bytes", type: "integer" } },
+              { "boot.autostart": { shortdesc: "Start on boot", type: "bool" } },
+            ],
+          },
+        },
+      },
     }),
   },
 }));
@@ -40,6 +49,41 @@ describe("KeyValueEditor", () => {
   it("loads descriptions from the metadata API when none are provided", async () => {
     render(<KeyValueEditor values={{ "limits.memory": "512MiB" }} onChange={() => {}} />);
     expect(await screen.findByTestId("kv-desc-limits.memory")).toHaveTextContent("Memory limit in bytes");
+  });
+
+  it("suggests known keys with search while typing a new key", async () => {
+    const user = userEvent.setup();
+    render(<KeyValueEditor values={{}} onChange={() => {}} />);
+    await user.click(screen.getByTestId("kv-add"));
+    await user.type(screen.getByTestId("kv-key-edit-"), "limit");
+    expect(screen.getByTestId("kv-suggestions")).toBeInTheDocument();
+    expect(screen.getByTestId("kv-suggest-limits.memory")).toBeInTheDocument();
+    await user.click(screen.getByTestId("kv-suggest-limits.memory"));
+    expect(screen.getByTestId("kv-key-edit-")).toHaveValue("limits.memory");
+    expect(screen.getByTestId("kv-key-hint")).toHaveTextContent("Memory limit in bytes");
+    expect(screen.getByTestId("kv-key-hint")).toHaveTextContent("integer");
+  });
+
+  it("selects suggestions with the keyboard", async () => {
+    const user = userEvent.setup();
+    render(<KeyValueEditor values={{}} onChange={() => {}} />);
+    await user.click(screen.getByTestId("kv-add"));
+    const keyInput = screen.getByTestId("kv-key-edit-");
+    await user.type(keyInput, "boot");
+    await user.keyboard("{ArrowDown}{Enter}");
+    expect(screen.getByTestId("kv-key-edit-")).toHaveValue("boot.autostart");
+  });
+
+  it("presets true and shows quick buttons for bool keys", async () => {
+    const user = userEvent.setup();
+    render(<KeyValueEditor values={{}} onChange={() => {}} />);
+    await user.click(screen.getByTestId("kv-add"));
+    await user.type(screen.getByTestId("kv-key-edit-"), "boot");
+    await user.click(screen.getByTestId("kv-suggest-boot.autostart"));
+    expect(screen.getByTestId("kv-value-edit-")).toHaveValue("true");
+    expect(screen.getByTestId("kv-bool-true")).toBeInTheDocument();
+    await user.click(screen.getByTestId("kv-bool-false"));
+    expect(screen.getByTestId("kv-value-edit-")).toHaveValue("false");
   });
 
   it("keeps the header non-sticky by default", () => {
