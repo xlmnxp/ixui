@@ -16,18 +16,19 @@ describe("Tree", () => {
     },
   ];
 
-  it("renders expanded and only the toggle button collapses", async () => {
+  it("clicking a row opens closed parents but never collapses", async () => {
     const user = userEvent.setup();
     render(<Tree nodes={nodes} />);
     expect(screen.getByTestId("tree-instances")).toBeInTheDocument();
     expect(screen.getAllByRole("group").length).toBeGreaterThan(0);
-    // Clicking the row must not collapse the subtree...
+    // Clicking an open row keeps the subtree open...
     await user.click(screen.getByTestId("tree-project-default"));
     expect(screen.getAllByRole("group").length).toBeGreaterThan(0);
-    // ...only the explicit toggle button does.
+    // The toggle button collapses...
     await user.click(screen.getByTestId("tree-toggle-project-default"));
     expect(screen.queryByRole("group")).not.toBeInTheDocument();
-    await user.click(screen.getByTestId("tree-toggle-project-default"));
+    // ...and clicking the row opens it again (one-way).
+    await user.click(screen.getByTestId("tree-project-default"));
     expect(screen.getAllByRole("group").length).toBeGreaterThan(0);
   });
 

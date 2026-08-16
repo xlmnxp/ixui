@@ -43,8 +43,10 @@ function TreeNodeItem({
   const [expanded, setExpanded] = useState(initialExpanded || depth === 0);
   const hasChildren = (node.children?.length ?? 0) > 0;
 
+  // Clicking a row selects it and opens closed subtrees — never collapses.
   const handleClick = () => {
     onSelect?.(node.id);
+    if (hasChildren) setExpanded(true);
   };
 
   return (
