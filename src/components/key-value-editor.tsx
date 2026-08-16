@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Badge } from "./badge";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
+import { Switch } from "./switch";
 import { metadataStore, metadataTypesStore, loadMetadata, configDescription } from "../state/metadata";
 import { useStore } from "../state/store";
 
@@ -64,6 +66,21 @@ export function KeyValueEditor({
       })
       .slice(0, 8);
   }, [draftKey, effectiveDescriptions]);
+
+  // Open the suggestion dropdown upward when there is no room below the row.
+  const [suggestionsUp, setSuggestionsUp] = useState(false);
+  useEffect(() => {
+    if (suggestions.length === 0) {
+      setSuggestionsUp(false);
+      return;
+    }
+    const input = document.querySelector<HTMLInputElement>("[data-kv-edit-row]");
+    if (!input) return;
+    const rect = input.getBoundingClientRect();
+    const needed = suggestions.length * 44 + 16;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    setSuggestionsUp(spaceBelow < needed && rect.top > needed);
+  }, [suggestions, draftKey]);
 
   const selectSuggestion = (rowKey: string, key: string) => {
     setDraftKey(key);
@@ -222,7 +239,7 @@ export function KeyValueEditor({
           onBlur={(e) => {
             if (editingRef.current !== rowKey) return;
             const next = e.relatedTarget;
-            if (next instanceof HTMLElement && next.dataset.kvEditRow === rowKey) return;
+            if (next instanceof HTMLElement && next.closest(`[data-kv-edit-row="${rowKey}"]`)) return;
             commitEdit(rowKey, draftKey, draftValue);
           }}
           aria-label={`Edit key ${rowKey}`}
@@ -235,7 +252,7 @@ export function KeyValueEditor({
         )}
         {showSuggestions && (
           <div
-            className="absolute left-0 top-full z-20 mt-1 w-80 overflow-hidden rounded border border-border bg-surface-700 shadow-xl"
+            className={`absolute left-0 z-20 w-80 overflow-hidden rounded border border-border bg-surface-700 shadow-xl ${suggestionsUp ? "bottom-full mb-1" : "top-full mt-1"}`}
             data-testid="kv-suggestions"
           >
             {suggestions.map((key, i) => (
@@ -262,8 +279,29 @@ export function KeyValueEditor({
     );
   };
 
+  const renderDisplayValue = (key: string, value: string) => {
+    const type = metadataTypes[key];
+    if (type === "bool") {
+      return <Badge tone={value === "true" ? "success" : "neutral"}>{value}</Badge>;
+    }
+    if (type === "integer") return <span className="font-mono text-xs">{value}</span>;
+    return value;
+  };
+
   const valueInput = (rowKey: string) => {
     const valueType = metadataTypes[draftKey];
+    if (valueType === "bool") {
+      return (
+        <div className="flex items-center gap-2" data-kv-edit-row={rowKey}>
+          <Switch
+            checked={draftValue === "true"}
+            onChange={(checked) => setDraftValue(checked ? "true" : "false")}
+            label={draftValue === "true" ? "true" : "false"}
+            dataTestId="kv-bool-switch"
+          />
+        </div>
+      );
+    }
     return (
       <div className="flex items-center gap-1.5">
         <input
@@ -280,17 +318,11 @@ export function KeyValueEditor({
           onBlur={(e) => {
             if (editingRef.current !== rowKey) return;
             const next = e.relatedTarget;
-            if (next instanceof HTMLElement && next.dataset.kvEditRow === rowKey) return;
+            if (next instanceof HTMLElement && next.closest(`[data-kv-edit-row="${rowKey}"]`)) return;
             commitEdit(rowKey, draftKey, draftValue);
           }}
           aria-label={`Edit value ${rowKey}`}
         />
-        {valueType === "bool" && (
-          <div className="flex shrink-0 gap-1">
-            <button type="button" data-testid="kv-bool-true" data-kv-edit-row={rowKey} onClick={() => setDraftValue("true")} className={`rounded border px-1.5 text-xs ${draftValue === "true" ? "border-accent-500 bg-accent-600/20 text-text-primary" : "border-border text-text-secondary hover:text-text-primary"}`}>true</button>
-            <button type="button" data-testid="kv-bool-false" data-kv-edit-row={rowKey} onClick={() => setDraftValue("false")} className={`rounded border px-1.5 text-xs ${draftValue === "false" ? "border-accent-500 bg-accent-600/20 text-text-primary" : "border-border text-text-secondary hover:text-text-primary"}`}>false</button>
-          </div>
-        )}
       </div>
     );
   };
@@ -362,7 +394,7 @@ export function KeyValueEditor({
               <td data-testid={`kv-value-${key}`} onDoubleClick={() => startEditing(key)} className="px-2 py-1 text-sm text-text-primary">
                 {editing === key ? valueInput(key) : (
                   <span className="inline-flex items-center gap-1.5">
-                    {value}
+                    {renderDisplayValue(key, value)}
                     <span className="opacity-0 transition-opacity group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); startEditing(key); }}>
                       <button data-testid={`kv-edit-${key}`} aria-label={`Edit ${key}`} type="button" className="text-text-tertiary hover:text-text-primary"><Pencil size={13} /></button>
                     </span>

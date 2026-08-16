@@ -74,16 +74,48 @@ describe("KeyValueEditor", () => {
     expect(screen.getByTestId("kv-key-edit-")).toHaveValue("boot.autostart");
   });
 
-  it("presets true and shows quick buttons for bool keys", async () => {
+  it("presets true and renders a switch for bool keys", async () => {
     const user = userEvent.setup();
     render(<KeyValueEditor values={{}} onChange={() => {}} />);
     await user.click(screen.getByTestId("kv-add"));
     await user.type(screen.getByTestId("kv-key-edit-"), "boot");
     await user.click(screen.getByTestId("kv-suggest-boot.autostart"));
-    expect(screen.getByTestId("kv-value-edit-")).toHaveValue("true");
-    expect(screen.getByTestId("kv-bool-true")).toBeInTheDocument();
-    await user.click(screen.getByTestId("kv-bool-false"));
-    expect(screen.getByTestId("kv-value-edit-")).toHaveValue("false");
+    const switchEl = screen.getByTestId("kv-bool-switch");
+    expect(switchEl).toHaveAttribute("aria-checked", "true");
+    await user.click(switchEl);
+    expect(screen.getByTestId("kv-bool-switch")).toHaveAttribute("aria-checked", "false");
+    expect(screen.queryByTestId("kv-value-edit-")).not.toBeInTheDocument();
+  });
+
+  it("renders bool values as badges in display mode", async () => {
+    render(<KeyValueEditor values={{ "boot.autostart": "true" }} onChange={() => {}} />);
+    const cell = await screen.findByTestId("kv-value-boot.autostart");
+    const badge = cell.querySelector('[data-testid="badge"]');
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveTextContent("true");
+    expect(badge?.className).toContain("green");
+  });
+
+  it("opens the suggestion dropdown upward when there is no room below", async () => {
+    const user = userEvent.setup();
+    render(<KeyValueEditor values={{}} onChange={() => {}} />);
+    await user.click(screen.getByTestId("kv-add"));
+    const keyInput = screen.getByTestId("kv-key-edit-");
+    vi.spyOn(keyInput, "getBoundingClientRect").mockReturnValue({
+      bottom: window.innerHeight - 4,
+      top: window.innerHeight - 120,
+      left: 0,
+      right: 200,
+      width: 200,
+      height: 20,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    await user.type(keyInput, "boot");
+    const dropdown = await screen.findByTestId("kv-suggestions");
+    expect(dropdown.className).toContain("bottom-full");
+    expect(dropdown.className).not.toContain("top-full");
   });
 
   it("keeps the header non-sticky by default", () => {
