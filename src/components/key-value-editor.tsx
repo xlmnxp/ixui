@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
+import { metadataStore, loadMetadata } from "../state/metadata";
+import { useStore } from "../state/store";
 
 const DESCRIPTION_ROW = "__description__";
 
@@ -40,6 +42,13 @@ export function KeyValueEditor({
   const [draftValue, setDraftValue] = useState("");
   const [displayValues, setDisplayValues] = useState(values);
   const editingRef = useRef<string | null>(null);
+
+  const metadataDescriptions = useStore(metadataStore);
+  const effectiveDescriptions = descriptions ?? metadataDescriptions;
+
+  useEffect(() => {
+    if (descriptions === undefined) loadMetadata();
+  }, [descriptions]);
 
   const selectedKeys = controlledSelected ?? internalSelected;
   const setSelectedKeys: (keys: string[] | ((prev: string[]) => string[])) => void = controlledSelected !== undefined && onControlledSelection
@@ -245,7 +254,16 @@ export function KeyValueEditor({
                 <Checkbox data-testid={`kv-check-${key}`} checked={selectedKeys.includes(key)} onChange={() => toggle(key)} aria-label={`Select ${key}`} />
               </td>
               <td data-testid={`kv-key-${key}`} onDoubleClick={() => startEditing(key)} className="px-2 py-1 font-mono text-xs text-text-primary">
-                {editing === key ? keyInput(key) : key}
+                {editing === key ? keyInput(key) : (
+                  <>
+                    <div>{key}</div>
+                    {effectiveDescriptions?.[key] && (
+                      <div className="mt-0.5 text-[11px] font-sans text-text-tertiary" data-testid={`kv-desc-${key}`}>
+                        {effectiveDescriptions[key]}
+                      </div>
+                    )}
+                  </>
+                )}
               </td>
               <td data-testid={`kv-value-${key}`} onDoubleClick={() => startEditing(key)} className="px-2 py-1 text-sm text-text-primary">
                 {editing === key ? valueInput(key) : (
@@ -256,7 +274,6 @@ export function KeyValueEditor({
                     </span>
                   </span>
                 )}
-                {descriptions?.[key] && <div className="text-xs text-text-tertiary">{descriptions[key]}</div>}
               </td>
             </tr>
           ))}

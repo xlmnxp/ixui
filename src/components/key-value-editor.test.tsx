@@ -3,6 +3,14 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { KeyValueEditor } from "./key-value-editor";
 
+vi.mock("../api", () => ({
+  serverApi: {
+    metadata: vi.fn().mockResolvedValue({
+      configs: [{ key: "limits.memory", description: "Memory limit in bytes" }],
+    }),
+  },
+}));
+
 function Editable({ onChange }: { onChange: (values: Record<string, string>) => void }) {
   const [values, setValues] = useState<Record<string, string>>({ key1: "a" });
   return <KeyValueEditor values={values} onChange={(next) => { setValues(next); onChange(next); }} />;
@@ -13,6 +21,25 @@ describe("KeyValueEditor", () => {
     render(<KeyValueEditor values={{ "limits.memory": "512MiB" }} onChange={() => {}} />);
     expect(screen.getByTestId("kv-key-limits.memory")).toHaveTextContent("limits.memory");
     expect(screen.getByTestId("kv-value-limits.memory")).toHaveTextContent("512MiB");
+  });
+
+  it("renders the description under the key from the descriptions prop", () => {
+    render(
+      <KeyValueEditor
+        values={{ "limits.memory": "512MiB" }}
+        onChange={() => {}}
+        descriptions={{ "limits.memory": "Memory limit in bytes" }}
+      />
+    );
+    expect(screen.getByTestId("kv-desc-limits.memory")).toHaveTextContent("Memory limit in bytes");
+    expect(screen.getByTestId("kv-desc-limits.memory")).toBeInTheDocument();
+    // The description lives in the key cell.
+    expect(screen.getByTestId("kv-key-limits.memory")).toHaveTextContent("Memory limit in bytes");
+  });
+
+  it("loads descriptions from the metadata API when none are provided", async () => {
+    render(<KeyValueEditor values={{ "limits.memory": "512MiB" }} onChange={() => {}} />);
+    expect(await screen.findByTestId("kv-desc-limits.memory")).toHaveTextContent("Memory limit in bytes");
   });
 
   it("keeps the header non-sticky by default", () => {
@@ -187,10 +214,11 @@ describe("KeyValueEditor", () => {
     expect(screen.getByTestId("kv-check-Description")).toBeChecked();
   });
 
-  it("renders descriptions as helper text under the value", () => {
+  it("renders descriptions as helper text under the key", () => {
     render(<KeyValueEditor values={{ key1: "a", key2: "b" }} descriptions={{ key1: "Memory limit" }} onChange={() => {}} />);
     expect(screen.getByText("Memory limit")).toBeInTheDocument();
     expect(screen.queryByText("Description")).not.toBeInTheDocument();
-    expect(screen.getByTestId("kv-value-key1")).toHaveTextContent("aMemory limit");
+    expect(screen.getByTestId("kv-key-key1")).toHaveTextContent("Memory limit");
+    expect(screen.getByTestId("kv-value-key1")).not.toHaveTextContent("Memory limit");
   });
 });
