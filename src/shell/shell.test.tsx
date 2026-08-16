@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { Shell } from "./layout";
 import { operationsStore } from "../state/operations";
 import { authStore } from "../auth/status";
+import { uiTitleStore } from "../state/ui-title";
 
 vi.mock("../api", () => ({
   api: { setForbiddenHandler: vi.fn(), get: vi.fn().mockResolvedValue({ cpu: { total: 8 }, memory: { total: 17179869184, used: 0 } }) },
@@ -51,6 +52,21 @@ describe("Shell", () => {
     expect(await screen.findByTestId("sidebar")).toBeInTheDocument();
     expect(screen.getByTestId("project-selector")).toBeInTheDocument();
     expect(screen.getByTestId("tree")).toBeInTheDocument();
+  });
+
+  it("shows the configured UI title in the sidebar header", async () => {
+    uiTitleStore.setState("My Cloud");
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(await screen.findByTestId("sidebar-title")).toHaveTextContent("My Cloud");
+    uiTitleStore.setState("Incus");
   });
 
   it("navigates to instance detail when an instance label is clicked", async () => {
@@ -129,6 +145,16 @@ describe("App", () => {
     render(<App />);
     expect(await screen.findByTestId("shell")).toBeInTheDocument();
     await act(async () => {});
+  });
+
+  it("sets the document title from the UI title store", async () => {
+    window.history.pushState({}, "", "/ui/");
+    authStore.setState("authenticated");
+    uiTitleStore.setState("My Cloud");
+    render(<App />);
+    await screen.findByTestId("shell");
+    expect(document.title).toBe("My Cloud");
+    uiTitleStore.setState("Incus");
   });
 
   it("renders the operations page at its route", async () => {

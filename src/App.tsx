@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { Shell } from "./shell/layout";
 import { ErrorBoundary } from "./components/error-boundary";
 import { AuthScreen } from "./auth/auth-screen";
 import { authStore } from "./auth/status";
+import { uiTitleStore } from "./state/ui-title";
 import { useStore } from "./state/store";
 import { Toaster } from "./components/toast";
 import { DashboardPage } from "./pages/dashboard";
@@ -26,6 +28,11 @@ function TerminalPage() {
 
 export function App() {
   const auth = useStore(authStore);
+  const uiTitle = useStore(uiTitleStore);
+
+  useEffect(() => {
+    document.title = uiTitle;
+  }, [uiTitle]);
 
   if (auth === "unauthenticated") {
     return <AuthScreen onRetry={() => authStore.setState("unknown")} />;

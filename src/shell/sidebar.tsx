@@ -6,6 +6,7 @@ import { ProjectDropdown } from "../components/project-dropdown";
 import { buildTree } from "./tree-model";
 import { useTreeData } from "./use-tree-data";
 import { currentProjectStore } from "../state/projects";
+import { uiTitleStore } from "../state/ui-title";
 import { useStore } from "../state/store";
 import { CreateInstanceWizard } from "../components/create-instance-wizard";
 
@@ -13,6 +14,7 @@ export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const project = useStore(currentProjectStore);
+  const uiTitle = useStore(uiTitleStore);
   const { members, instancesByMember, unassigned } = useTreeData();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardTarget, setWizardTarget] = useState<string | undefined>(undefined);
@@ -54,7 +56,7 @@ export function Sidebar() {
     <aside className="flex h-full flex-col border-r border-border bg-sidebar" data-testid="sidebar">
       <div className="flex h-10 items-center gap-2 border-b border-border px-3">
         <span className="h-3 w-3 rounded-sm bg-accent-600" data-testid="sidebar-mark" />
-        <span className="text-sm font-semibold text-text-primary">Incus</span>
+        <span className="truncate text-sm font-semibold text-text-primary" data-testid="sidebar-title">{uiTitle}</span>
       </div>
       <ProjectDropdown />
       <div className="flex items-center justify-end gap-1 px-2">
