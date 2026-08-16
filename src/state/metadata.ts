@@ -4,6 +4,18 @@ import { serverApi } from "../api";
 /** Config-key → description map from GET /1.0/metadata/configuration (shared, fetched once). */
 export const metadataStore = createStore<Record<string, string>>({});
 
+/** Client-side fallbacks for keys the daemon does not document (e.g. image.*). */
+const FALLBACK_DESCRIPTIONS: Record<string, string> = {
+  "image.architecture": "CPU architecture of the image",
+  "image.description": "Human-readable description of the image",
+  "image.os": "Operating system name",
+  "image.release": "Operating system release",
+  "image.serial": "Image build serial (build date)",
+  "image.variant": "Image variant (default, cloud, desktop, …)",
+  "image.secureboot": "Whether the image supports secure boot (VMs)",
+  "image.requirements.*": "Image requirement flag (e.g. nesting, secureboot)",
+};
+
 let started = false;
 
 /** Collect every key description from the nested group/entity/keys shape.
@@ -47,7 +59,7 @@ export function loadMetadata(): void {
       .then((m) => {
         const map: Record<string, string> = {};
         collectKeys(m.configs, map);
-        metadataStore.setState(map);
+        metadataStore.setState({ ...FALLBACK_DESCRIPTIONS, ...map });
       })
       .catch(() => {
         // Metadata may be unavailable; descriptions just stay empty.
