@@ -215,7 +215,7 @@ export function KeyValueEditor({
         <input
           data-testid={`kv-key-edit-${rowKey}`}
           data-kv-edit-row={rowKey}
-          className="w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary focus:border-accent-500 focus:outline-none"
+          className="h-7 w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary focus:border-accent-500 focus:outline-none"
           value={draftKey}
           onChange={(e) => {
             setDraftKey(e.target.value);
@@ -297,7 +297,7 @@ export function KeyValueEditor({
     const valueType = metadataTypes[draftKey];
     if (valueType === "bool") {
       return (
-        <div className="flex items-center gap-2" data-kv-edit-row={rowKey}>
+        <div className="flex h-7 items-center gap-2" data-kv-edit-row={rowKey}>
           <Switch
             checked={draftValue === "true"}
             onChange={(checked) => setDraftValue(checked ? "true" : "false")}
@@ -313,7 +313,7 @@ export function KeyValueEditor({
           data-testid={`kv-value-edit-${rowKey}`}
           data-kv-edit-row={rowKey}
           inputMode={valueType === "integer" ? "numeric" : undefined}
-          className="w-full rounded border border-border bg-surface-500 px-1.5 text-sm text-text-primary focus:border-accent-500 focus:outline-none"
+          className="h-7 w-full rounded border border-border bg-surface-500 px-1.5 text-sm text-text-primary focus:border-accent-500 focus:outline-none"
           value={draftValue}
           onChange={(e) => setDraftValue(e.target.value)}
           onKeyDown={(e) => {
