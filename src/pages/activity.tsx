@@ -85,16 +85,9 @@ export function ActivityPage({ registerBar }: { registerBar?: (bar: BarState | n
   ];
 
   return (
-    <div data-testid="activity-page" className="space-y-3 p-3">
-      {!registerBar && (
-        <PageBar
-          title="Activity"
-          actions={[
-            <Button key="clear" size="sm" variant="ghost" data-testid="activity-clear" onClick={() => setClearOpen(true)}><Trash2 size={14} /> Clear</Button>,
-          ]}
-        />
-      )}
-      <div className="flex items-center gap-2">
+    <div data-testid="activity-page">
+      {!registerBar && <PageBar title="Activity" />}
+      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
         <div className="relative w-72">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
           <Input
@@ -109,6 +102,9 @@ export function ActivityPage({ registerBar }: { registerBar?: (bar: BarState | n
         <span className="text-xs text-text-tertiary" data-testid="activity-count">
           {filtered.length} of {events.length} events (browser keeps the latest {MAX_ACTIVITY_EVENTS})
         </span>
+        <div className="ml-auto">
+          <Button size="sm" variant="ghost" data-testid="activity-clear" onClick={() => setClearOpen(true)}><Trash2 size={14} /> Clear</Button>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
