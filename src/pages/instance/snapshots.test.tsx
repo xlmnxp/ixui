@@ -61,9 +61,9 @@ describe("SnapshotsTab", () => {
     vi.mocked(instancesApi.get).mockResolvedValueOnce({ ...snapshot("web1"), config: {} } as Instance);
     render(<SnapshotsTab instanceName="web1" />);
     await screen.findByTestId("snapshot-schedule");
-    expect(screen.getByTestId("schedule-input")).toBeDisabled();
+    expect(screen.queryByTestId("schedule-input")).not.toBeInTheDocument();
     await user.click(screen.getByTestId("schedule-enable"));
-    expect(screen.getByTestId("schedule-input")).not.toBeDisabled();
+    expect(screen.getByTestId("schedule-input")).toBeInTheDocument();
     await user.type(screen.getByTestId("schedule-input"), "@weekly");
     await user.click(screen.getByTestId("schedule-save"));
     await waitFor(() =>
@@ -81,7 +81,7 @@ describe("SnapshotsTab", () => {
     render(<SnapshotsTab instanceName="web1" />);
     await screen.findByTestId("schedule-input");
     await user.click(screen.getByTestId("schedule-enable"));
-    expect(screen.getByTestId("schedule-input")).toBeDisabled();
+    expect(screen.queryByTestId("schedule-input")).not.toBeInTheDocument();
     await user.click(screen.getByTestId("schedule-save"));
     await waitFor(() => expect(instancesApi.update).toHaveBeenCalled());
     const [, body] = vi.mocked(instancesApi.update).mock.calls[0]!;
