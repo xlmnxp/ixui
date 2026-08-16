@@ -39,7 +39,9 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   }, [instanceName, project]);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [kind, setKind] = useState<"exec" | "console">("exec");
+  const initialKind: "exec" | "console" =
+    new URLSearchParams(window.location.search).get("mode") === "vga" ? "console" : "exec";
+  const [kind, setKind] = useState<"exec" | "console">(initialKind);
   const [status, setStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");
   const termRef = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -235,7 +237,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   };
 
   useEffect(() => {
-    void connect("exec");
+    void connect(initialKind);
     return disconnect;
   }, []);
 

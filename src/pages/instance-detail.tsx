@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Camera, Check, Copy as CopyIcon, Cpu, Download, FileText, FolderOpen, Gauge, History, MoreHorizontal, Plus, MoveRight, Pencil, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
+import { Camera, Check, Copy as CopyIcon, Cpu, Download, FileText, FolderOpen, Gauge, History, Monitor, MoreHorizontal, Plus, MoveRight, Pencil, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
 import { backupsApi, instancesApi, operationsApi } from "../api";
 import type { Instance } from "../api/types";
 import { instancesStore, loadInstances } from "../state/instances";
@@ -44,6 +44,7 @@ export function InstanceDetailPage() {
   const [copyOpen, setCopyOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const moreRef = useRef<HTMLDivElement>(null);
 
   const explicitProject = searchParams.get("project") ?? undefined;
@@ -67,6 +68,29 @@ export function InstanceDetailPage() {
   useEffect(() => {
     if (storeInstance) setInstance(storeInstance);
   }, [storeInstance, name]);
+
+  // Load the VM display screenshot for the action-bar thumbnail.
+  useEffect(() => {
+    if (!instance || instance.type !== "virtual-machine") return;
+    let cancelled = false;
+    let objectUrl: string | null = null;
+    void (async () => {
+      try {
+        const res = await fetch(instancesApi.screenshotUrl(instance.name, instance.project), { credentials: "include" });
+        if (!res.ok || cancelled) return;
+        const blob = await res.blob();
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        setScreenshotUrl(objectUrl);
+      } catch {
+        // Leave the icon-only fallback.
+      }
+    })();
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [instance]);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -201,6 +225,31 @@ export function InstanceDetailPage() {
             )}
           </div>,
           <Button key="delete" size="sm" variant="ghost" data-testid="detail-action-delete" onClick={() => setDeleteOpen(true)}><Trash2 size={14} /> Delete</Button>,
+          ...(instance.type === "virtual-machine"
+            ? [
+                <Button
+                  key="screenshot"
+                  size="sm"
+                  variant="ghost"
+                  title="Open console"
+                  aria-label="Open console"
+                  data-testid="detail-screenshot"
+                  onClick={() =>
+                    window.open(
+                      `/ui/terminal/${instance.name}?project=${encodeURIComponent(instance.project)}&mode=vga`,
+                      `terminal-${instance.name}`,
+                      "width=1000,height=640"
+                    )
+                  }
+                >
+                  {screenshotUrl ? (
+                    <img src={screenshotUrl} alt="" data-testid="detail-screenshot-img" className="h-5 w-auto max-w-12 rounded-sm object-contain" />
+                  ) : (
+                    <Monitor size={14} />
+                  )}
+                </Button>,
+              ]
+            : []),
           <Button key="terminal" size="sm" variant="secondary" data-testid="detail-terminal" onClick={() => window.open(`/ui/terminal/${instance.name}?project=${instance.project}`, `terminal-${instance.name}`, "width=1000,height=640")}><TerminalIcon size={14} /> Terminal</Button>,
         ]}
       />

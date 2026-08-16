@@ -285,6 +285,14 @@ describe("InstanceTerminal", () => {
     expect(screen.getByText("web1")).toBeInTheDocument();
   });
 
+  it("starts in VGA mode when the URL requests it", async () => {
+    window.history.replaceState({}, "", "/ui/terminal/web1?project=default&mode=vga");
+    render(<InstanceTerminal instanceName="web1" />);
+    await waitFor(() => expect(apiMocks.console).toHaveBeenCalledWith("web1", 80, 24));
+    expect(apiMocks.exec).not.toHaveBeenCalled();
+    window.history.replaceState({}, "", "/");
+  });
+
   it("refits and resizes the shell when the window resizes", async () => {
     render(<InstanceTerminal instanceName="web1" />);
     await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));

@@ -2,13 +2,14 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom";
 import { InstanceDetailPage } from "./instance-detail";
+import type { Instance } from "../api/types";
 
 function LocationProbe() {
   const location = useLocation();
   return <div data-testid="location">{location.pathname}</div>;
 }
 
-function instance() {
+function instance(): Instance {
   return {
     name: "web1", status: "Stopped", type: "container", description: "web server",
     created_at: "2026-01-01T00:00:00Z", last_used_at: "2026-01-02T00:00:00Z",
@@ -26,6 +27,7 @@ vi.mock("../api", () => ({
     copy: vi.fn().mockResolvedValue(null),
     rename: vi.fn().mockResolvedValue(null),
     move: vi.fn().mockResolvedValue(null),
+    screenshotUrl: vi.fn((name: string, project?: string) => `/1.0/instances/${name}/console?project=${project}&type=vga`),
   },
   infraApi: { listImages: vi.fn().mockResolvedValue([]), listProfiles: vi.fn().mockResolvedValue([]), listNetworks: vi.fn().mockResolvedValue([]), listPools: vi.fn().mockResolvedValue([{ name: "default", description: "", driver: "dir", status: "", used_by: [] }]), listProjects: vi.fn().mockResolvedValue([{ name: "default", description: "", config: {} }, { name: "prod", description: "", config: {} }]) },
   clusterApi: { listMembers: vi.fn().mockResolvedValue([{ server_name: "incus-1", url: "https://incus-1:8443", database: true, status: "Online", message: "", architecture: "x86_64" }]) },
@@ -136,6 +138,37 @@ describe("InstanceDetailPage", () => {
     await screen.findByText("web1");
     expect(screen.getByTestId("instance-strip")).toBeInTheDocument();
     expect(screen.getByTestId("instance-strip").querySelector('[data-testid="instance-icon"]')).toBeInTheDocument();
+    // Containers have no display: no screenshot thumbnail button.
+    expect(screen.queryByTestId("detail-screenshot")).not.toBeInTheDocument();
+  });
+
+  it("shows a screenshot thumbnail in the action bar for VMs", async () => {
+    const { instancesApi } = await import("../api");
+    vi.mocked(instancesApi.get).mockResolvedValueOnce({ ...instance(), type: "virtual-machine" });
+    const fetchMock = vi.fn().mockResolvedValue(new Response(new Blob(["png"], { type: "image/png" }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    URL.createObjectURL = vi.fn().mockReturnValue("blob:vm");
+    URL.revokeObjectURL = vi.fn();
+    renderPage();
+    expect(await screen.findByTestId("detail-screenshot-img")).toHaveAttribute("src", "blob:vm");
+    expect(fetchMock).toHaveBeenCalledWith("/1.0/instances/web1/console?project=default&type=vga", { credentials: "include" });
+    vi.unstubAllGlobals();
+  });
+
+  it("opens the terminal popup in VGA mode from the thumbnail", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../api");
+    vi.mocked(instancesApi.get).mockResolvedValueOnce({ ...instance(), type: "virtual-machine" });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(new Blob(["png"], { type: "image/png" }), { status: 200 })));
+    const openSpy = vi.fn();
+    vi.stubGlobal("open", openSpy);
+    URL.createObjectURL = vi.fn().mockReturnValue("blob:vm");
+    URL.revokeObjectURL = vi.fn();
+    renderPage();
+    await screen.findByTestId("detail-screenshot-img");
+    await user.click(screen.getByTestId("detail-screenshot"));
+    expect(openSpy).toHaveBeenCalledWith("/ui/terminal/web1?project=default&mode=vga", "terminal-web1", "width=1000,height=640");
+    vi.unstubAllGlobals();
   });
 
   it("opens the terminal popup", async () => {
