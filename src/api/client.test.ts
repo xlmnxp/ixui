@@ -146,6 +146,14 @@ describe("ApiClient", () => {
     expect(authStore.getState()).toBe("authenticated");
   });
 
+  it("does not flip an unauthenticated state back to authenticated on 2xx", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(200, { hello: "world" })));
+    const client = new ApiClient("/1.0");
+    authStore.setState("unauthenticated");
+    await client.get("/");
+    expect(authStore.getState()).toBe("unauthenticated");
+  });
+
   it("DELETE sends no body", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("", { status: 200 })));
     const client = new ApiClient("/1.0");

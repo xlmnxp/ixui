@@ -4,7 +4,8 @@ import { Shell } from "./shell/layout";
 import { ErrorBoundary } from "./components/error-boundary";
 import { AuthScreen } from "./auth/auth-screen";
 import { authStore } from "./auth/status";
-import { uiTitleStore } from "./state/ui-title";
+import { uiTitleStore, uiSsoOnlyStore } from "./state/ui-title";
+import { startOidcLogin } from "./auth/login";
 import { useStore } from "./state/store";
 import { Toaster } from "./components/toast";
 import { DashboardPage } from "./pages/dashboard";
@@ -29,12 +30,20 @@ function TerminalPage() {
 export function App() {
   const auth = useStore(authStore);
   const uiTitle = useStore(uiTitleStore);
+  const ssoOnly = useStore(uiSsoOnlyStore);
 
   useEffect(() => {
     document.title = uiTitle;
   }, [uiTitle]);
 
-  if (auth === "unauthenticated") {
+  // With user.ui.sso_only, skip the login page and go straight to the IdP.
+  useEffect(() => {
+    if (auth === "unauthenticated" && ssoOnly) {
+      startOidcLogin();
+    }
+  }, [auth, ssoOnly]);
+
+  if (auth === "unauthenticated" && !ssoOnly) {
     return <AuthScreen onRetry={() => authStore.setState("unknown")} />;
   }
 

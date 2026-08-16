@@ -4,7 +4,12 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { Shell } from "./layout";
 import { operationsStore } from "../state/operations";
 import { authStore } from "../auth/status";
-import { uiTitleStore } from "../state/ui-title";
+import { uiTitleStore, uiSsoOnlyStore } from "../state/ui-title";
+
+vi.mock("../auth/login", () => ({
+  startOidcLogin: vi.fn(),
+  startOidcLogout: vi.fn(),
+}));
 
 vi.mock("../api", () => ({
   api: { setForbiddenHandler: vi.fn(), get: vi.fn().mockResolvedValue({ cpu: { total: 8 }, memory: { total: 17179869184, used: 0 } }) },
@@ -155,6 +160,17 @@ describe("App", () => {
     await screen.findByTestId("shell");
     expect(document.title).toBe("My Cloud");
     uiTitleStore.setState("Incus");
+  });
+
+  it("redirects to OIDC when unauthenticated with sso_only", async () => {
+    window.history.pushState({}, "", "/ui/");
+    authStore.setState("unauthenticated");
+    uiSsoOnlyStore.setState(true);
+    const { startOidcLogin } = await import("../auth/login");
+    render(<App />);
+    expect(startOidcLogin).toHaveBeenCalled();
+    expect(screen.queryByTestId("auth-screen")).not.toBeInTheDocument();
+    uiSsoOnlyStore.setState(false);
   });
 
   it("renders the operations page at its route", async () => {

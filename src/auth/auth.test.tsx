@@ -1,15 +1,19 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AuthScreen } from "./auth-screen";
-import { authStore, markForbidden, markAuthenticated } from "./status";
+import { authStore, markForbidden, markAuthenticated, markProbeAuthenticated } from "./status";
 import { startOidcLogin, startOidcLogout } from "./login";
 
 describe("auth status", () => {
-  it("transitions on forbidden and success", () => {
+  it("transitions on forbidden and probe success", () => {
     expect(authStore.getState()).toBe("unknown");
     markForbidden();
     expect(authStore.getState()).toBe("unauthenticated");
+    // Plain 2xx responses no longer clear the unauthenticated state...
     markAuthenticated();
+    expect(authStore.getState()).toBe("unauthenticated");
+    // ...only the startup probe does.
+    markProbeAuthenticated();
     expect(authStore.getState()).toBe("authenticated");
   });
 });

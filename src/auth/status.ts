@@ -9,6 +9,12 @@ export function markForbidden(): void {
 }
 
 export function markAuthenticated(): void {
-  if (authStore.getState() === "authenticated") return;
+  const state = authStore.getState();
+  if (state !== "unknown") return;
+  authStore.setState("authenticated");
+}
+
+/** Explicitly authenticated by the startup probe (GET /1.0 reporting auth: trusted). */
+export function markProbeAuthenticated(): void {
   authStore.setState("authenticated");
 }
