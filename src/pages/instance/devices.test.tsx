@@ -39,6 +39,10 @@ describe("DevicesTab", () => {
     expect(screen.getByTestId("device-type-eth0")).toHaveTextContent("nic");
     expect(screen.getByTestId("kv-key-nictype")).toHaveTextContent("nictype");
     expect(screen.getByTestId("kv-value-parent")).toHaveTextContent("br0");
+    const propsEditor = screen.getByTestId("device-props-eth0");
+    expect(propsEditor.className).toContain("rounded");
+    expect(propsEditor.className).toContain("border");
+    expect(propsEditor.className).toContain("border-border");
   });
 
   it("keeps the devices table header sticky", async () => {

@@ -23,6 +23,8 @@ export interface KeyValueEditorProps {
   stickyHeader?: boolean;
   /** Distance in px from the scroll container's top for the pinned header (default 0). */
   stickyHeaderOffset?: number;
+  /** Draw a rounded border around the editor so nested editors stand out inside outer tables (default false). */
+  bordered?: boolean;
 }
 
 export function KeyValueEditor({
@@ -37,6 +39,7 @@ export function KeyValueEditor({
   showToolbar = true,
   stickyHeader = false,
   stickyHeaderOffset = 0,
+  bordered = false,
 }: KeyValueEditorProps) {
   const [internalSelected, setInternalSelected] = useState<string[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
@@ -328,7 +331,10 @@ export function KeyValueEditor({
   };
 
   return (
-    <div className="space-y-2" data-testid={dataTestId}>
+    <div
+      className={`space-y-2${bordered ? (editing !== null ? " rounded border border-border" : " overflow-hidden rounded border border-border") : ""}`}
+      data-testid={dataTestId}
+    >
       {showToolbar && (
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" data-testid="kv-add" onClick={addEntry}><Plus size={13} /> Add</Button>
