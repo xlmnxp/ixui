@@ -4,6 +4,9 @@ import { serverApi } from "../api";
 /** Config-key → description map from GET /1.0/metadata/configuration (shared, fetched once). */
 export const metadataStore = createStore<Record<string, string>>({});
 
+/** Config-key → long description map (the detailed text behind the short hints). */
+export const metadataLongStore = createStore<Record<string, string>>({});
+
 /** Config-key → value type map ("string", "bool", "integer", …). */
 export const metadataTypesStore = createStore<Record<string, string>>({});
 
@@ -26,11 +29,18 @@ const FALLBACK_DESCRIPTIONS: Record<string, string> = {
 let started = false;
 
 /** Collect every key description and type from the nested group/entity/keys shape.
-    The keys listed inside each "keys" array are full config-key names. */
-function collectKeys(node: unknown, descriptions: Record<string, string>, types: Record<string, string>): void {
+    The keys listed inside each "keys" array are full config-key names. First definitions
+    win because the same key is often repeated across storage drivers, and the earliest
+    (instance-level) entries carry the real text. */
+function collectKeys(
+  node: unknown,
+  descriptions: Record<string, string>,
+  types: Record<string, string>,
+  longs: Record<string, string>
+): void {
   if (typeof node !== "object" || node === null) return;
   if (Array.isArray(node)) {
-    for (const item of node) collectKeys(item, descriptions, types);
+    for (const item of node) collectKeys(item, descriptions, types, longs);
     return;
   }
   const obj = node as Record<string, unknown>;
@@ -38,13 +48,14 @@ function collectKeys(node: unknown, descriptions: Record<string, string>, types:
     for (const item of obj.keys) {
       if (typeof item !== "object" || item === null) continue;
       for (const [key, value] of Object.entries(item)) {
-        const entry = value as { shortdesc?: string; type?: string } | null;
-        if (entry?.shortdesc) descriptions[key] = entry.shortdesc;
-        if (entry?.type) types[key] = entry.type;
+        const entry = value as { shortdesc?: string; longdesc?: string; type?: string } | null;
+        if (entry?.shortdesc && !(key in descriptions)) descriptions[key] = entry.shortdesc;
+        if (entry?.longdesc && !(key in longs)) longs[key] = entry.longdesc;
+        if (entry?.type && !(key in types)) types[key] = entry.type;
       }
     }
   }
-  for (const [, child] of Object.entries(obj)) collectKeys(child, descriptions, types);
+  for (const [, child] of Object.entries(obj)) collectKeys(child, descriptions, types, longs);
 }
 
 /** Matches placeholder patterns like "volatile.<name>.hwaddr" against a real key. */
@@ -56,7 +67,7 @@ function patternMatches(pattern: string, key: string): boolean {
 }
 
 /** Look up a description, falling back to wildcard and placeholder entries. */
-export function configDescription(map: Record<string, string>, key: string): string | undefined {
+function lookup(map: Record<string, string>, key: string): string | undefined {
   if (map[key]) return map[key];
   const parts = key.split(".");
   for (let i = parts.length - 1; i >= 1; i--) {
@@ -69,6 +80,37 @@ export function configDescription(map: Record<string, string>, key: string): str
   return undefined;
 }
 
+const TOKEN = /\{\{([a-z0-9_.-]+)\}\}/g;
+
+/** Replace {{cross-reference}} tokens with the text of the referenced metadata entry. */
+function resolveTokens(text: string, map: Record<string, string>, longs: Record<string, string>, depth = 0): string {
+  if (!text.includes("{{") || depth > 4) return text;
+  return text.replace(TOKEN, (_match, name: string) => {
+    const refShort = map[name];
+    if (refShort && refShort !== text) return resolveTokens(refShort, map, longs, depth + 1);
+    const refLong = longs[name];
+    if (refLong && refLong !== text) return resolveTokens(refLong, map, longs, depth + 1);
+    return "";
+  });
+}
+
+/**
+ * Look up a description, falling back to wildcard and placeholder entries.
+ * Cross-reference tokens like {{snapshot_expiry_format}} are resolved against the
+ * metadata maps; when the referenced entry is missing (common), the key's own long
+ * description is used instead, so hints never show raw {{tokens}}.
+ */
+export function configDescription(map: Record<string, string>, key: string, longMap?: Record<string, string>): string | undefined {
+  const desc = lookup(map, key);
+  if (!desc) return undefined;
+  const resolved = resolveTokens(desc, map, longMap ?? {}).trim();
+  if (resolved) return resolved;
+  const long = longMap ? lookup(longMap, key) : undefined;
+  if (!long) return undefined;
+  const longResolved = resolveTokens(long, map, longMap ?? {}).trim();
+  return longResolved || undefined;
+}
+
 export function loadMetadata(): void {
   if (started) return;
   started = true;
@@ -78,9 +120,11 @@ export function loadMetadata(): void {
       .then((m) => {
         const map: Record<string, string> = {};
         const types: Record<string, string> = {};
-        collectKeys(m.configs, map, types);
+        const longs: Record<string, string> = {};
+        collectKeys(m.configs, map, types, longs);
         metadataStore.setState({ ...FALLBACK_DESCRIPTIONS, ...map });
         metadataTypesStore.setState(types);
+        metadataLongStore.setState(longs);
       })
       .catch(() => {
         // Metadata may be unavailable; descriptions just stay empty.

@@ -31,6 +31,17 @@ describe("metadata store", () => {
     expect(configDescription(metadataStore.getState(), "limits.memory")).toBe("Memory limit");
   });
 
+  it("resolves {{token}} cross-references and falls back to long descriptions", () => {
+    metadataStore.setState({
+      "snapshots.schedule": "{{snapshot_schedule_format}}",
+      "snapshots.expiry": "{{snapshot_expiry_format}}",
+      "snapshot_schedule_format": "Cron expression or schedule alias",
+    });
+    const longs = { "snapshots.expiry": "Specify an expression like 1M 2H 3d 4w 5m 6y" };
+    expect(configDescription(metadataStore.getState(), "snapshots.schedule", longs)).toBe("Cron expression or schedule alias");
+    expect(configDescription(metadataStore.getState(), "snapshots.expiry", longs)).toBe("Specify an expression like 1M 2H 3d 4w 5m 6y");
+  });
+
   it("matches placeholder patterns like volatile.<name>.hwaddr", () => {
     metadataStore.setState({
       "volatile.<name>.hwaddr": "Network device MAC address",

@@ -4,7 +4,7 @@ import { Badge } from "./badge";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
 import { Switch } from "./switch";
-import { metadataStore, metadataTypesStore, loadMetadata, configDescription } from "../state/metadata";
+import { metadataStore, metadataTypesStore, metadataLongStore, loadMetadata, configDescription } from "../state/metadata";
 import { useStore } from "../state/store";
 
 const DESCRIPTION_ROW = "__description__";
@@ -50,7 +50,9 @@ export function KeyValueEditor({
 
   const metadataDescriptions = useStore(metadataStore);
   const metadataTypes = useStore(metadataTypesStore);
+  const metadataLongs = useStore(metadataLongStore);
   const effectiveDescriptions = descriptions ?? metadataDescriptions;
+  const effectiveLongs = descriptions === undefined ? metadataLongs : undefined;
   const [suggestionIndex, setSuggestionIndex] = useState(-1);
 
   useEffect(() => {
@@ -205,7 +207,7 @@ export function KeyValueEditor({
   }, [editing]);
 
   const keyInput = (rowKey: string) => {
-    const knownDesc = configDescription(effectiveDescriptions, draftKey);
+    const knownDesc = configDescription(effectiveDescriptions, draftKey, effectiveLongs);
     const knownType = metadataTypes[draftKey];
     const showSuggestions = suggestions.length > 0 && !effectiveDescriptions[draftKey];
     return (
@@ -389,9 +391,9 @@ export function KeyValueEditor({
                 {editing === key ? keyInput(key) : (
                   <>
                     <div>{key}</div>
-                    {configDescription(effectiveDescriptions, key) && (
+                    {configDescription(effectiveDescriptions, key, effectiveLongs) && (
                       <div className="mt-0.5 text-[11px] font-sans text-text-tertiary" data-testid={`kv-desc-${key}`}>
-                        {configDescription(effectiveDescriptions, key)}
+                        {configDescription(effectiveDescriptions, key, effectiveLongs)}
                       </div>
                     )}
                   </>

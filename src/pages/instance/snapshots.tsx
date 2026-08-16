@@ -13,7 +13,7 @@ import { EmptyState } from "../../components/empty-state";
 import { Loading } from "../../components/loading";
 import { toast } from "../../components/toast";
 import { useStore } from "../../state/store";
-import { metadataStore, loadMetadata, configDescription } from "../../state/metadata";
+import { metadataStore, metadataLongStore, loadMetadata, configDescription } from "../../state/metadata";
 
 export interface SnapshotsTabProps {
   instanceName: string;
@@ -38,6 +38,7 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
   const [scheduleBusy, setScheduleBusy] = useState(false);
   const [hasConfig, setHasConfig] = useState(false);
   const metadataDescriptions = useStore(metadataStore);
+  const metadataLongs = useStore(metadataLongStore);
 
   useEffect(() => {
     registerActions?.({ create: () => setCreateOpen(true) });
@@ -76,8 +77,8 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
     }
   };
 
-  const scheduleHint = configDescription(metadataDescriptions, "snapshots.schedule");
-  const expiryHint = configDescription(metadataDescriptions, "snapshots.expiry");
+  const scheduleHint = configDescription(metadataDescriptions, "snapshots.schedule", metadataLongs);
+  const expiryHint = configDescription(metadataDescriptions, "snapshots.expiry", metadataLongs);
 
   const refresh = useCallback(() => {
     void instancesApi
