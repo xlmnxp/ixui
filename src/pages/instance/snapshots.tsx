@@ -166,7 +166,7 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
               <Button size="sm" variant="ghost" loading={scheduleBusy} data-testid="schedule-save" onClick={() => void saveSchedule()}><Check size={13} /> Save</Button>
             </span>
           </div>
-          <table className="w-full border-separate border-spacing-0 bg-surface-800 text-[13px]">
+          <table className="w-full table-fixed border-separate border-spacing-0 bg-surface-800 text-[13px]">
             <tbody className="divide-y divide-border">
               <tr>
                 <td className="w-44 px-2 py-1.5 align-top">
@@ -180,7 +180,7 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
                     disabled={!enabled}
                     onChange={(e) => setSchedule(e.target.value)}
                     placeholder="@daily"
-                    className="w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none disabled:opacity-60"
+                    className="h-8 w-full rounded border border-border bg-surface-500 px-2.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
                   />
                 </td>
               </tr>
@@ -196,7 +196,7 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
                     disabled={!enabled}
                     onChange={(e) => setExpiry(e.target.value)}
                     placeholder="1d"
-                    className="w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none disabled:opacity-60"
+                    className="h-8 w-full rounded border border-border bg-surface-500 px-2.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
                   />
                 </td>
               </tr>
