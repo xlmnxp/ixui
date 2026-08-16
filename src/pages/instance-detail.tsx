@@ -231,7 +231,7 @@ export function InstanceDetailPage() {
                   key="screenshot"
                   size="sm"
                   variant="ghost"
-                  className="!px-0"
+                  className="!px-0 !py-0"
                   title="Open console"
                   aria-label="Open console"
                   data-testid="detail-screenshot"
