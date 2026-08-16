@@ -177,7 +177,6 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
           selectedKeys={selectedKeys}
           onSelectionChange={setSelectedKeys}
           onRowClick={(i) => navigate(`/instances/${i.name}?project=${encodeURIComponent(i.project)}`)}
-          stickyHeaderOffset={40}
         />
       )}
 
