@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Search, Trash2 } from "lucide-react";
-import { activityStore, clearActivity, MAX_ACTIVITY_EVENTS } from "../state/activity";
+import { activityStore, clearActivity } from "../state/activity";
 import type { ActivityEvent } from "../state/activity";
 import { useStore } from "../state/store";
 import { Table } from "../components/table";
@@ -37,7 +37,23 @@ export function ActivityPage({ registerBar }: { registerBar?: (bar: BarState | n
     );
   }, [events, filter]);
 
-  const barActions: ReactNode[] = [];
+  const barActions: ReactNode[] = [
+    <div key="filter" className="relative">
+      <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-text-tertiary" />
+      <Input
+        name="activity-filter"
+        data-testid="activity-filter"
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+        placeholder="Filter by instance, action, user…"
+        className="w-56 pl-7 text-xs"
+      />
+    </div>,
+    <span key="count" className="text-xs text-text-tertiary" data-testid="activity-count">
+      {filtered.length} of {events.length}
+    </span>,
+    <Button key="clear" size="sm" variant="ghost" data-testid="activity-clear" onClick={() => setClearOpen(true)}><Trash2 size={14} /> Clear</Button>,
+  ];
 
   useEffect(() => {
     registerBar?.({ title: "Activity", actions: barActions });
@@ -86,26 +102,7 @@ export function ActivityPage({ registerBar }: { registerBar?: (bar: BarState | n
 
   return (
     <div data-testid="activity-page">
-      {!registerBar && <PageBar title="Activity" />}
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <div className="relative w-72">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
-          <Input
-            name="activity-filter"
-            data-testid="activity-filter"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter by instance, action, user…"
-            className="pl-8"
-          />
-        </div>
-        <span className="text-xs text-text-tertiary" data-testid="activity-count">
-          {filtered.length} of {events.length} events (browser keeps the latest {MAX_ACTIVITY_EVENTS})
-        </span>
-        <div className="ml-auto">
-          <Button size="sm" variant="ghost" data-testid="activity-clear" onClick={() => setClearOpen(true)}><Trash2 size={14} /> Clear</Button>
-        </div>
-      </div>
+      {!registerBar && <PageBar title="Activity" actions={barActions} />}
 
       {filtered.length === 0 ? (
         <EmptyState
