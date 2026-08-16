@@ -4,6 +4,7 @@ import { Button } from "../components/button";
 import { Badge } from "../components/badge";
 import { StatusDot } from "../components/status-dot";
 import { Spinner } from "../components/spinner";
+import { Loading } from "../components/loading";
 import { Input } from "../components/input";
 import { Select } from "../components/select";
 import { Textarea } from "../components/textarea";
@@ -104,6 +105,13 @@ export function Gallery() {
         <Spinner size="xs" />
         <Spinner size="sm" />
         <Spinner size="md" />
+      </Section>
+
+      <Section title="Loading">
+        <Loading label="Loading instances…" />
+        <div className="w-64 rounded border border-border">
+          <Loading dataTestId="gallery-loading-bordered" label="Loading config…" />
+        </div>
       </Section>
 
       <Section title="Form">
@@ -269,6 +277,16 @@ export function Gallery() {
             onChange={setKvValues}
             selectedKeys={kvSelected}
             onSelectionChange={setKvSelected}
+          />
+        </div>
+        <div className="w-full rounded border border-border p-2">
+          <p className="mb-2 text-[11px] text-text-tertiary">Nested editor (bordered, toolbar hidden) — as used inside the devices table.</p>
+          <KeyValueEditor
+            values={{ nictype: "bridged", parent: "br0" }}
+            onChange={() => {}}
+            dataTestId="gallery-kv-bordered"
+            showToolbar={false}
+            bordered
           />
         </div>
       </Section>
