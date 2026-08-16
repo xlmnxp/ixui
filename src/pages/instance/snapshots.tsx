@@ -155,8 +155,14 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
 
   return (
     <div className="space-y-4" data-testid="snapshots-tab">
+      {snapshots.length === 0 ? (
+        <EmptyState title="No snapshots" description="Snapshots let you roll back to a previous state." />
+      ) : (
+        <Table columns={columns} rows={snapshots} rowKey={(s) => s.name} />
+      )}
+
       {hasConfig && (
-        <div className="overflow-hidden rounded border border-border" data-testid="snapshot-schedule">
+        <div className={`overflow-hidden rounded border border-border ${enabled ? "" : "opacity-60"}`} data-testid="snapshot-schedule">
           <div className="flex items-center justify-between border-b border-border bg-surface-700 px-2 py-1">
             <span className="flex items-center gap-1.5 text-xs font-medium text-text-secondary">
               <Clock size={12} /> Automatic snapshots
@@ -166,49 +172,43 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
               <Button size="sm" variant="ghost" loading={scheduleBusy} data-testid="schedule-save" onClick={() => void saveSchedule()}><Check size={13} /> Save</Button>
             </span>
           </div>
-          {enabled && (
-            <table className="w-full border-separate border-spacing-0 bg-surface-800 text-[13px]">
-              <tbody className="divide-y divide-border">
-                <tr>
-                  <td className="w-44 px-2 py-1.5 align-top">
-                    <div className="font-mono text-xs text-text-primary">snapshots.schedule</div>
-                    {scheduleHint && <div className="mt-0.5 text-[11px] font-sans text-text-tertiary" data-testid="schedule-hint">{scheduleHint}</div>}
-                  </td>
-                  <td className="px-2 py-1.5 align-top">
-                    <input
-                      data-testid="schedule-input"
-                      value={schedule}
-                      onChange={(e) => setSchedule(e.target.value)}
-                      placeholder="@daily"
-                      className="w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td className="w-44 px-2 py-1.5 align-top">
-                    <div className="font-mono text-xs text-text-primary">snapshots.expiry</div>
-                    {expiryHint && <div className="mt-0.5 text-[11px] font-sans text-text-tertiary" data-testid="expiry-hint">{expiryHint}</div>}
-                  </td>
-                  <td className="px-2 py-1.5 align-top">
-                    <input
-                      data-testid="expiry-input"
-                      value={expiry}
-                      onChange={(e) => setExpiry(e.target.value)}
-                      placeholder="1d"
-                      className="w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          )}
+          <table className="w-full border-separate border-spacing-0 bg-surface-800 text-[13px]">
+            <tbody className="divide-y divide-border">
+              <tr>
+                <td className="w-44 px-2 py-1.5 align-top">
+                  <div className="font-mono text-xs text-text-primary">snapshots.schedule</div>
+                  {scheduleHint && <div className="mt-0.5 text-[11px] font-sans text-text-tertiary" data-testid="schedule-hint">{scheduleHint}</div>}
+                </td>
+                <td className="px-2 py-1.5 align-top">
+                  <input
+                    data-testid="schedule-input"
+                    value={schedule}
+                    disabled={!enabled}
+                    onChange={(e) => setSchedule(e.target.value)}
+                    placeholder="@daily"
+                    className="w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none disabled:opacity-60"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td className="w-44 px-2 py-1.5 align-top">
+                  <div className="font-mono text-xs text-text-primary">snapshots.expiry</div>
+                  {expiryHint && <div className="mt-0.5 text-[11px] font-sans text-text-tertiary" data-testid="expiry-hint">{expiryHint}</div>}
+                </td>
+                <td className="px-2 py-1.5 align-top">
+                  <input
+                    data-testid="expiry-input"
+                    value={expiry}
+                    disabled={!enabled}
+                    onChange={(e) => setExpiry(e.target.value)}
+                    placeholder="1d"
+                    className="w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none disabled:opacity-60"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      )}
-
-      {snapshots.length === 0 ? (
-        <EmptyState title="No snapshots" description="Snapshots let you roll back to a previous state." />
-      ) : (
-        <Table columns={columns} rows={snapshots} rowKey={(s) => s.name} />
       )}
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create snapshot" footer={
