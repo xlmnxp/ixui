@@ -19,7 +19,8 @@ export function Sidebar() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardTarget, setWizardTarget] = useState<string | undefined>(undefined);
   const [treeEpoch, setTreeEpoch] = useState(0);
-  const [treeExpanded, setTreeExpanded] = useState(false);
+  // The tree starts fully expanded; the Expand/Collapse-all buttons override it.
+  const [treeExpanded, setTreeExpanded] = useState(true);
 
   const nodes = buildTree({ project, members, instancesByMember, unassigned, onCreate: (target) => { setWizardTarget(target); setWizardOpen(true); } });
 
