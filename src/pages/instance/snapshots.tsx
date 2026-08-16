@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Check, Clock, RotateCcw, Trash2, X } from "lucide-react";
+import { Check, RotateCcw, Trash2, X } from "lucide-react";
 import { instancesApi } from "../../api";
 import type { Instance } from "../../api/types";
 import { Table } from "../../components/table";
@@ -11,9 +11,8 @@ import { Input } from "../../components/input";
 import { Switch } from "../../components/switch";
 import { EmptyState } from "../../components/empty-state";
 import { Loading } from "../../components/loading";
+import { SnapshotSchedule } from "../../components/snapshot-schedule";
 import { toast } from "../../components/toast";
-import { useStore } from "../../state/store";
-import { metadataStore, metadataLongStore, loadMetadata, configDescription } from "../../state/metadata";
 
 export interface SnapshotsTabProps {
   instanceName: string;
@@ -38,8 +37,6 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
   const [expiry, setExpiry] = useState("");
   const [scheduleBusy, setScheduleBusy] = useState(false);
   const [hasConfig, setHasConfig] = useState(false);
-  const metadataDescriptions = useStore(metadataStore);
-  const metadataLongs = useStore(metadataLongStore);
 
   useEffect(() => {
     registerActions?.({ create: () => setCreateOpen(true) });
@@ -47,7 +44,6 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
   }, [registerActions]);
 
   useEffect(() => {
-    loadMetadata();
     void instancesApi
       .get(instanceName, project)
       .then((i) => {
@@ -83,9 +79,6 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
       setScheduleBusy(false);
     }
   };
-
-  const scheduleHint = configDescription(metadataDescriptions, "snapshots.schedule", metadataLongs);
-  const expiryHint = configDescription(metadataDescriptions, "snapshots.expiry", metadataLongs);
 
   const refresh = useCallback(() => {
     void instancesApi
@@ -156,53 +149,16 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
   return (
     <div className="space-y-4" data-testid="snapshots-tab">
       {hasConfig && (
-        <div className={`m-3 overflow-hidden rounded border border-border ${enabled ? "" : "opacity-60"}`} data-testid="snapshot-schedule">
-          <div className="flex items-center justify-between border-b border-border bg-surface-700 px-2 py-1">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-text-secondary">
-              <Clock size={12} /> Automatic snapshots
-            </span>
-            <span className="flex items-center gap-2">
-              <Switch checked={enabled} onChange={setEnabled} dataTestId="schedule-enable" />
-              <Button size="sm" variant="ghost" loading={scheduleBusy} data-testid="schedule-save" onClick={() => void saveSchedule()}><Check size={13} /> Save</Button>
-            </span>
-          </div>
-          {enabled && (
-            <table className="w-full table-fixed border-separate border-spacing-0 bg-surface-800 text-[13px]">
-              <tbody className="divide-y divide-border">
-                <tr>
-                  <td className="w-44 px-2 py-1.5 align-top">
-                    <div className="font-mono text-xs text-text-primary">snapshots.schedule</div>
-                    {scheduleHint && <div className="mt-0.5 text-[11px] font-sans text-text-tertiary" data-testid="schedule-hint">{scheduleHint}</div>}
-                  </td>
-                  <td className="px-2 py-1.5 align-top">
-                    <input
-                      data-testid="schedule-input"
-                      value={schedule}
-                      onChange={(e) => setSchedule(e.target.value)}
-                      placeholder="@daily"
-                      className="h-8 w-full rounded border border-border bg-surface-500 px-2.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td className="w-44 px-2 py-1.5 align-top">
-                    <div className="font-mono text-xs text-text-primary">snapshots.expiry</div>
-                    {expiryHint && <div className="mt-0.5 text-[11px] font-sans text-text-tertiary" data-testid="expiry-hint">{expiryHint}</div>}
-                  </td>
-                  <td className="px-2 py-1.5 align-top">
-                    <input
-                      data-testid="expiry-input"
-                      value={expiry}
-                      onChange={(e) => setExpiry(e.target.value)}
-                      placeholder="1d"
-                      className="h-8 w-full rounded border border-border bg-surface-500 px-2.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          )}
-        </div>
+        <SnapshotSchedule
+          schedule={schedule}
+          expiry={expiry}
+          enabled={enabled}
+          busy={scheduleBusy}
+          onScheduleChange={setSchedule}
+          onExpiryChange={setExpiry}
+          onEnabledChange={setEnabled}
+          onSave={() => void saveSchedule()}
+        />
       )}
 
       {snapshots.length === 0 ? (

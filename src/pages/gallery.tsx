@@ -29,6 +29,7 @@ import { ProjectDropdown } from "../components/project-dropdown";
 import { InstanceIcon } from "../shell/instance-icon";
 import { ExplorerNavbar } from "../components/explorer-nav";
 import { FileEntryIcon } from "../components/file-entry-icon";
+import { SnapshotSchedule } from "../components/snapshot-schedule";
 import { parentOf } from "../lib/path";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -51,6 +52,9 @@ export function Gallery() {
   const [explorerCwd, setExplorerCwd] = useState("/srv/www");
   const [explorerHistory, setExplorerHistory] = useState<string[]>(["/srv/www"]);
   const [explorerIndex, setExplorerIndex] = useState(0);
+  const [ssEnabled, setSsEnabled] = useState(true);
+  const [ssSchedule, setSsSchedule] = useState("");
+  const [ssExpiry, setSsExpiry] = useState("");
 
   const explorerNavigate = (path: string) => {
     setExplorerCwd(path);
@@ -253,6 +257,20 @@ export function Gallery() {
               <Button key="b" size="sm" variant="secondary">Save</Button>,
               <Button key="c" size="sm" variant="ghost">Cancel</Button>,
             ]}
+          />
+        </div>
+      </Section>
+
+      <Section title="SnapshotSchedule">
+        <div className="w-full">
+          <SnapshotSchedule
+            schedule={ssSchedule}
+            expiry={ssExpiry}
+            enabled={ssEnabled}
+            onScheduleChange={setSsSchedule}
+            onExpiryChange={setSsExpiry}
+            onEnabledChange={setSsEnabled}
+            onSave={() => toast("success", "Saved (gallery demo)")}
           />
         </div>
       </Section>
