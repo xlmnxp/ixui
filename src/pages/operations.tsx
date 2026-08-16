@@ -105,7 +105,7 @@ export function OperationsPage({ registerBar }: { registerBar?: (bar: BarState |
           {operations.length === 0 ? (
             <EmptyState title="No operations" />
           ) : (
-            <Table columns={columns} rows={operations} rowKey={(o) => o.id} />
+            <Table columns={columns} rows={operations} rowKey={(o) => o.id} stickyHeaderOffset={40} />
           )}
         </>
       )}

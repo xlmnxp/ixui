@@ -113,7 +113,7 @@ export function ActivityPage({ registerBar }: { registerBar?: (bar: BarState | n
           description="Instance lifecycle events from the live event stream will appear here while the UI is open."
         />
       ) : (
-        <Table columns={columns} rows={filtered} rowKey={(e) => e.id} />
+        <Table columns={columns} rows={filtered} rowKey={(e) => e.id} stickyHeaderOffset={40} />
       )}
 
       <ConfirmDialog

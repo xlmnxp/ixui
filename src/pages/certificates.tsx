@@ -124,7 +124,7 @@ export function CertificatesPage() {
       ) : certificates.length === 0 ? (
         <EmptyState title="No certificates" />
       ) : (
-        <Table columns={columns} rows={certificates} rowKey={(c) => c.fingerprint} emptyMessage="No certificates" />
+        <Table columns={columns} rows={certificates} rowKey={(c) => c.fingerprint} emptyMessage="No certificates" stickyHeaderOffset={40} />
       )}
 
       <Dialog

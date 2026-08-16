@@ -17,6 +17,8 @@ export interface KeyValueEditorProps {
   showToolbar?: boolean;
   /** Pin the Key/Value header while the surrounding container scrolls (default false). */
   stickyHeader?: boolean;
+  /** Distance in px from the scroll container's top for the pinned header (default 0). */
+  stickyHeaderOffset?: number;
 }
 
 export function KeyValueEditor({
@@ -30,6 +32,7 @@ export function KeyValueEditor({
   onSelectionChange: onControlledSelection,
   showToolbar = true,
   stickyHeader = false,
+  stickyHeaderOffset = 0,
 }: KeyValueEditorProps) {
   const [internalSelected, setInternalSelected] = useState<string[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
@@ -201,11 +204,11 @@ export function KeyValueEditor({
       <table className={`w-full text-[13px] ${stickyHeader ? "border-separate border-spacing-0" : "border-collapse"}`}>
         <thead className={`bg-surface-700 text-left text-xs text-text-secondary ${stickyHeader ? "" : "border-b border-border"}`}>
           <tr>
-            <th className={`w-8 px-2 py-1 ${stickyHeader ? "sticky top-0 z-[5] border-b border-border bg-surface-700" : ""}`}>
+            <th style={stickyHeader ? { top: stickyHeaderOffset } : undefined} className={`w-8 px-2 py-1 ${stickyHeader ? "sticky top-0 z-[5] border-b border-border bg-surface-700" : ""}`}>
               <Checkbox data-testid="kv-select-all" checked={allSelected} onChange={toggleAll} aria-label="Select all" />
             </th>
-            <th className={`px-2 py-1 ${stickyHeader ? "sticky top-0 z-[5] border-b border-border bg-surface-700" : ""}`}>Key</th>
-            <th className={`px-2 py-1 ${stickyHeader ? "sticky top-0 z-[5] border-b border-border bg-surface-700" : ""}`}>Value</th>
+            <th style={stickyHeader ? { top: stickyHeaderOffset } : undefined} className={`px-2 py-1 ${stickyHeader ? "sticky top-0 z-[5] border-b border-border bg-surface-700" : ""}`}>Key</th>
+            <th style={stickyHeader ? { top: stickyHeaderOffset } : undefined} className={`px-2 py-1 ${stickyHeader ? "sticky top-0 z-[5] border-b border-border bg-surface-700" : ""}`}>Value</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border bg-surface-800">

@@ -243,7 +243,7 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
       {networks.length === 0 ? (
         <EmptyState title="No networks" />
       ) : (
-        <Table columns={columns} rows={networks} rowKey={(n) => n.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
+        <Table columns={columns} rows={networks} rowKey={(n) => n.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} stickyHeaderOffset={40} />
       )}
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create network" footer={

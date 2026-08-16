@@ -121,7 +121,7 @@ export function ProjectsPage() {
         ]}
       />
 
-      <Table columns={columns} rows={projects} rowKey={(p) => p.name} emptyMessage="No projects" />
+      <Table columns={columns} rows={projects} rowKey={(p) => p.name} emptyMessage="No projects" stickyHeaderOffset={40} />
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create project" footer={
         <>

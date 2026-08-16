@@ -101,7 +101,7 @@ export function SettingsPage({ registerBar }: { registerBar?: (bar: BarState | n
           {Object.keys(original).length === 0 ? (
             <EmptyState title="—" description="No server config available" />
           ) : (
-            <KeyValueEditor values={config} onChange={setConfig} dataTestId="settings-editor" selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} showToolbar={false} stickyHeader />
+            <KeyValueEditor values={config} onChange={setConfig} dataTestId="settings-editor" selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} showToolbar={false} stickyHeader stickyHeaderOffset={40} />
           )}
         </>
       )}

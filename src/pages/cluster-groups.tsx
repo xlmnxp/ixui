@@ -116,7 +116,7 @@ export function ClusterGroupsPage({ registerBar }: { registerBar?: (bar: BarStat
       ) : groups.length === 0 ? (
         <EmptyState title="No cluster groups" />
       ) : (
-        <Table columns={columns} rows={groups} rowKey={(g) => g.name} dataTestId="groups-table" />
+        <Table columns={columns} rows={groups} rowKey={(g) => g.name} dataTestId="groups-table" stickyHeaderOffset={40} />
       )}
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create group" footer={

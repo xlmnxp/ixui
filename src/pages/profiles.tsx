@@ -145,7 +145,7 @@ export function ProfilesPage({ registerBar }: { registerBar?: (bar: BarState | n
       {profiles.length === 0 ? (
         <EmptyState title="No profiles" />
       ) : (
-        <Table columns={columns} rows={profiles} rowKey={(p) => p.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
+        <Table columns={columns} rows={profiles} rowKey={(p) => p.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} stickyHeaderOffset={40} />
       )}
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create profile" footer={

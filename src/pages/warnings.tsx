@@ -100,7 +100,7 @@ export function WarningsPage({ registerBar }: { registerBar?: (bar: BarState | n
           {warnings.length === 0 ? (
             <EmptyState title="No warnings" />
           ) : (
-            <Table columns={columns} rows={warnings} rowKey={(w) => w.uuid} />
+            <Table columns={columns} rows={warnings} rowKey={(w) => w.uuid} stickyHeaderOffset={40} />
           )}
         </>
       )}
