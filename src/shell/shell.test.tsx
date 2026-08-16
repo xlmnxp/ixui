@@ -88,7 +88,9 @@ describe("Shell", () => {
       </MemoryRouter>
     );
     expect(await screen.findByText("incus-1")).toBeInTheDocument();
-    // The tree is fully expanded by default.
+    // Subtrees are closed by default; clicking the member row opens it.
+    expect(screen.queryByText("web1")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("tree-member-incus-1"));
     expect(await screen.findByText("web1")).toBeInTheDocument();
     await user.click(screen.getByText("web1"));
     expect(await screen.findByTestId("instance-detail-page")).toBeInTheDocument();
