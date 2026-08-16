@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SnapshotsTab } from "./snapshots";
+import type { Instance } from "../../api/types";
 
 function snapshot(name: string) {
   return { name, status: "Stopped", type: "container", description: "", created_at: "2026-01-01T00:00:00Z", last_used_at: "", config: {}, devices: {}, profiles: [], project: "default", ephemeral: false };
@@ -25,6 +26,10 @@ vi.mock("../../api", () => ({
 }));
 
 describe("SnapshotsTab", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("lists snapshots", async () => {
     render(<SnapshotsTab instanceName="web1" />);
     expect(await screen.findByText("snap1")).toBeInTheDocument();
@@ -48,6 +53,41 @@ describe("SnapshotsTab", () => {
         undefined
       )
     );
+  });
+
+  it("enables automatic snapshots from the toggle", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../../api");
+    vi.mocked(instancesApi.get).mockResolvedValueOnce({ ...snapshot("web1"), config: {} } as Instance);
+    render(<SnapshotsTab instanceName="web1" />);
+    await screen.findByTestId("snapshot-schedule");
+    expect(screen.queryByTestId("schedule-input")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("schedule-enable"));
+    expect(screen.getByTestId("schedule-input")).toBeInTheDocument();
+    await user.type(screen.getByTestId("schedule-input"), "@weekly");
+    await user.click(screen.getByTestId("schedule-save"));
+    await waitFor(() =>
+      expect(instancesApi.update).toHaveBeenCalledWith(
+        "web1",
+        expect.objectContaining({ config: expect.objectContaining({ "snapshots.schedule": "@weekly" }) }),
+        undefined
+      )
+    );
+  });
+
+  it("disables automatic snapshots when toggled off", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../../api");
+    render(<SnapshotsTab instanceName="web1" />);
+    await screen.findByTestId("schedule-input");
+    await user.click(screen.getByTestId("schedule-enable"));
+    expect(screen.queryByTestId("schedule-input")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("schedule-save"));
+    await waitFor(() => expect(instancesApi.update).toHaveBeenCalled());
+    const [, body] = vi.mocked(instancesApi.update).mock.calls[0]!;
+    const config = (body as { config?: Record<string, string> }).config;
+    expect(config).not.toHaveProperty("snapshots.schedule");
+    expect(config).not.toHaveProperty("snapshots.expiry");
   });
 
   it("creates a snapshot via the bar action", async () => {

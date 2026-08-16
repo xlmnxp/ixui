@@ -33,6 +33,7 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
   const [stateful, setStateful] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [enabled, setEnabled] = useState(false);
   const [schedule, setSchedule] = useState("");
   const [expiry, setExpiry] = useState("");
   const [scheduleBusy, setScheduleBusy] = useState(false);
@@ -52,6 +53,7 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
       .then((i) => {
         setSchedule(i.config["snapshots.schedule"] ?? "");
         setExpiry(i.config["snapshots.expiry"] ?? "");
+        setEnabled(Boolean(i.config["snapshots.schedule"] || i.config["snapshots.expiry"]));
         setHasConfig(true);
       })
       .catch(() => {});
@@ -62,14 +64,19 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
     try {
       const current = await instancesApi.get(instanceName, project);
       const config = { ...current.config };
-      const s = schedule.trim();
-      const e = expiry.trim();
-      if (s) config["snapshots.schedule"] = s;
-      else delete config["snapshots.schedule"];
-      if (e) config["snapshots.expiry"] = e;
-      else delete config["snapshots.expiry"];
+      if (enabled) {
+        const s = schedule.trim();
+        const e = expiry.trim();
+        if (s) config["snapshots.schedule"] = s;
+        else delete config["snapshots.schedule"];
+        if (e) config["snapshots.expiry"] = e;
+        else delete config["snapshots.expiry"];
+      } else {
+        delete config["snapshots.schedule"];
+        delete config["snapshots.expiry"];
+      }
       await instancesApi.update(instanceName, { config }, project);
-      toast("success", "Snapshot schedule saved");
+      toast("success", enabled ? "Snapshot schedule saved" : "Automatic snapshots disabled");
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Save failed");
     } finally {
@@ -154,42 +161,47 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
             <span className="flex items-center gap-1.5 text-xs font-medium text-text-secondary">
               <Clock size={12} /> Automatic snapshots
             </span>
-            <Button size="sm" variant="ghost" loading={scheduleBusy} data-testid="schedule-save" onClick={() => void saveSchedule()}><Check size={13} /> Save</Button>
+            <span className="flex items-center gap-2">
+              <Switch checked={enabled} onChange={setEnabled} dataTestId="schedule-enable" />
+              <Button size="sm" variant="ghost" loading={scheduleBusy} data-testid="schedule-save" onClick={() => void saveSchedule()}><Check size={13} /> Save</Button>
+            </span>
           </div>
-          <table className="w-full border-separate border-spacing-0 bg-surface-800 text-[13px]">
-            <tbody className="divide-y divide-border">
-              <tr>
-                <td className="w-44 px-2 py-1.5 align-top">
-                  <div className="font-mono text-xs text-text-primary">snapshots.schedule</div>
-                  {scheduleHint && <div className="mt-0.5 text-[11px] font-sans text-text-tertiary" data-testid="schedule-hint">{scheduleHint}</div>}
-                </td>
-                <td className="px-2 py-1.5 align-top">
-                  <input
-                    data-testid="schedule-input"
-                    value={schedule}
-                    onChange={(e) => setSchedule(e.target.value)}
-                    placeholder="@daily"
-                    className="w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="w-44 px-2 py-1.5 align-top">
-                  <div className="font-mono text-xs text-text-primary">snapshots.expiry</div>
-                  {expiryHint && <div className="mt-0.5 text-[11px] font-sans text-text-tertiary" data-testid="expiry-hint">{expiryHint}</div>}
-                </td>
-                <td className="px-2 py-1.5 align-top">
-                  <input
-                    data-testid="expiry-input"
-                    value={expiry}
-                    onChange={(e) => setExpiry(e.target.value)}
-                    placeholder="1d"
-                    className="w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {enabled && (
+            <table className="w-full border-separate border-spacing-0 bg-surface-800 text-[13px]">
+              <tbody className="divide-y divide-border">
+                <tr>
+                  <td className="w-44 px-2 py-1.5 align-top">
+                    <div className="font-mono text-xs text-text-primary">snapshots.schedule</div>
+                    {scheduleHint && <div className="mt-0.5 text-[11px] font-sans text-text-tertiary" data-testid="schedule-hint">{scheduleHint}</div>}
+                  </td>
+                  <td className="px-2 py-1.5 align-top">
+                    <input
+                      data-testid="schedule-input"
+                      value={schedule}
+                      onChange={(e) => setSchedule(e.target.value)}
+                      placeholder="@daily"
+                      className="w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td className="w-44 px-2 py-1.5 align-top">
+                    <div className="font-mono text-xs text-text-primary">snapshots.expiry</div>
+                    {expiryHint && <div className="mt-0.5 text-[11px] font-sans text-text-tertiary" data-testid="expiry-hint">{expiryHint}</div>}
+                  </td>
+                  <td className="px-2 py-1.5 align-top">
+                    <input
+                      data-testid="expiry-input"
+                      value={expiry}
+                      onChange={(e) => setExpiry(e.target.value)}
+                      placeholder="1d"
+                      className="w-full rounded border border-border bg-surface-500 px-1.5 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 
