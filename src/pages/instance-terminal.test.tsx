@@ -232,7 +232,7 @@ describe("InstanceTerminal", () => {
     expect(screen.getByText("Shell unavailable")).toBeInTheDocument();
     expect(screen.getByText(/instance is running/)).toBeInTheDocument();
     expect(screen.getByTestId("term-retry")).toBeInTheDocument();
-    expect(screen.getByTestId("term-switch")).toHaveTextContent("Switch to VGA");
+    expect(screen.getByTestId("term-switch")).toHaveTextContent("Switch to Console");
     // Both shell candidates were attempted.
     expect(apiMocks.exec).toHaveBeenCalledTimes(2);
     const toasts = toastStore.getState();
@@ -258,7 +258,7 @@ describe("InstanceTerminal", () => {
     data.readyState = FakeWebSocket.OPEN;
     act(() => data.onopen?.());
     await user.click(screen.getByTestId("term-vga"));
-    expect(await screen.findByText("VGA console unavailable")).toBeInTheDocument();
+    expect(await screen.findByText("Console unavailable")).toBeInTheDocument();
     expect(screen.getByTestId("term-switch")).toHaveTextContent("Switch to Shell");
     await user.click(screen.getByTestId("term-switch"));
     expect(apiMocks.exec).toHaveBeenCalledWith("web1", ["/bin/bash"], true);

@@ -268,7 +268,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
             onClick={() => switchKind("console")}
             data-testid="term-vga"
           >
-            <Monitor size={14} /> VGA
+            <Monitor size={14} /> Console
           </Button>
         </div>
       </div>
@@ -285,11 +285,11 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
           <div className="flex h-full items-center justify-center p-6" data-testid="term-error">
             <EmptyState
               icon={kind === "console" ? <Monitor size={28} className="text-text-tertiary" /> : <SquareTerminal size={28} className="text-text-tertiary" />}
-              title={kind === "console" ? "VGA console unavailable" : "Shell unavailable"}
+              title={kind === "console" ? "Console unavailable" : "Shell unavailable"}
               description={
                 kind === "console"
-                  ? "The VGA console could not connect. Check that the instance is running, then retry or switch to the Shell."
-                  : "The shell could not connect. Check that the instance is running, then retry or switch to the VGA console."
+                  ? "The console could not connect. Check that the instance is running, then retry or switch to the Shell."
+                  : "The shell could not connect. Check that the instance is running, then retry or switch to the Console."
               }
               action={
                 <div className="flex items-center justify-center gap-2">
@@ -297,7 +297,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                     <RotateCw size={14} /> Retry
                   </Button>
                   <Button size="sm" variant="secondary" data-testid="term-switch" onClick={() => switchKind(kind === "console" ? "exec" : "console")}>
-                    {kind === "console" ? <SquareTerminal size={14} /> : <Monitor size={14} />} Switch to {kind === "console" ? "Shell" : "VGA"}
+                    {kind === "console" ? <SquareTerminal size={14} /> : <Monitor size={14} />} Switch to {kind === "console" ? "Shell" : "Console"}
                   </Button>
                 </div>
               }
