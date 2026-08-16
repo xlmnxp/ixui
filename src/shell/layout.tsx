@@ -14,7 +14,7 @@ export function Shell() {
         min={12}
         left={<Sidebar />}
         right={
-          <main className="h-full overflow-auto bg-surface-950">
+          <main className={`h-full overflow-auto bg-surface-950 ${taskCollapsed ? "pb-8" : ""}`}>
             <Outlet />
           </main>
         }
