@@ -88,7 +88,8 @@ describe("Shell", () => {
       </MemoryRouter>
     );
     expect(await screen.findByText("incus-1")).toBeInTheDocument();
-    await user.click(screen.getByTestId("tree-member-incus-1"));
+    // Expand the member subtree with the dedicated toggle button.
+    await user.click(screen.getByTestId("tree-toggle-member-incus-1"));
     expect(await screen.findByText("web1")).toBeInTheDocument();
     await user.click(screen.getByText("web1"));
     expect(await screen.findByTestId("instance-detail-page")).toBeInTheDocument();
