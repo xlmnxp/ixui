@@ -174,27 +174,17 @@ export function MemberView() {
           right={
             <div className="h-full overflow-auto">
               {tab === "overview" && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="mb-2 text-sm font-semibold text-text-primary">Member</h2>
-                    <KeyValueTable rows={[
-                      { key: "Member", value: member?.server_name ?? name },
-                      { key: "Status", value: member ? <Badge tone={member.status === "Online" ? "success" : "neutral"}>{member.status}</Badge> : "—" },
-                      { key: "Architecture", value: member?.architecture ?? "—" },
-                      { key: "Database", value: member ? (member.database ? "Yes" : "No") : "—" },
-                      { key: "URL", value: member?.url ?? "—" },
-                      { key: "Message", value: member?.message || "—" },
-                    ]} />
-                  </div>
-                  <div>
-                    <h2 className="mb-2 text-sm font-semibold text-text-primary">Capacity</h2>
-                    <KeyValueTable dataTestId="member-capacity" rows={[
-                      { key: "CPU", value: capacity ? String(capacity.cpu?.total ?? "—") : "—" },
-                      { key: "Memory total", value: capacity?.memory?.total ? formatBytes(capacity.memory.total) : "—" },
-                      { key: "Memory used", value: capacity?.memory?.used ? formatBytes(capacity.memory.used) : "—" },
-                    ]} />
-                  </div>
-                </div>
+                <KeyValueTable dataTestId="member-capacity" rows={[
+                  { key: "Member", value: member?.server_name ?? name },
+                  { key: "Status", value: member ? <Badge tone={member.status === "Online" ? "success" : "neutral"}>{member.status}</Badge> : "—" },
+                  { key: "Architecture", value: member?.architecture ?? "—" },
+                  { key: "Database", value: member ? (member.database ? "Yes" : "No") : "—" },
+                  { key: "URL", value: member?.url ?? "—" },
+                  { key: "Message", value: member?.message || "—" },
+                  { key: "CPU", value: capacity ? String(capacity.cpu?.total ?? "—") : "—" },
+                  { key: "Memory total", value: capacity?.memory?.total ? formatBytes(capacity.memory.total) : "—" },
+                  { key: "Memory used", value: capacity?.memory?.used ? formatBytes(capacity.memory.used) : "—" },
+                ]} />
               )}
               {tab === "instances" && <InstancesPage location={name} onCreate={openCreate} registerBar={setTabBar} />}
             </div>

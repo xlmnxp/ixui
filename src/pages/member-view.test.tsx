@@ -43,8 +43,8 @@ describe("MemberView", () => {
   it("shows member info in the overview table", async () => {
     await renderMember("Online");
     expect(screen.getByTestId("member-header")).toHaveTextContent("incus-1");
-    expect(screen.getByTestId("kv-table")).toBeInTheDocument();
-    const table = screen.getByTestId("kv-table");
+    expect(screen.getByTestId("member-capacity")).toBeInTheDocument();
+    const table = screen.getByTestId("member-capacity");
     expect(within(table).getByText("incus-1")).toBeInTheDocument();
     expect(within(table).getByText("x86_64")).toBeInTheDocument();
   });
@@ -55,7 +55,7 @@ describe("MemberView", () => {
     await user.click(screen.getByTestId("vtab-instances"));
     expect(screen.getByTestId("instances-page")).toBeInTheDocument();
     await user.click(screen.getByTestId("vtab-overview"));
-    expect(screen.getByTestId("kv-table")).toBeInTheDocument();
+    expect(screen.getByTestId("member-capacity")).toBeInTheDocument();
   });
 
   it("opens the instances tab from a ?tab=instances deep link", async () => {
