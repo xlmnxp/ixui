@@ -361,11 +361,11 @@ export function KeyValueEditor({
               data-selected={selectedKeys.includes(DESCRIPTION_ROW)}
               className={`group ${selectedKeys.includes(DESCRIPTION_ROW) ? "bg-accent-600/10" : "hover:bg-surface-700/60"}`}
             >
-              <td className="w-8 px-2 py-1">
+              <td className="w-8 px-2 py-1 align-top">
                 <Checkbox data-testid="kv-check-Description" checked={selectedKeys.includes(DESCRIPTION_ROW)} onChange={() => toggle(DESCRIPTION_ROW)} aria-label="Select Description" />
               </td>
-              <td className="px-2 py-1 text-xs text-text-primary">Description</td>
-              <td data-testid="kv-value-Description" onDoubleClick={() => startEditing(DESCRIPTION_ROW)} className="px-2 py-1 text-sm text-text-primary">
+              <td className="px-2 py-1 align-top text-xs text-text-primary">Description</td>
+              <td data-testid="kv-value-Description" onDoubleClick={() => startEditing(DESCRIPTION_ROW)} className="px-2 py-1 align-top text-sm text-text-primary">
                 {editing === DESCRIPTION_ROW ? valueInput(DESCRIPTION_ROW) : (
                   <span className="inline-flex items-center gap-1.5">
                     {description || "—"}
@@ -384,10 +384,10 @@ export function KeyValueEditor({
               data-selected={selectedKeys.includes(key)}
               className={`group ${selectedKeys.includes(key) ? "bg-accent-600/10" : "hover:bg-surface-700/60"}`}
             >
-              <td className="w-8 px-2 py-1">
+              <td className="w-8 px-2 py-1 align-top">
                 <Checkbox data-testid={`kv-check-${key}`} checked={selectedKeys.includes(key)} onChange={() => toggle(key)} aria-label={`Select ${key}`} />
               </td>
-              <td data-testid={`kv-key-${key}`} onDoubleClick={() => startEditing(key)} className="px-2 py-1 font-mono text-xs text-text-primary">
+              <td data-testid={`kv-key-${key}`} onDoubleClick={() => startEditing(key)} className="px-2 py-1 align-top font-mono text-xs text-text-primary">
                 {editing === key ? keyInput(key) : (
                   <>
                     <div>{key}</div>
@@ -399,7 +399,7 @@ export function KeyValueEditor({
                   </>
                 )}
               </td>
-              <td data-testid={`kv-value-${key}`} onDoubleClick={() => startEditing(key)} className="px-2 py-1 text-sm text-text-primary">
+              <td data-testid={`kv-value-${key}`} onDoubleClick={() => startEditing(key)} className="px-2 py-1 align-top text-sm text-text-primary">
                 {editing === key ? valueInput(key) : (
                   <span className="inline-flex items-center gap-1.5">
                     {renderDisplayValue(key, value)}
