@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Pencil, Plus, Star, Trash2, X } from "lucide-react";
 import { infraApi, instancesApi } from "../api";
 import type { Project } from "../api/types";
-import { projectsStore, currentProjectStore, setCurrentProject } from "../state/projects";
+import { projectsStore, projectsLoadingStore, currentProjectStore, setCurrentProject, loadProjects } from "../state/projects";
 import { useStore } from "../state/store";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
@@ -10,6 +10,7 @@ import { Button } from "../components/button";
 import { Dialog } from "../components/dialog";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
+import { Loading } from "../components/loading";
 import { Badge } from "../components/badge";
 import { PageBar } from "../components/page-bar";
 import { ProjectEditor } from "../components/project-editor";
@@ -17,6 +18,7 @@ import { toast } from "../components/toast";
 
 export function ProjectsPage() {
   const projects = useStore(projectsStore);
+  const projectsLoading = useStore(projectsLoadingStore);
   const currentProject = useStore(currentProjectStore);
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
@@ -26,7 +28,7 @@ export function ProjectsPage() {
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(() => {
-    void infraApi.listProjects().then(projectsStore.setState).catch(() => {});
+    void loadProjects().catch(() => {});
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -121,7 +123,11 @@ export function ProjectsPage() {
         ]}
       />
 
-      <Table columns={columns} rows={projects} rowKey={(p) => p.name} emptyMessage="No projects" stickyHeaderOffset={40} />
+      {projectsLoading && projects.length === 0 ? (
+        <Loading dataTestId="projects-loading" label="Loading projects…" />
+      ) : (
+        <Table columns={columns} rows={projects} rowKey={(p) => p.name} emptyMessage="No projects" stickyHeaderOffset={40} />
+      )}
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create project" footer={
         <>

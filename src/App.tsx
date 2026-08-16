@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-
 import { Shell } from "./shell/layout";
 import { ErrorBoundary } from "./components/error-boundary";
 import { AuthScreen } from "./auth/auth-screen";
+import { Loading } from "./components/loading";
 import { authStore } from "./auth/status";
 import { uiTitleStore, uiSsoOnlyStore } from "./state/ui-title";
 import { startOidcLogin } from "./auth/login";
@@ -43,7 +44,16 @@ export function App() {
     }
   }, [auth, ssoOnly]);
 
-  if (auth === "unauthenticated" && !ssoOnly) {
+  // While the startup probe (GET /1.0) is still deciding between client-cert
+  // and OIDC authentication, show a loading screen instead of a blank page.
+  if (auth === "unknown") {
+    return <Loading fullScreen dataTestId="auth-loading" label="Checking authentication…" />;
+  }
+
+  if (auth === "unauthenticated") {
+    if (ssoOnly) {
+      return <Loading fullScreen dataTestId="oidc-loading" label="Redirecting to single sign-on…" />;
+    }
     return <AuthScreen onRetry={() => authStore.setState("unknown")} />;
   }
 

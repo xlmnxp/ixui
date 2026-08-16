@@ -11,6 +11,7 @@ import { Input } from "../components/input";
 import { Select } from "../components/select";
 import { KeyValueEditor } from "../components/key-value-editor";
 import { EmptyState } from "../components/empty-state";
+import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
@@ -39,6 +40,7 @@ const toBytes = (size: string): number => {
 
 export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [pools, setPools] = useState<StoragePool[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [volumes, setVolumes] = useState<Record<string, StorageVolume[]>>({});
   const [createOpen, setCreateOpen] = useState(false);
   const [deletePoolTarget, setDeletePoolTarget] = useState<StoragePool | null>(null);
@@ -97,7 +99,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
         }
         return next;
       });
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setLoaded(true));
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -525,7 +527,9 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
     <div data-testid="storage-page">
       {!registerBar && <PageBar title="Storage pools" actions={barActions} />}
 
-      {pools.length === 0 ? (
+      {!loaded ? (
+        <Loading dataTestId="storage-loading" label="Loading storage pools…" />
+      ) : pools.length === 0 ? (
         <EmptyState title="No storage pools" />
       ) : (
         <Table columns={columns} rows={pools} rowKey={(p) => p.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />

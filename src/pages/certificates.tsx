@@ -13,6 +13,7 @@ import { Button } from "../components/button";
 import { Dialog } from "../components/dialog";
 import { Input } from "../components/input";
 import { EmptyState } from "../components/empty-state";
+import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import { toast } from "../components/toast";
 
@@ -42,6 +43,7 @@ export function CertificatesPage() {
   const [token, setToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [denied, setDenied] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(() => {
     void certificatesApi
@@ -49,7 +51,8 @@ export function CertificatesPage() {
       .then(setCertificates)
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 403) setDenied(true);
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -121,6 +124,8 @@ export function CertificatesPage() {
         <div data-testid="permission-denied">
           <EmptyState title="Permission denied" description="Your account does not have permission to view certificates." />
         </div>
+      ) : loading ? (
+        <Loading dataTestId="certificates-loading" label="Loading certificates…" />
       ) : certificates.length === 0 ? (
         <EmptyState title="No certificates" />
       ) : (

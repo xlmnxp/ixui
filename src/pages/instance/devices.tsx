@@ -3,6 +3,7 @@ import { Check, Pencil, Trash2, X } from "lucide-react";
 import { instancesApi } from "../../api";
 import type { Instance } from "../../api/types";
 import { KeyValueEditor } from "../../components/key-value-editor";
+import { Loading } from "../../components/loading";
 import { Button } from "../../components/button";
 import { Dialog } from "../../components/dialog";
 import { ConfirmDialog } from "../../components/confirm-dialog";
@@ -135,7 +136,7 @@ export function DevicesTab({ instanceName, project, registerActions }: DevicesTa
     }
   };
 
-  if (!instance) return <div data-testid="devices-tab">Loading…</div>;
+  if (!instance) return <Loading dataTestId="devices-tab" label="Loading devices…" />;
 
   const entries = Object.entries(instance.devices);
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { instancesApi } from "../../api";
 import type { Instance } from "../../api/types";
 import { KeyValueEditor } from "../../components/key-value-editor";
+import { Loading } from "../../components/loading";
 import { toast } from "../../components/toast";
 import { validateConfigKey } from "../../lib/config";
 
@@ -94,7 +95,7 @@ export function ConfigTab({ instanceName, project, registerActions }: ConfigTabP
   }, [registerActions, save, cancel, removeSelected, dirty, selectedKeys.length]);
 
 
-  if (!instance) return <div data-testid="config-tab">Loading…</div>;
+  if (!instance) return <Loading dataTestId="config-tab" label="Loading configuration…" />;
 
   return (
     <div data-testid="config-tab">

@@ -9,6 +9,7 @@ import { Badge } from "../components/badge";
 import type { BadgeTone } from "../components/badge";
 import { Button } from "../components/button";
 import { EmptyState } from "../components/empty-state";
+import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
@@ -23,6 +24,7 @@ const severityTones: Record<string, BadgeTone> = {
 export function WarningsPage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [denied, setDenied] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(() => {
     void warningsApi
@@ -30,7 +32,8 @@ export function WarningsPage({ registerBar }: { registerBar?: (bar: BarState | n
       .then(setWarnings)
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 403) setDenied(true);
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -97,7 +100,9 @@ export function WarningsPage({ registerBar }: { registerBar?: (bar: BarState | n
       ) : (
         <>
           {!registerBar && <PageBar title="Warnings" />}
-          {warnings.length === 0 ? (
+          {loading ? (
+            <Loading dataTestId="warnings-loading" label="Loading warnings…" />
+          ) : warnings.length === 0 ? (
             <EmptyState title="No warnings" />
           ) : (
             <Table columns={columns} rows={warnings} rowKey={(w) => w.uuid} stickyHeaderOffset={40} />

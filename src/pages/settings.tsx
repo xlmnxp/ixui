@@ -5,6 +5,7 @@ import { ApiError } from "../api/client";
 import { KeyValueEditor } from "../components/key-value-editor";
 import { Button } from "../components/button";
 import { EmptyState } from "../components/empty-state";
+import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
@@ -27,6 +28,7 @@ export function SettingsPage({ registerBar }: { registerBar?: (bar: BarState | n
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [denied, setDenied] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(() => {
     void serverApi
@@ -38,7 +40,8 @@ export function SettingsPage({ registerBar }: { registerBar?: (bar: BarState | n
       })
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 403) setDenied(true);
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -98,7 +101,9 @@ export function SettingsPage({ registerBar }: { registerBar?: (bar: BarState | n
       ) : (
         <>
           {!registerBar && <PageBar title="Server settings" actions={barActions} />}
-          {Object.keys(original).length === 0 ? (
+          {loading ? (
+            <Loading dataTestId="settings-loading" label="Loading server settings…" />
+          ) : Object.keys(original).length === 0 ? (
             <EmptyState title="—" description="No server config available" />
           ) : (
             <KeyValueEditor values={config} onChange={setConfig} dataTestId="settings-editor" selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} showToolbar={false} stickyHeader stickyHeaderOffset={40} />

@@ -5,6 +5,9 @@ import type { Instance } from "../api/types";
 
 export const instancesStore = createStore<Record<string, Instance>>({});
 
+/** True while an explicit instances list fetch is in flight. */
+export const instancesLoadingStore = createStore<boolean>(false);
+
 const ACTION_STATUS: Record<string, Instance["status"]> = {
   "instance-started": "Started",
   "instance-stopped": "Stopped",
@@ -67,6 +70,15 @@ export function applyInstanceLifecycle(
 }
 
 export async function loadInstances(project: string): Promise<void> {
+  instancesLoadingStore.setState(true);
+  try {
+    await loadInstancesInternal(project);
+  } finally {
+    instancesLoadingStore.setState(false);
+  }
+}
+
+async function loadInstancesInternal(project: string): Promise<void> {
   const list = await instancesApi.list();
   // The returned list is authoritative for the projects it contains: prune their
   // registry entries first so renamed/deleted instances don't linger, then

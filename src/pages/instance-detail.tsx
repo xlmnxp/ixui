@@ -10,6 +10,7 @@ import { ALL_PROJECTS, registerInstanceProject } from "../api/client";
 import { VerticalTabs } from "../components/vertical-tabs";
 import { SplitPane } from "../components/split-pane";
 import { Button } from "../components/button";
+import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { RenameInstanceDialog, CopyInstanceDialog, MoveInstanceDialog } from "../components/instance-dialogs";
@@ -166,7 +167,7 @@ export function InstanceDetailPage() {
       </div>
     );
   }
-  if (!instance) return <div className="p-6" data-testid="instance-loading">Loading…</div>;
+  if (!instance) return <Loading dataTestId="instance-loading" label="Loading instance…" />;
 
   const tabs = [
     { key: "overview", label: "Overview", icon: <Gauge size={14} /> },

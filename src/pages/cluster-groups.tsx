@@ -10,6 +10,7 @@ import { Dialog } from "../components/dialog";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
 import { EmptyState } from "../components/empty-state";
+import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
@@ -23,6 +24,7 @@ export function ClusterGroupsPage({ registerBar }: { registerBar?: (bar: BarStat
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const [denied, setDenied] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(() => {
     void clusterApi
@@ -30,7 +32,8 @@ export function ClusterGroupsPage({ registerBar }: { registerBar?: (bar: BarStat
       .then(setGroups)
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 403) setDenied(true);
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -113,6 +116,8 @@ export function ClusterGroupsPage({ registerBar }: { registerBar?: (bar: BarStat
         <div data-testid="permission-denied">
           <EmptyState title="Permission denied" description="Your account does not have permission to view cluster groups." />
         </div>
+      ) : loading ? (
+        <Loading dataTestId="cluster-groups-loading" label="Loading cluster groups…" />
       ) : groups.length === 0 ? (
         <EmptyState title="No cluster groups" />
       ) : (

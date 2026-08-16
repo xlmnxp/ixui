@@ -10,6 +10,7 @@ import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
 import { Select } from "../components/select";
 import { EmptyState } from "../components/empty-state";
+import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
@@ -32,9 +33,10 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
   const [aliasTarget, setAliasTarget] = useState("");
   const [aliasBusy, setAliasBusy] = useState(false);
   const [aliasDelete, setAliasDelete] = useState<ImageAlias | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(() => {
-    void infraApi.listImages().then(setImages).catch(() => {});
+    void infraApi.listImages().then(setImages).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const refreshAliases = useCallback(() => {
@@ -166,7 +168,9 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
     <div data-testid="images-page">
       {!registerBar && <PageBar title="Images" actions={barActions} />}
 
-      {images.length === 0 ? (
+      {loading ? (
+        <Loading dataTestId="images-loading" label="Loading images…" />
+      ) : images.length === 0 ? (
         <EmptyState title="No images" description="Pull an image from a remote to get started." />
       ) : (
         <Table columns={columns} rows={images} rowKey={(i) => i.fingerprint} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />

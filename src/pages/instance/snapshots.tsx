@@ -10,6 +10,7 @@ import { ConfirmDialog } from "../../components/confirm-dialog";
 import { Input } from "../../components/input";
 import { Switch } from "../../components/switch";
 import { EmptyState } from "../../components/empty-state";
+import { Loading } from "../../components/loading";
 import { toast } from "../../components/toast";
 
 export interface SnapshotsTabProps {
@@ -29,6 +30,7 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
   const [name, setName] = useState("");
   const [stateful, setStateful] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     registerActions?.({ create: () => setCreateOpen(true) });
@@ -36,7 +38,11 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
   }, [registerActions]);
 
   const refresh = useCallback(() => {
-    void instancesApi.listSnapshots(instanceName, project).then(setSnapshots).catch(() => {});
+    void instancesApi
+      .listSnapshots(instanceName, project)
+      .then((list) => setSnapshots(list))
+      .catch(() => {})
+      .finally(() => setLoaded(true));
   }, [instanceName, project]);
 
   useEffect(refresh, [refresh]);
@@ -94,6 +100,8 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
       ),
     },
   ];
+
+  if (!loaded) return <Loading dataTestId="snapshots-tab" label="Loading snapshots…" />;
 
   return (
     <div className="space-y-4" data-testid="snapshots-tab">

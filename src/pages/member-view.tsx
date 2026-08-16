@@ -12,6 +12,7 @@ import { Dialog } from "../components/dialog";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { EmptyState } from "../components/empty-state";
 import { Input } from "../components/input";
+import { Loading } from "../components/loading";
 import { KeyValueTable } from "../components/key-value-table";
 import { VerticalTabs } from "../components/vertical-tabs";
 import type { VerticalTabItem } from "../components/vertical-tabs";
@@ -138,7 +139,15 @@ export function MemberView() {
     );
   }
 
-  if (loaded && !member) {
+  if (!loaded) {
+    return (
+      <div className="p-6" data-testid="member-view">
+        <Loading dataTestId="member-loading" label="Loading member…" />
+      </div>
+    );
+  }
+
+  if (!member) {
     return (
       <div className="p-6" data-testid="member-view">
         <h1 className="text-lg font-semibold text-text-primary">Member not found</h1>

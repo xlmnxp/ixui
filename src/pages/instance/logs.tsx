@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { instancesApi } from "../../api";
 import { EmptyState } from "../../components/empty-state";
+import { Loading } from "../../components/loading";
 
 export interface LogsTabProps {
   instanceName: string;
@@ -11,12 +12,13 @@ export function LogsTab({ instanceName, project }: LogsTabProps) {
   const [files, setFiles] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [content, setContent] = useState("");
+  const [loaded, setLoaded] = useState(false);
 
   const refresh = useCallback(() => {
     void instancesApi.listLogs(instanceName, project).then((list) => {
       setFiles(list);
       if (!selected && list[0]) setSelected(list[0]);
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setLoaded(true));
   }, [instanceName, selected, project]);
 
   useEffect(refresh, [refresh]);
@@ -25,6 +27,8 @@ export function LogsTab({ instanceName, project }: LogsTabProps) {
     if (!selected) return;
     void instancesApi.readLog(instanceName, selected, project).then(setContent).catch(() => setContent("(unreadable)"));
   }, [instanceName, selected, project]);
+
+  if (!loaded) return <Loading dataTestId="logs-tab" label="Loading logs…" />;
 
   if (files.length === 0) return <EmptyState title="No logs" description="This instance has no log files." />;
 

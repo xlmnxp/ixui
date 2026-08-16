@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "../components/button";
 import { startOidcLogin } from "./login";
 
@@ -6,6 +7,8 @@ export interface AuthScreenProps {
 }
 
 export function AuthScreen({ onRetry }: AuthScreenProps) {
+  const [redirecting, setRedirecting] = useState(false);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-950 p-4" data-testid="auth-screen">
       <div className="w-full max-w-sm rounded-lg border border-border bg-surface-900 p-6 shadow-xl">
@@ -15,7 +18,17 @@ export function AuthScreen({ onRetry }: AuthScreenProps) {
           are already authenticated — otherwise use OIDC.
         </p>
         <div className="flex flex-col gap-2">
-          <Button onClick={startOidcLogin} data-testid="oidc-login">Sign in with OIDC</Button>
+          <Button
+            onClick={() => {
+              setRedirecting(true);
+              startOidcLogin();
+            }}
+            loading={redirecting}
+            disabled={redirecting}
+            data-testid="oidc-login"
+          >
+            {redirecting ? "Redirecting to sign-in…" : "Sign in with OIDC"}
+          </Button>
           {onRetry && <Button variant="secondary" onClick={onRetry} data-testid="auth-retry">Retry</Button>}
         </div>
       </div>

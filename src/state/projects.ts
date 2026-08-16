@@ -12,6 +12,7 @@ function readStoredProject(): string {
 }
 
 export const projectsStore = createStore<Project[]>([]);
+export const projectsLoadingStore = createStore<boolean>(false);
 export const currentProjectStore = createStore<string>(readStoredProject());
 
 export function setCurrentProject(name: string): void {
@@ -24,6 +25,11 @@ export function setCurrentProject(name: string): void {
 }
 
 export async function loadProjects(): Promise<void> {
-  const projects = await infraApi.listProjects();
-  projectsStore.setState(projects);
+  projectsLoadingStore.setState(true);
+  try {
+    const projects = await infraApi.listProjects();
+    projectsStore.setState(projects);
+  } finally {
+    projectsLoadingStore.setState(false);
+  }
 }

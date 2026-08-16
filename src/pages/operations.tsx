@@ -10,6 +10,7 @@ import { Badge } from "../components/badge";
 import type { BadgeTone } from "../components/badge";
 import { Button } from "../components/button";
 import { EmptyState } from "../components/empty-state";
+import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
@@ -25,6 +26,7 @@ const statusTones: Record<OperationStatus, BadgeTone> = {
 export function OperationsPage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [operations, setOperations] = useState<Operation[]>([]);
   const [denied, setDenied] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(() => {
     void operationsApi
@@ -32,7 +34,8 @@ export function OperationsPage({ registerBar }: { registerBar?: (bar: BarState |
       .then(setOperations)
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 403) setDenied(true);
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -102,7 +105,9 @@ export function OperationsPage({ registerBar }: { registerBar?: (bar: BarState |
       ) : (
         <>
           {!registerBar && <PageBar title="Operations" actions={barActions} />}
-          {operations.length === 0 ? (
+          {loading ? (
+            <Loading dataTestId="operations-loading" label="Loading operations…" />
+          ) : operations.length === 0 ? (
             <EmptyState title="No operations" />
           ) : (
             <Table columns={columns} rows={operations} rowKey={(o) => o.id} stickyHeaderOffset={40} />

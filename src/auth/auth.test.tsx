@@ -52,4 +52,19 @@ describe("AuthScreen", () => {
     await user.click(screen.getByTestId("auth-retry"));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
+
+  it("shows a redirecting state while starting OIDC login", async () => {
+    const user = userEvent.setup();
+    const assign = vi.fn();
+    Object.defineProperty(window, "location", {
+      value: { pathname: "/", search: "", assign },
+      writable: true,
+      configurable: true,
+    });
+    render(<AuthScreen />);
+    await user.click(screen.getByTestId("oidc-login"));
+    expect(screen.getByTestId("oidc-login")).toHaveTextContent(/Redirecting/);
+    expect(screen.getByTestId("spinner")).toBeInTheDocument();
+    expect(assign).toHaveBeenCalledWith(expect.stringContaining("/oidc/login?path="));
+  });
 });

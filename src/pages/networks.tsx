@@ -12,6 +12,7 @@ import { Input } from "../components/input";
 import { Select } from "../components/select";
 import { KeyValueEditor } from "../components/key-value-editor";
 import { EmptyState } from "../components/empty-state";
+import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
@@ -40,9 +41,10 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
   const [forwardDescription, setForwardDescription] = useState("");
   const [forwardDeleteTarget, setForwardDeleteTarget] = useState<Forward | null>(null);
   const [forwardBusy, setForwardBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(() => {
-    void infraApi.listNetworks().then(setNetworks).catch(() => {});
+    void infraApi.listNetworks().then(setNetworks).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -229,7 +231,9 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
     <div data-testid="networks-page">
       {!registerBar && <PageBar title="Networks" actions={barActions} />}
 
-      {networks.length === 0 ? (
+      {loading ? (
+        <Loading dataTestId="networks-loading" label="Loading networks…" />
+      ) : networks.length === 0 ? (
         <EmptyState title="No networks" />
       ) : (
         <Table columns={columns} rows={networks} rowKey={(n) => n.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
@@ -264,7 +268,7 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
           <div>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">Config</h3>
             {configLoading ? (
-              <div className="py-4 text-center text-sm text-text-tertiary">Loading config…</div>
+              <Loading dataTestId="network-config-loading" label="Loading config…" />
             ) : (
               <KeyValueEditor values={config} onChange={setConfig} dataTestId="network-config-editor" stickyHeader />
             )}
@@ -276,7 +280,7 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
         <Button variant="secondary" onClick={() => setLeasesNetwork(null)}><X size={14} /> Close</Button>
       }>
         {leasesBusy ? (
-          <div className="py-4 text-center text-sm text-text-tertiary">Loading leases…</div>
+          <Loading dataTestId="network-leases-loading" label="Loading leases…" />
         ) : (
           <Table columns={leaseColumns} rows={leases} rowKey={(l) => l.address} dataTestId="network-leases-table" emptyMessage="No leases" />
         )}

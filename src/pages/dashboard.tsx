@@ -6,6 +6,7 @@ import { ALL_PROJECTS } from "../api/client";
 import { operationsStore } from "../state/operations";
 import { instancesStore } from "../state/instances";
 import { KeyValueTable } from "../components/key-value-table";
+import { Loading } from "../components/loading";
 import { Badge } from "../components/badge";
 import { PageBar } from "../components/page-bar";
 import { SplitPane } from "../components/split-pane";
@@ -22,9 +23,11 @@ export function DashboardPage() {
   const instances = useStore(instancesStore);
   const [server, setServer] = useState<{ hostname: string; version: string } | null>(null);
   const [counts, setCounts] = useState({ images: 0, profiles: 0, networks: 0, storage: 0 });
+  const [serverLoaded, setServerLoaded] = useState(false);
+  const [countsLoaded, setCountsLoaded] = useState(false);
 
   useEffect(() => {
-    void serverApi.info().then((info) => setServer({ hostname: info.environment.server, version: info.environment.server_version })).catch(() => {});
+    void serverApi.info().then((info) => setServer({ hostname: info.environment.server, version: info.environment.server_version })).catch(() => {}).finally(() => setServerLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -35,7 +38,7 @@ export function DashboardPage() {
       infraApi.listPools(),
     ]).then(([images, profiles, networks, pools]) =>
       setCounts({ images: images.length, profiles: profiles.length, networks: networks.length, storage: pools.length })
-    ).catch(() => {});
+    ).catch(() => {}).finally(() => setCountsLoaded(true));
   }, []);
 
   const scoped = Object.values(instances).filter((i) => project === ALL_PROJECTS || i.project === project);
@@ -50,6 +53,9 @@ export function DashboardPage() {
           initial={45}
           min={25}
           left={
+            !serverLoaded || !countsLoaded ? (
+              <Loading dataTestId="dashboard-loading" label="Loading dashboard…" />
+            ) : (
             <KeyValueTable
               dataTestId="dashboard-overview-table"
               rows={[
@@ -63,6 +69,7 @@ export function DashboardPage() {
                 { key: "Storage pools", value: String(counts.storage) },
               ]}
             />
+            )
           }
           right={
             <div className="h-full overflow-auto border-t border-border">

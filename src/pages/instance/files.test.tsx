@@ -423,6 +423,7 @@ describe("FilesTab", () => {
   it("uploads a file to the current directory", async () => {
     const user = userEvent.setup();
     renderTab();
+    await screen.findByTestId("files-table");
     const file = new File(["binary"], "data.bin", { type: "application/octet-stream" });
     await user.upload(screen.getByTestId("files-upload-input"), file);
     await waitFor(() => expect(filesApi.create).toHaveBeenCalledWith("web1", "/", "data.bin", file, "default"));

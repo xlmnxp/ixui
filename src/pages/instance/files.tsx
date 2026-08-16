@@ -10,6 +10,7 @@ import { Dialog } from "../../components/dialog";
 import { Input } from "../../components/input";
 import { Textarea } from "../../components/textarea";
 import { EmptyState } from "../../components/empty-state";
+import { Loading } from "../../components/loading";
 import { toast } from "../../components/toast";
 import { ExplorerNavbar } from "../../components/explorer-nav";
 import { FileEntryIcon, fileTypeLabel } from "../../components/file-entry-icon";
@@ -333,6 +334,8 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
       },
     },
   ];
+
+  if (entries === null) return <Loading dataTestId="files-tab" label="Loading files…" />;
 
   return (
     <div data-testid="files-tab">

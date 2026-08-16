@@ -10,6 +10,7 @@ import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
 import { KeyValueEditor } from "../components/key-value-editor";
 import { EmptyState } from "../components/empty-state";
+import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
@@ -26,9 +27,10 @@ export function ProfilesPage({ registerBar }: { registerBar?: (bar: BarState | n
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [deleteManyOpen, setDeleteManyOpen] = useState(false);
   const [deletingMany, setDeletingMany] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(() => {
-    void infraApi.listProfiles().then(setProfiles).catch(() => {});
+    void infraApi.listProfiles().then(setProfiles).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -131,7 +133,9 @@ export function ProfilesPage({ registerBar }: { registerBar?: (bar: BarState | n
     <div data-testid="profiles-page">
       {!registerBar && <PageBar title="Profiles" actions={barActions} />}
 
-      {profiles.length === 0 ? (
+      {loading ? (
+        <Loading dataTestId="profiles-loading" label="Loading profiles…" />
+      ) : profiles.length === 0 ? (
         <EmptyState title="No profiles" />
       ) : (
         <Table columns={columns} rows={profiles} rowKey={(p) => p.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />

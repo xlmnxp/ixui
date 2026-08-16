@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { instancesApi } from "../api";
 import { useStore } from "../state/store";
 import { currentProjectStore } from "../state/projects";
-import { instancesStore, loadInstances } from "../state/instances";
+import { instancesStore, instancesLoadingStore, loadInstances } from "../state/instances";
 import { ALL_PROJECTS } from "../api/client";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
@@ -14,6 +14,7 @@ import { InstanceIcon } from "../shell/instance-icon";
 import { Button } from "../components/button";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { EmptyState } from "../components/empty-state";
+import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
@@ -27,6 +28,7 @@ type Action = "start" | "stop" | "restart" | "freeze" | "unfreeze";
 export function InstancesPage({ location, onCreate, registerBar }: { location?: string; onCreate?: () => void; registerBar?: (bar: BarState | null) => void } = {}) {
   const project = useStore(currentProjectStore);
   const instances = useStore(instancesStore);
+  const instancesLoading = useStore(instancesLoadingStore);
   const navigate = useNavigate();
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
@@ -163,7 +165,9 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
     <div data-testid="instances-page">
       {!registerBar && <PageBar title="Instances" actions={barActions} />}
 
-      {scoped.length === 0 ? (
+      {instancesLoading && scoped.length === 0 ? (
+        <Loading dataTestId="instances-loading" label="Loading instances…" />
+      ) : scoped.length === 0 ? (
         <EmptyState
           title="No instances"
           description="Create your first instance to get started."
