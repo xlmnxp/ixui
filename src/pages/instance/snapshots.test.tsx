@@ -18,7 +18,10 @@ vi.mock("../../api", () => ({
     createSnapshot: vi.fn().mockResolvedValue(null),
     restoreSnapshot: vi.fn().mockResolvedValue(null),
     deleteSnapshot: vi.fn().mockResolvedValue(undefined),
+    get: vi.fn().mockResolvedValue({ ...snapshot("web1"), config: { "snapshots.schedule": "@daily", "snapshots.expiry": "1d" } }),
+    update: vi.fn().mockResolvedValue(null),
   },
+  serverApi: { metadata: vi.fn().mockResolvedValue({ configs: {} }) },
 }));
 
 describe("SnapshotsTab", () => {
@@ -26,6 +29,25 @@ describe("SnapshotsTab", () => {
     render(<SnapshotsTab instanceName="web1" />);
     expect(await screen.findByText("snap1")).toBeInTheDocument();
     expect(screen.getByText("snap2")).toBeInTheDocument();
+  });
+
+  it("edits snapshots.schedule and snapshots.expiry", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../../api");
+    render(<SnapshotsTab instanceName="web1" />);
+    await screen.findByTestId("schedule-input");
+    await user.clear(screen.getByTestId("schedule-input"));
+    await user.type(screen.getByTestId("schedule-input"), "0 3 * * *");
+    await user.clear(screen.getByTestId("expiry-input"));
+    await user.type(screen.getByTestId("expiry-input"), "7d");
+    await user.click(screen.getByTestId("schedule-save"));
+    await waitFor(() =>
+      expect(instancesApi.update).toHaveBeenCalledWith(
+        "web1",
+        expect.objectContaining({ config: expect.objectContaining({ "snapshots.schedule": "0 3 * * *", "snapshots.expiry": "7d" }) }),
+        undefined
+      )
+    );
   });
 
   it("creates a snapshot via the bar action", async () => {

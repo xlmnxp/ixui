@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Check, RotateCcw, Trash2, X } from "lucide-react";
+import { Check, Clock, RotateCcw, Trash2, X } from "lucide-react";
 import { instancesApi } from "../../api";
 import type { Instance } from "../../api/types";
 import { Table } from "../../components/table";
@@ -12,6 +12,8 @@ import { Switch } from "../../components/switch";
 import { EmptyState } from "../../components/empty-state";
 import { Loading } from "../../components/loading";
 import { toast } from "../../components/toast";
+import { useStore } from "../../state/store";
+import { metadataStore, loadMetadata, configDescription } from "../../state/metadata";
 
 export interface SnapshotsTabProps {
   instanceName: string;
@@ -31,11 +33,48 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
   const [stateful, setStateful] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [schedule, setSchedule] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [scheduleBusy, setScheduleBusy] = useState(false);
+  const [hasConfig, setHasConfig] = useState(false);
+  const metadataDescriptions = useStore(metadataStore);
 
   useEffect(() => {
     registerActions?.({ create: () => setCreateOpen(true) });
     return () => registerActions?.(null);
   }, [registerActions]);
+
+  useEffect(() => {
+    loadMetadata();
+    void instancesApi
+      .get(instanceName, project)
+      .then((i) => {
+        setSchedule(i.config["snapshots.schedule"] ?? "");
+        setExpiry(i.config["snapshots.expiry"] ?? "");
+        setHasConfig(true);
+      })
+      .catch(() => {});
+  }, [instanceName, project]);
+
+  const saveSchedule = async () => {
+    setScheduleBusy(true);
+    try {
+      const current = await instancesApi.get(instanceName, project);
+      const config = { ...current.config };
+      const s = schedule.trim();
+      const e = expiry.trim();
+      if (s) config["snapshots.schedule"] = s;
+      else delete config["snapshots.schedule"];
+      if (e) config["snapshots.expiry"] = e;
+      else delete config["snapshots.expiry"];
+      await instancesApi.update(instanceName, { config }, project);
+      toast("success", "Snapshot schedule saved");
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setScheduleBusy(false);
+    }
+  };
 
   const refresh = useCallback(() => {
     void instancesApi
@@ -105,6 +144,31 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
 
   return (
     <div className="space-y-4" data-testid="snapshots-tab">
+      {hasConfig && (
+        <div className="rounded border border-border bg-surface-900 p-3" data-testid="snapshot-schedule">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-text-secondary">
+              <Clock size={13} /> Automatic snapshots
+            </h3>
+            <Button size="sm" loading={scheduleBusy} data-testid="schedule-save" onClick={() => void saveSchedule()}><Check size={13} /> Save</Button>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <Input label="Schedule (cron)" name="snap-schedule" data-testid="schedule-input" value={schedule} onChange={(e) => setSchedule(e.target.value)} placeholder="@daily" />
+              {configDescription(metadataDescriptions, "snapshots.schedule") && (
+                <p className="mt-1 text-[11px] text-text-tertiary" data-testid="schedule-hint">{configDescription(metadataDescriptions, "snapshots.schedule")}</p>
+              )}
+            </div>
+            <div>
+              <Input label="Expiry" name="snap-expiry" data-testid="expiry-input" value={expiry} onChange={(e) => setExpiry(e.target.value)} placeholder="1d" />
+              {configDescription(metadataDescriptions, "snapshots.expiry") && (
+                <p className="mt-1 text-[11px] text-text-tertiary" data-testid="expiry-hint">{configDescription(metadataDescriptions, "snapshots.expiry")}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {snapshots.length === 0 ? (
         <EmptyState title="No snapshots" description="Snapshots let you roll back to a previous state." />
       ) : (

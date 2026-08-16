@@ -37,6 +37,7 @@ export function Sidebar() {
   else if (p === "/settings") selectedId = "admin-settings";
   else if (p === "/cluster-groups") selectedId = "admin-cluster-groups";
   else if (p === "/certificates") selectedId = "admin-certificates";
+  else if (p === "/network-acls") selectedId = "network-acls";
 
   const routeFor = (id: string): string => {
     if (id === "dashboard") return "/dashboard";
@@ -47,6 +48,7 @@ export function Sidebar() {
     if (id === "admin-settings") return "/settings";
     if (id === "admin-cluster-groups") return "/cluster-groups";
     if (id === "admin-certificates") return "/certificates";
+    if (id === "network-acls") return "/network-acls";
     if (id.startsWith("project-")) return "/";
     if (id.startsWith("member-")) return `/members/${id.slice(7)}`;
     if (id.startsWith("instance-")) return `/instances/${id.slice(9)}`;

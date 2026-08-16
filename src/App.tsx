@@ -22,6 +22,7 @@ import { ActivityPage } from "./pages/activity";
 import { WarningsPage } from "./pages/warnings";
 import { SettingsPage } from "./pages/settings";
 import { ClusterGroupsPage } from "./pages/cluster-groups";
+import { AclsPage } from "./pages/acls";
 
 function TerminalPage() {
   const { name = "" } = useParams();
@@ -79,6 +80,7 @@ export function App() {
           <Route path="warnings" element={<WarningsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="cluster-groups" element={<ClusterGroupsPage />} />
+          <Route path="network-acls" element={<AclsPage />} />
           <Route path="certificates" element={<CertificatesPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

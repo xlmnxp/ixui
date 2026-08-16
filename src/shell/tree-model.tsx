@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Boxes, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, FolderCog, History, Settings, TriangleAlert } from "lucide-react";
+import { Boxes, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, FolderCog, History, Settings, ShieldCheck, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import type { TreeNode } from "../components/tree";
 import { ALL_PROJECTS } from "../api/client";
@@ -83,6 +83,15 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
         </span>
       ),
       children: memberNodes,
+    },
+    {
+      id: "network-acls",
+      label: (
+        <span className="flex items-center gap-2">
+          <ShieldCheck size={14} className="text-text-secondary" />
+          <Link to="/network-acls">Network ACLs</Link>
+        </span>
+      ),
     },
     {
       id: "gallery",
