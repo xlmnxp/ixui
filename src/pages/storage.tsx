@@ -528,7 +528,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
       {pools.length === 0 ? (
         <EmptyState title="No storage pools" />
       ) : (
-        <Table columns={columns} rows={pools} rowKey={(p) => p.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} stickyHeaderOffset={40} />
+        <Table columns={columns} rows={pools} rowKey={(p) => p.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
       )}
 
       {Object.entries(volumes).map(([poolName, list]) => (

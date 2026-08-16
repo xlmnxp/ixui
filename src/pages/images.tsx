@@ -169,7 +169,7 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
       {images.length === 0 ? (
         <EmptyState title="No images" description="Pull an image from a remote to get started." />
       ) : (
-        <Table columns={columns} rows={images} rowKey={(i) => i.fingerprint} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} stickyHeaderOffset={40} />
+        <Table columns={columns} rows={images} rowKey={(i) => i.fingerprint} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
       )}
 
       {aliasesOpen && (
