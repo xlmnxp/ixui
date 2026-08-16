@@ -244,7 +244,7 @@ export function InstanceDetailPage() {
                   }
                 >
                   {screenshotUrl ? (
-                    <img src={screenshotUrl} alt="" data-testid="detail-screenshot-img" className="h-5 w-auto max-w-12 rounded-sm object-contain" />
+                    <img src={screenshotUrl} alt="" data-testid="detail-screenshot-img" className="h-5 w-auto max-w-12 object-contain" />
                   ) : (
                     <Monitor size={14} />
                   )}
