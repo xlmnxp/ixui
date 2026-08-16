@@ -152,6 +152,9 @@ describe("InstanceDetailPage", () => {
     renderPage();
     expect(await screen.findByTestId("detail-screenshot-img")).toHaveAttribute("src", "blob:vm");
     expect(fetchMock).toHaveBeenCalledWith("/1.0/instances/web1/console?project=default&type=vga", { credentials: "include" });
+    // Hover popover with arrow below the thumbnail.
+    expect(screen.getByTestId("detail-screenshot-popover")).toBeInTheDocument();
+    expect(screen.getByTestId("detail-screenshot-arrow")).toBeInTheDocument();
     vi.unstubAllGlobals();
   });
 

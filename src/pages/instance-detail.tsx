@@ -231,7 +231,7 @@ export function InstanceDetailPage() {
                   key="screenshot"
                   size="sm"
                   variant="ghost"
-                  className="!px-0 !py-0"
+                  className="group relative !px-0 !py-0"
                   title="Open console"
                   aria-label="Open console"
                   data-testid="detail-screenshot"
@@ -247,6 +247,18 @@ export function InstanceDetailPage() {
                     <img src={screenshotUrl} alt="" data-testid="detail-screenshot-img" className="h-5 w-auto max-w-12 object-contain" />
                   ) : (
                     <Monitor size={14} />
+                  )}
+                  {screenshotUrl && (
+                    <div
+                      className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 -translate-x-1/2 rounded border border-border bg-surface-800 p-1 opacity-0 shadow-xl transition-opacity group-hover:opacity-100"
+                      data-testid="detail-screenshot-popover"
+                    >
+                      <span
+                        className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-l border-t border-border bg-surface-800"
+                        data-testid="detail-screenshot-arrow"
+                      />
+                      <img src={screenshotUrl} alt="" className="h-40 w-auto max-w-72 object-contain" />
+                    </div>
                   )}
                 </Button>,
               ]
