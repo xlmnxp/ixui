@@ -155,14 +155,8 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
 
   return (
     <div className="space-y-4" data-testid="snapshots-tab">
-      {snapshots.length === 0 ? (
-        <EmptyState title="No snapshots" description="Snapshots let you roll back to a previous state." />
-      ) : (
-        <Table columns={columns} rows={snapshots} rowKey={(s) => s.name} />
-      )}
-
       {hasConfig && (
-        <div className={`overflow-hidden rounded border border-border ${enabled ? "" : "opacity-60"}`} data-testid="snapshot-schedule">
+        <div className={`m-3 overflow-hidden rounded border border-border ${enabled ? "" : "opacity-60"}`} data-testid="snapshot-schedule">
           <div className="flex items-center justify-between border-b border-border bg-surface-700 px-2 py-1">
             <span className="flex items-center gap-1.5 text-xs font-medium text-text-secondary">
               <Clock size={12} /> Automatic snapshots
@@ -209,6 +203,12 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
             </tbody>
           </table>
         </div>
+      )}
+
+      {snapshots.length === 0 ? (
+        <EmptyState title="No snapshots" description="Snapshots let you roll back to a previous state." />
+      ) : (
+        <Table columns={columns} rows={snapshots} rowKey={(s) => s.name} />
       )}
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create snapshot" footer={
