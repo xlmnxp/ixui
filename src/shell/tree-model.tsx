@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Folder, Server, Palette, Gauge, Plus, FolderCog, History } from "lucide-react";
+import { Boxes, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, FolderCog, History, Settings, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import type { TreeNode } from "../components/tree";
 import { ALL_PROJECTS } from "../api/client";
@@ -106,6 +106,7 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
           id: "admin-operations",
           label: (
             <span className="flex items-center gap-2">
+              <ListTodo size={14} className="text-text-secondary" />
               <Link to="/operations">Operations</Link>
             </span>
           ),
@@ -123,6 +124,7 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
           id: "admin-warnings",
           label: (
             <span className="flex items-center gap-2">
+              <TriangleAlert size={14} className="text-text-secondary" />
               <Link to="/warnings">Warnings</Link>
             </span>
           ),
@@ -131,6 +133,7 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
           id: "admin-settings",
           label: (
             <span className="flex items-center gap-2">
+              <Settings size={14} className="text-text-secondary" />
               <Link to="/settings">Settings</Link>
             </span>
           ),
@@ -139,6 +142,7 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
           id: "admin-cluster-groups",
           label: (
             <span className="flex items-center gap-2">
+              <Boxes size={14} className="text-text-secondary" />
               <Link to="/cluster-groups">Cluster Groups</Link>
             </span>
           ),
@@ -147,6 +151,7 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
           id: "admin-certificates",
           label: (
             <span className="flex items-center gap-2">
+              <KeyRound size={14} className="text-text-secondary" />
               <Link to="/certificates">Certificates</Link>
             </span>
           ),
