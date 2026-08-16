@@ -17,6 +17,7 @@ describe("metadata store", () => {
     expect(map["limits.memory"]).toBe("Memory limit");
     expect(map["image.architecture"]).toBe("CPU architecture of the image");
     expect(map["image.os"]).toBe("Operating system name");
+    expect(map["volatile.cloud-init.instance-id"]).toContain("instance-id");
   });
 
   it("resolves wildcard fallbacks like image.requirements.*", () => {

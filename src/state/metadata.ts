@@ -14,6 +14,10 @@ const FALLBACK_DESCRIPTIONS: Record<string, string> = {
   "image.variant": "Image variant (default, cloud, desktop, …)",
   "image.secureboot": "Whether the image supports secure boot (VMs)",
   "image.requirements.*": "Image requirement flag (e.g. nesting, secureboot)",
+  // The daemon documents these with an underscore (volatile.cloud_init.*),
+  // but the actual keys use a hyphen.
+  "volatile.cloud-init.instance-id": "instance-id (UUID) exposed to cloud-init",
+  "volatile.cloud-init.ready": "Whether cloud-init has finished running",
 };
 
 let started = false;
