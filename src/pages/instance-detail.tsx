@@ -250,11 +250,11 @@ export function InstanceDetailPage() {
                   )}
                   {screenshotUrl && (
                     <div
-                      className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 -translate-x-1/2 rounded border border-border bg-surface-800 p-1 opacity-0 shadow-xl transition-opacity group-hover:opacity-100"
+                      className="pointer-events-none absolute right-0 top-full z-50 mt-2 rounded border border-border bg-surface-800 p-1 opacity-0 shadow-xl transition-opacity group-hover:opacity-100"
                       data-testid="detail-screenshot-popover"
                     >
                       <span
-                        className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-l border-t border-border bg-surface-800"
+                        className="absolute -top-1 right-5 h-2 w-2 rotate-45 border-l border-t border-border bg-surface-800"
                         data-testid="detail-screenshot-arrow"
                       />
                       <img src={screenshotUrl} alt="" className="h-40 w-auto max-w-72 object-contain" />
