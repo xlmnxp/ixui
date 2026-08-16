@@ -39,13 +39,24 @@ function collectKeys(node: unknown, map: Record<string, string>): void {
   for (const [, child] of Object.entries(obj)) collectKeys(child, map);
 }
 
-/** Look up a description, falling back to wildcard entries like user.* or volatile.*. */
+/** Matches placeholder patterns like "volatile.<name>.hwaddr" against a real key. */
+function patternMatches(pattern: string, key: string): boolean {
+  const p = pattern.split(".");
+  const k = key.split(".");
+  if (p.length !== k.length) return false;
+  return p.every((seg, i) => (seg.startsWith("<") && seg.endsWith(">")) || seg === k[i]);
+}
+
+/** Look up a description, falling back to wildcard and placeholder entries. */
 export function configDescription(map: Record<string, string>, key: string): string | undefined {
   if (map[key]) return map[key];
   const parts = key.split(".");
   for (let i = parts.length - 1; i >= 1; i--) {
     const candidate = parts.slice(0, i).join(".") + ".*";
     if (map[candidate]) return map[candidate];
+  }
+  for (const pattern of Object.keys(map)) {
+    if (pattern.includes("<") && patternMatches(pattern, key)) return map[pattern];
   }
   return undefined;
 }

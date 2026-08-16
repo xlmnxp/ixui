@@ -29,4 +29,15 @@ describe("metadata store", () => {
     metadataStore.setState({ "limits.memory": "Memory limit", "limits.*": "Some limit" });
     expect(configDescription(metadataStore.getState(), "limits.memory")).toBe("Memory limit");
   });
+
+  it("matches placeholder patterns like volatile.<name>.hwaddr", () => {
+    metadataStore.setState({
+      "volatile.<name>.hwaddr": "Network device MAC address",
+      "volatile.<name>.last_state.hwaddr": "Network device original MAC",
+    });
+    expect(configDescription(metadataStore.getState(), "volatile.eth0.hwaddr")).toBe("Network device MAC address");
+    expect(configDescription(metadataStore.getState(), "volatile.eth1.last_state.hwaddr")).toBe("Network device original MAC");
+    // A non-matching segment count returns undefined.
+    expect(configDescription(metadataStore.getState(), "volatile.eth0")).toBeUndefined();
+  });
 });
