@@ -15,7 +15,7 @@ vi.mock("../api", () => ({
     deleteProfile: vi.fn().mockResolvedValue(undefined),
   },
   serverApi: {
-    metadata: vi.fn().mockResolvedValue({ configs: [] }),
+    metadata: vi.fn().mockResolvedValue({ configs: {} }),
   },
 }));
 

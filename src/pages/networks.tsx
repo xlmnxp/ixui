@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeftRight, Check, Laptop, Pencil, Plus, Trash2, X } from "lucide-react";
-import { infraApi, networkExtrasApi, serverApi } from "../api";
+import { infraApi, networkExtrasApi } from "../api";
 import type { Network } from "../api/types";
 import type { Forward, Lease } from "../api/network-extras";
 import { Table } from "../components/table";
@@ -26,7 +26,6 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
   const [description, setDescription] = useState("");
   const [config, setConfig] = useState<Record<string, string>>({});
   const [configLoading, setConfigLoading] = useState(false);
-  const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [deleteManyOpen, setDeleteManyOpen] = useState(false);
@@ -47,16 +46,6 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
   }, []);
 
   useEffect(refresh, [refresh]);
-
-  useEffect(() => {
-    void serverApi.metadata()
-      .then((m) => {
-        const map: Record<string, string> = {};
-        for (const c of m.configs ?? []) if (c.key) map[c.key] = c.description;
-        setDescriptions(map);
-      })
-      .catch(() => {});
-  }, []);
 
   const create = async () => {
     setBusy(true);
@@ -277,7 +266,7 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
             {configLoading ? (
               <div className="py-4 text-center text-sm text-text-tertiary">Loading config…</div>
             ) : (
-              <KeyValueEditor values={config} onChange={setConfig} dataTestId="network-config-editor" descriptions={descriptions} stickyHeader />
+              <KeyValueEditor values={config} onChange={setConfig} dataTestId="network-config-editor" stickyHeader />
             )}
           </div>
         </div>

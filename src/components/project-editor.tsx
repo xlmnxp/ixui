@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
-import { infraApi, serverApi } from "../api";
+import { infraApi } from "../api";
 import type { Project } from "../api/types";
 import { Dialog } from "./dialog";
 import { Button } from "./button";
@@ -10,6 +10,7 @@ import { Input } from "./input";
 import { Progress } from "./progress";
 import { toast } from "./toast";
 import { currentProjectStore } from "../state/projects";
+import { loadMetadata, metadataStore, configDescription } from "../state/metadata";
 import { useStore } from "../state/store";
 
 export interface ProjectKeyMeta {
@@ -150,18 +151,11 @@ export function ProjectEditor({ project, usage = {}, onClose, onSaved }: Project
   const currentProject = useStore(currentProjectStore);
   const activeProject = project.name === currentProject;
   const [config, setConfig] = useState<Record<string, string>>(() => ({ ...project.config }));
-  const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const descriptions = useStore(metadataStore);
 
   useEffect(() => {
-    void serverApi
-      .metadata()
-      .then((m) => {
-        const map: Record<string, string> = {};
-        for (const c of m.configs ?? []) if (c.key) map[c.key] = c.description;
-        setDescriptions(map);
-      })
-      .catch(() => {});
+    loadMetadata();
   }, []);
 
   const setKey = (key: string, value: string | undefined) => {
@@ -173,7 +167,8 @@ export function ProjectEditor({ project, usage = {}, onClose, onSaved }: Project
     });
   };
 
-  const descriptionFor = (key: string): string => descriptions[key] ?? PROJECT_KEY_META[key]?.description ?? "";
+  const descriptionFor = (key: string): string =>
+    configDescription(descriptions, key) ?? PROJECT_KEY_META[key]?.description ?? "";
 
   const usageFor = (key: string): number | null => {
     const used = usage[key];

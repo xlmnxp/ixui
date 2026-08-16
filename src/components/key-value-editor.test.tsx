@@ -6,7 +6,7 @@ import { KeyValueEditor } from "./key-value-editor";
 vi.mock("../api", () => ({
   serverApi: {
     metadata: vi.fn().mockResolvedValue({
-      configs: [{ key: "limits.memory", description: "Memory limit in bytes" }],
+      configs: { instance: { instance: { keys: [{ "limits.memory": { shortdesc: "Memory limit in bytes" } }] } } },
     }),
   },
 }));

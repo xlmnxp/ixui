@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { instancesApi, serverApi } from "../../api";
+import { instancesApi } from "../../api";
 import type { Instance } from "../../api/types";
 import { KeyValueEditor } from "../../components/key-value-editor";
 import { toast } from "../../components/toast";
@@ -26,7 +26,6 @@ export function ConfigTab({ instanceName, project, registerActions }: ConfigTabP
   const [initialConfig, setInitialConfig] = useState<Record<string, string>>({});
   const [initialDescription, setInitialDescription] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
   const refresh = useCallback(() => {
@@ -42,17 +41,6 @@ export function ConfigTab({ instanceName, project, registerActions }: ConfigTabP
   }, [instanceName, project]);
 
   useEffect(refresh, [refresh]);
-
-
-  useEffect(() => {
-    void serverApi.metadata()
-      .then((m) => {
-        const map: Record<string, string> = {};
-        for (const c of m.configs ?? []) if (c.key) map[c.key] = c.description;
-        setDescriptions(map);
-      })
-      .catch(() => {});
-  }, []);
 
   const dirty = useMemo(
     () => JSON.stringify(config) !== JSON.stringify(initialConfig) || description !== initialDescription,
@@ -114,7 +102,6 @@ export function ConfigTab({ instanceName, project, registerActions }: ConfigTabP
         values={config}
         onChange={setConfig}
         dataTestId="config-editor"
-        descriptions={descriptions}
         description={description}
         onDescriptionChange={setDescription}
         selectedKeys={selectedKeys}

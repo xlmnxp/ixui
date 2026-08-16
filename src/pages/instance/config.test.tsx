@@ -17,7 +17,7 @@ vi.mock("../../api", () => ({
     update: vi.fn().mockResolvedValue(null),
   },
   serverApi: {
-    metadata: vi.fn().mockResolvedValue({ configs: [{ key: "limits.memory", description: "Memory limit" }] }),
+    metadata: vi.fn().mockResolvedValue({ configs: { instance: { instance: { keys: [{ "limits.memory": { shortdesc: "Memory limit" } }] } } } }),
   },
 }));
 

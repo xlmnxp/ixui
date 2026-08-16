@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
-import { metadataStore, loadMetadata } from "../state/metadata";
+import { metadataStore, loadMetadata, configDescription } from "../state/metadata";
 import { useStore } from "../state/store";
 
 const DESCRIPTION_ROW = "__description__";
@@ -257,9 +257,9 @@ export function KeyValueEditor({
                 {editing === key ? keyInput(key) : (
                   <>
                     <div>{key}</div>
-                    {effectiveDescriptions?.[key] && (
+                    {configDescription(effectiveDescriptions, key) && (
                       <div className="mt-0.5 text-[11px] font-sans text-text-tertiary" data-testid={`kv-desc-${key}`}>
-                        {effectiveDescriptions[key]}
+                        {configDescription(effectiveDescriptions, key)}
                       </div>
                     )}
                   </>

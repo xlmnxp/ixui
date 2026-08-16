@@ -154,7 +154,7 @@ describe("API endpoints", () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { configs: [{ key: "limits.memory", description: "Memory limit" }] }));
     vi.stubGlobal("fetch", fetchMock);
     await serverApi.metadata();
-    expect(fetchMock).toHaveBeenCalledWith("/1.0/metadata", expect.anything());
+    expect(fetchMock).toHaveBeenCalledWith("/1.0/metadata/configuration", expect.anything());
   });
 
   it("certificates token posts type client with description and expiry", async () => {

@@ -8,8 +8,9 @@ export class ServerApi {
     return this.client.get<ServerInfo>("");
   }
 
-  metadata(): Promise<{ configs: { key: string; description: string }[] }> {
-    return this.client.get<{ configs: { key: string; description: string }[] }>("/metadata");
+  /** Configuration key descriptions (nested group/entity/keys shape). */
+  metadata(): Promise<{ configs?: unknown }> {
+    return this.client.get<{ configs?: unknown }>("/metadata/configuration");
   }
 
   updateConfig(config: Record<string, string>): Promise<void> {

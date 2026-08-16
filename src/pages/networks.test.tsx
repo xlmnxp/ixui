@@ -35,7 +35,7 @@ vi.mock("../api", () => ({
     deleteForward: vi.fn().mockResolvedValue(undefined),
   },
   serverApi: {
-    metadata: vi.fn().mockResolvedValue({ configs: [{ key: "bridge.mode", description: "Bridge mode" }] }),
+    metadata: vi.fn().mockResolvedValue({ configs: { network: { network: { keys: [{ "bridge.mode": { shortdesc: "Bridge mode" } }] } } } }),
   },
 }));
 
