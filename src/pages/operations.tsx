@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { X } from "lucide-react";
 import { operationsApi } from "../api";
 import { ApiError } from "../api/client";
+import { operationsStore } from "../state/operations";
+import { useStore } from "../state/store";
 import type { Operation, OperationStatus } from "../api/types";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
@@ -25,8 +27,18 @@ const statusTones: Record<OperationStatus, BadgeTone> = {
 
 export function OperationsPage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [operations, setOperations] = useState<Operation[]>([]);
+  const liveOperations = useStore(operationsStore);
   const [denied, setDenied] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Merge operations seen on the event stream (which the daemon prunes from the
+  // REST list once finished) with the fetched list.
+  const merged = useMemo(() => {
+    const byId = new Map<string, Operation>();
+    for (const op of operations) byId.set(op.id, op);
+    for (const op of liveOperations) byId.set(op.id, op);
+    return [...byId.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }, [operations, liveOperations]);
 
   const refresh = useCallback(() => {
     void operationsApi
@@ -107,10 +119,10 @@ export function OperationsPage({ registerBar }: { registerBar?: (bar: BarState |
           {!registerBar && <PageBar title="Operations" actions={barActions} />}
           {loading ? (
             <Loading dataTestId="operations-loading" label="Loading operations…" />
-          ) : operations.length === 0 ? (
-            <EmptyState title="No operations" />
+          ) : merged.length === 0 ? (
+            <EmptyState title="No operations" description="Operations appear here while they run; finished ones are pruned by the server." />
           ) : (
-            <Table columns={columns} rows={operations} rowKey={(o) => o.id} stickyHeaderOffset={40} />
+            <Table columns={columns} rows={merged} rowKey={(o) => o.id} stickyHeaderOffset={40} />
           )}
         </>
       )}

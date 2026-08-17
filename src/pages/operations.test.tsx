@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { OperationsPage } from "./operations";
 import { ApiError } from "../api/client";
+import { operationsStore } from "../state/operations";
 
 vi.mock("../api", () => ({
   operationsApi: {
@@ -33,6 +34,8 @@ vi.mock("../api", () => ({
 }));
 
 describe("OperationsPage", () => {
+  afterEach(() => operationsStore.setState([]));
+
   it("lists operations with class, status, and error text", async () => {
     render(<OperationsPage />);
     expect(await screen.findByText("Create instance web1")).toBeInTheDocument();
@@ -40,6 +43,25 @@ describe("OperationsPage", () => {
     expect(screen.getByText("Running")).toBeInTheDocument();
     expect(screen.getByText("Failure")).toBeInTheDocument();
     expect(screen.getByText("Instance is busy")).toBeInTheDocument();
+  });
+
+  it("shows operations from the live event stream even when the list is empty", async () => {
+    const { operationsApi } = await import("../api");
+    vi.mocked(operationsApi.list).mockResolvedValueOnce([]);
+    operationsStore.setState([
+      {
+        id: "op-live",
+        class: "task",
+        description: "Starting db1",
+        status: "Running",
+        status_code: 103,
+        created_at: "2026-08-12T11:00:00Z",
+        updated_at: "2026-08-12T11:00:00Z",
+        may_cancel: false,
+      },
+    ]);
+    render(<OperationsPage />);
+    expect(await screen.findByText("Starting db1")).toBeInTheDocument();
   });
 
   it("cancels a cancellable operation", async () => {

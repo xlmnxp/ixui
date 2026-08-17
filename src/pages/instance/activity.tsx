@@ -25,9 +25,13 @@ export function ActivityTab({ instanceName, project }: ActivityTabProps) {
 
   const rows = useMemo(
     () =>
-      events.filter(
-        (e) => e.instance === instanceName && (project === undefined || e.project === project)
-      ),
+      events.filter((e) => {
+        if (e.instance !== instanceName) return false;
+        if (project === undefined) return true;
+        // The daemon omits ?project for the default project, so null means "default".
+        const eventProject = e.project ?? "default";
+        return eventProject === project;
+      }),
     [events, instanceName, project]
   );
 

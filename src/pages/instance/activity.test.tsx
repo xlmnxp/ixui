@@ -59,6 +59,15 @@ describe("ActivityTab", () => {
     expect(screen.queryAllByText("instance-started")).toHaveLength(2);
   });
 
+  it("treats a null project (default project sources omit ?project) as default", () => {
+    activityStore.setState([
+      event("n", { action: "instance-restarted", instance: "web1", project: null, username: "carol" }),
+    ]);
+    renderTab("default");
+    expect(screen.getByText("instance-restarted")).toBeInTheDocument();
+    expect(screen.getByText("carol")).toBeInTheDocument();
+  });
+
   it("shows the empty state with no matching events", () => {
     activityStore.setState([]);
     renderTab();
