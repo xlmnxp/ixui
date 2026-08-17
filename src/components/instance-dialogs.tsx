@@ -5,7 +5,7 @@ import { Input } from "./input";
 import { Select } from "./select";
 import { Checkbox } from "./checkbox";
 import { toast } from "./toast";
-import { instancesApi, infraApi, clusterApi } from "../api";
+import { instancesApi, infraApi, clusterApi, operationsApi } from "../api";
 import { validateInstanceName } from "../lib/instance-name";
 import { loadInstances } from "../state/instances";
 import { currentProjectStore } from "../state/projects";
@@ -26,18 +26,28 @@ export function RenameInstanceDialog({ open, onClose, name, project, onRenamed }
 
   useEffect(() => {
     if (!open) return;
-    setNewName("");
+    setNewName(name);
     setBusy(false);
-  }, [open]);
+  }, [open, name]);
 
   const error = validateInstanceName(newName);
   const valid = error === null;
 
   const submit = async () => {
     if (!valid) return;
+    if (newName.trim() === name) {
+      onClose();
+      return;
+    }
     setBusy(true);
     try {
-      await instancesApi.rename(name, newName.trim(), project);
+      const result = await instancesApi.rename(name, newName.trim(), project);
+      // Rename is async: wait for the operation so the list reload below sees
+      // the new name instead of racing the in-flight rename.
+      if (result && "type" in result && result.type === "async") {
+        const op = await operationsApi.wait(result.operation);
+        if (op.status !== "Success") throw new Error(op.err ?? "Rename failed");
+      }
       toast("success", `Renamed ${name} to ${newName.trim()}`);
       void loadInstances(currentProjectStore.getState()).catch(() => {});
       onRenamed?.(newName.trim());

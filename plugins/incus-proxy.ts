@@ -32,7 +32,7 @@ export function incusProxy(options: IncusProxyOptions = {}): Plugin {
     name: "incus-proxy",
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (!req.url?.startsWith("/1.0") && !req.url?.startsWith("/oidc")) {
+        if (!req.url?.startsWith("/1.0") && !req.url?.startsWith("/oidc") && !req.url?.startsWith("/documentation")) {
           next();
           return;
         }

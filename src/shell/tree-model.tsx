@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Boxes, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, FolderCog, History, Settings, TriangleAlert } from "lucide-react";
+import { BookOpen, Boxes, Bug, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, FolderCog, History, Settings, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import type { TreeNode } from "../components/tree";
 import { ALL_PROJECTS } from "../api/client";
@@ -56,11 +56,18 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
     }));
 
   if (unassigned.length > 0) {
-    memberNodes.push({
-      id: "unassigned",
-      label: <span className="text-text-tertiary">unassigned</span>,
-      children: [...unassigned].sort((a, b) => a.name.localeCompare(b.name)).map(instanceNode),
-    });
+    const unassignedNodes = [...unassigned].sort((a, b) => a.name.localeCompare(b.name)).map(instanceNode);
+    // On a standalone server every instance is "unassigned"; skip the bucket
+    // and list instances directly under the project.
+    if (members.length === 0) {
+      memberNodes.push(...unassignedNodes);
+    } else {
+      memberNodes.push({
+        id: "unassigned",
+        label: <span className="text-text-tertiary">unassigned</span>,
+        children: unassignedNodes,
+      });
+    }
   }
 
   return [
@@ -157,6 +164,26 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
           ),
         },
       ],
+    },
+    {
+      id: "documentation",
+      label: (
+        <span className="flex items-center gap-2">
+          <BookOpen size={14} className="text-text-secondary" />
+          <a href="/documentation/" target="_blank" rel="noreferrer">Documentation</a>
+          <ExternalLink size={12} className="text-text-tertiary" />
+        </span>
+      ),
+    },
+    {
+      id: "report-bug",
+      label: (
+        <span className="flex items-center gap-2">
+          <Bug size={14} className="text-text-secondary" />
+          <a href="https://github.com/xlmnxp/ixui/issues" target="_blank" rel="noreferrer">Report a bug</a>
+          <ExternalLink size={12} className="text-text-tertiary" />
+        </span>
+      ),
     },
   ];
 }

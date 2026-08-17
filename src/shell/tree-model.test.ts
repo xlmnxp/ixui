@@ -47,4 +47,9 @@ describe("buildTree", () => {
     const tree = buildTree({ project: "default", members: [member("incus-1")], instancesByMember: {}, unassigned: [instance("drift")] });
     expect(tree[1]?.children?.some((m) => m.id === "unassigned")).toBe(true);
   });
+
+  it("lists instances directly under the project when there are no members", () => {
+    const tree = buildTree({ project: "default", members: [], instancesByMember: {}, unassigned: [instance("z1"), instance("a1")] });
+    expect(tree[1]?.children?.map((n) => n.id)).toEqual(["instance-a1", "instance-z1"]);
+  });
 });

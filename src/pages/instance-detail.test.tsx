@@ -207,6 +207,8 @@ describe("InstanceDetailPage", () => {
     await screen.findByText("web1");
     await user.click(screen.getByTestId("detail-more"));
     await user.click(screen.getByTestId("detail-more-rename"));
+    expect(screen.getByTestId("rename-name")).toHaveValue("web1");
+    await user.clear(screen.getByTestId("rename-name"));
     await user.type(screen.getByTestId("rename-name"), "bad name!");
     expect(screen.getByText("Name must contain only letters, numbers, and hyphens")).toBeInTheDocument();
     await user.clear(screen.getByTestId("rename-name"));
@@ -221,6 +223,7 @@ describe("InstanceDetailPage", () => {
     await screen.findByText("web1");
     await user.click(screen.getByTestId("detail-more"));
     await user.click(screen.getByTestId("detail-more-rename"));
+    await user.clear(screen.getByTestId("rename-name"));
     await user.type(screen.getByTestId("rename-name"), "web2");
     await user.click(screen.getByTestId("rename-confirm"));
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/instances/web2"));

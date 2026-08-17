@@ -42,7 +42,7 @@ export function projectFromSource(source: string): string | null {
 
 export function applyInstanceLifecycle(
   state: Record<string, Instance>,
-  meta: { action: string; source: string }
+  meta: { action: string; source: string; context?: { old_name?: string } | null }
 ): Record<string, Instance> {
   const name = instanceNameFromSource(meta.source);
   if (!name) return state;
@@ -51,6 +51,20 @@ export function applyInstanceLifecycle(
   const project = projectFromSource(meta.source);
   const matches = (instance: Instance): boolean =>
     instance.name === name && (project === null || instance.project === project);
+  if (meta.action === "instance-renamed") {
+    // The source carries the NEW name; the old name comes from the event context.
+    const oldName = meta.context?.old_name;
+    if (!oldName) return state;
+    const next: Record<string, Instance> = {};
+    for (const [key, instance] of Object.entries(state)) {
+      if (instance.name === oldName && (project === null || instance.project === project)) {
+        next[`${instance.project}/${name}`] = { ...instance, name };
+      } else {
+        next[key] = instance;
+      }
+    }
+    return next;
+  }
   if (meta.action === "instance-deleted") {
     const next: Record<string, Instance> = {};
     for (const [key, instance] of Object.entries(state)) {
