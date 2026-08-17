@@ -65,7 +65,9 @@ export function ActivityTab({ instanceName, project }: ActivityTabProps) {
 
   return (
     <div data-testid="activity-tab" className="p-3">
-      <Table columns={columns} rows={rows} rowKey={(e) => e.id} />
+      <div className="overflow-hidden rounded border border-border">
+        <Table columns={columns} rows={rows} rowKey={(e) => e.id} />
+      </div>
     </div>
   );
 }
