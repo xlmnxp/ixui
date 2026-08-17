@@ -250,7 +250,7 @@ export function AclsPage() {
               <th className="w-14 border-b border-border px-2 py-1 font-normal">ICMP type</th>
               <th className="w-14 border-b border-border px-2 py-1 font-normal">Code</th>
               <th className="border-b border-border px-2 py-1 font-normal">Description</th>
-              <th className="w-8 border-b border-border px-2 py-1" />
+              <th className="w-40 border-b border-border px-2 py-1" />
             </tr>
           </thead>
           <tbody className="divide-y divide-border bg-surface-800">
@@ -370,14 +370,14 @@ export function AclsPage() {
                   ) : (
                     viewCell(r.description || "—", !r.description)
                   )}
-                  <td className="px-2 py-1 text-center">
-                    <div className="flex items-center justify-center gap-1">
+                  <td className="px-2 py-1">
+                    <div className="flex items-center justify-end gap-1.5">
                       {rowEditing ? (
-                        <button type="button" data-testid={`acl-${prefix}-done-${i}`} onClick={() => setEditingRow(null)} title="Finish editing" aria-label="Finish editing" className="text-success hover:opacity-80"><Save size={13} /></button>
+                        <Button size="sm" variant="ghost" data-testid={`acl-${prefix}-done-${i}`} onClick={() => setEditingRow(null)}><Save size={13} /> Save</Button>
                       ) : (
-                        <button type="button" data-testid={`acl-${prefix}-edit-${i}`} onClick={() => setEditingRow({ direction: prefix, index: i })} title="Edit rule" aria-label="Edit rule" className="text-text-tertiary hover:text-text-primary"><Pencil size={13} /></button>
+                        <Button size="sm" variant="ghost" data-testid={`acl-${prefix}-edit-${i}`} onClick={() => setEditingRow({ direction: prefix, index: i })}><Pencil size={13} /> Edit</Button>
                       )}
-                      <button type="button" data-testid={`acl-${prefix}-remove-${i}`} onClick={() => setRemoveRuleTarget({ direction: prefix, index: i })} className="text-text-tertiary hover:text-danger" aria-label={`Remove ${prefix} rule`}><Trash2 size={12} /></button>
+                      <Button size="sm" variant="ghost" data-testid={`acl-${prefix}-remove-${i}`} onClick={() => setRemoveRuleTarget({ direction: prefix, index: i })}><Trash2 size={13} /> Delete</Button>
                     </div>
                   </td>
                 </tr>
