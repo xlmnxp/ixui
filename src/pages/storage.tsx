@@ -13,6 +13,7 @@ import { KeyValueEditor } from "../components/key-value-editor";
 import { EmptyState } from "../components/empty-state";
 import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
+import { Window } from "../components/window";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
 
@@ -41,7 +42,9 @@ const toBytes = (size: string): number => {
 export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [pools, setPools] = useState<StoragePool[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [volumes, setVolumes] = useState<Record<string, StorageVolume[]>>({});
+  const [volumesWindowPool, setVolumesWindowPool] = useState<string | null>(null);
+  const [volumesList, setVolumesList] = useState<StorageVolume[]>([]);
+  const [volumesLoading, setVolumesLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [deletePoolTarget, setDeletePoolTarget] = useState<StoragePool | null>(null);
   const [name, setName] = useState("");
@@ -97,16 +100,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
   const fileRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(() => {
-    void infraApi.listPools().then((list) => {
-      setPools(list);
-      setVolumes((prev) => {
-        const next = { ...prev };
-        for (const key of Object.keys(next)) {
-          if (!list.some((p) => p.name === key)) delete next[key];
-        }
-        return next;
-      });
-    }).catch(() => {}).finally(() => setLoaded(true));
+    void infraApi.listPools().then(setPools).catch(() => {}).finally(() => setLoaded(true));
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -114,20 +108,23 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
   const refreshVolumes = useCallback(async (pool: string) => {
     try {
       const list = await volumesApi.list(pool);
-      setVolumes((prev) => ({ ...prev, [pool]: list }));
+      if (volumesWindowPool === pool) setVolumesList(list);
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Failed to load pool volumes");
     }
-  }, []);
+  }, [volumesWindowPool]);
 
-  const toggleVolumes = async (pool: string) => {
-    if (volumes[pool]) {
-      const next = { ...volumes };
-      delete next[pool];
-      setVolumes(next);
-      return;
+  const openVolumes = async (pool: string) => {
+    setVolumesWindowPool(pool);
+    setVolumesList([]);
+    setVolumesLoading(true);
+    try {
+      setVolumesList(await volumesApi.list(pool));
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Failed to load pool volumes");
+    } finally {
+      setVolumesLoading(false);
     }
-    await refreshVolumes(pool);
   };
 
   const refreshBuckets = async (pool: string) => {
@@ -202,11 +199,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
     try {
       await infraApi.deletePool(poolName);
       toast("success", `Pool ${poolName} deleted`);
-      setVolumes((prev) => {
-        const next = { ...prev };
-        delete next[poolName];
-        return next;
-      });
+      if (volumesWindowPool === poolName) setVolumesWindowPool(null);
       setDeletePoolTarget(null);
       refresh();
     } catch (err) {
@@ -219,11 +212,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
     try {
       await Promise.all(selectedKeys.map((poolName) => infraApi.deletePool(poolName)));
       toast("success", `Deleted ${selectedKeys.length} pool(s)`);
-      setVolumes((prev) => {
-        const next = { ...prev };
-        for (const poolName of selectedKeys) delete next[poolName];
-        return next;
-      });
+      if (volumesWindowPool && selectedKeys.includes(volumesWindowPool)) setVolumesWindowPool(null);
       setSelectedKeys([]);
       setDeleteManyOpen(false);
       refresh();
@@ -560,7 +549,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
       key: "actions", header: "", align: "right",
       render: (p) => (
         <div className="flex justify-end gap-1">
-          <Button size="sm" variant="ghost" data-testid={`pool-volumes-${p.name}`} onClick={() => void toggleVolumes(p.name)}><Database size={14} /> Volumes</Button>
+          <Button size="sm" variant="ghost" data-testid={`pool-volumes-${p.name}`} onClick={() => void openVolumes(p.name)}><Database size={14} /> Volumes</Button>
           {p.driver === "cephobject" && (
             <Button size="sm" variant="ghost" data-testid={`pool-buckets-${p.name}`} onClick={() => void toggleBuckets(p.name)}><Archive size={14} /> Buckets</Button>
           )}
@@ -596,15 +585,29 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
         <Table columns={columns} rows={pools} rowKey={(p) => p.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
       )}
 
-      {Object.entries(volumes).map(([poolName, list]) => (
-        <div key={poolName} className="rounded border border-border bg-surface-900 p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-text-primary">Volumes in {poolName}</h2>
-            <Button size="sm" data-testid={`volume-create-${poolName}`} onClick={() => openVolumeCreate(poolName)}><Plus size={13} /> Create volume</Button>
+      <Window
+        open={volumesWindowPool !== null}
+        onClose={() => setVolumesWindowPool(null)}
+        title={`Volumes in ${volumesWindowPool ?? ""}`}
+        width={1000}
+        bodyMaxHeight={560}
+        footer={
+          <Button variant="secondary" onClick={() => setVolumesWindowPool(null)}><X size={14} /> Close</Button>
+        }
+      >
+        {volumesWindowPool && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-end">
+              <Button size="sm" data-testid={`volume-create-${volumesWindowPool}`} onClick={() => openVolumeCreate(volumesWindowPool)}><Plus size={13} /> Create volume</Button>
+            </div>
+            {volumesLoading ? (
+              <Loading dataTestId="volumes-loading" label="Loading volumes…" />
+            ) : (
+              renderVolumeTable(volumesWindowPool, volumesList)
+            )}
           </div>
-          {renderVolumeTable(poolName, list)}
-        </div>
-      ))}
+        )}
+      </Window>
 
       {Object.entries(buckets).map(([poolName, list]) => (
         <div key={poolName} className="rounded border border-border bg-surface-900 p-3">
