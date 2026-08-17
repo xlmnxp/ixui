@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Ban, Check, FileText, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Ban, Check, ChevronDown, FileText, Pencil, Plus, ShieldAlert, Trash2, X } from "lucide-react";
 import { networkExtrasApi } from "../api";
 import { ApiError } from "../api/client";
 import type { Acl } from "../api/network-extras";
@@ -15,7 +15,6 @@ import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import { toast } from "../components/toast";
 
-const ACTIONS = ["allow", "drop", "reject"] as const;
 const PROTOCOLS = [
   { value: "", label: "All protocols" },
   { value: "tcp", label: "TCP" },
@@ -58,6 +57,72 @@ function CellSelect({ value, onChange, options, dataTestId }: CellSelectProps) {
         <option key={o.value} value={o.value}>{o.label}</option>
       ))}
     </select>
+  );
+}
+
+const ACTION_ITEMS = [
+  { value: "allow", label: "allow", icon: <Check size={12} className="text-success" /> },
+  { value: "drop", label: "drop", icon: <X size={12} className="text-text-tertiary" /> },
+  { value: "reject", label: "reject", icon: <ShieldAlert size={12} className="text-danger" /> },
+] as const;
+
+interface ActionDropdownProps {
+  value: string;
+  onChange: (value: string) => void;
+  dataTestId: string;
+}
+
+function ActionDropdown({ value, onChange, dataTestId }: ActionDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const [up, setUp] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = ACTION_ITEMS.find((it) => it.value === value) ?? ACTION_ITEMS[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        data-testid={dataTestId}
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          setUp(window.innerHeight - rect.bottom < 130);
+          setOpen((o) => !o);
+        }}
+        className="flex h-7 w-full items-center gap-1.5 rounded border border-border bg-surface-500 px-1.5 text-xs text-text-primary hover:bg-surface-600"
+      >
+        {current.icon}
+        <span className="min-w-0 flex-1 truncate text-left">{current.label}</span>
+        <ChevronDown size={12} className="shrink-0 text-text-tertiary" />
+      </button>
+      {open && (
+        <div className={`absolute left-0 z-20 min-w-full overflow-hidden rounded border border-border bg-surface-700 py-0.5 shadow-xl ${up ? "bottom-full mb-0.5" : "top-full mt-0.5"}`}>
+          {ACTION_ITEMS.map((it) => (
+            <button
+              key={it.value}
+              type="button"
+              data-testid={`${dataTestId}-${it.value}`}
+              onClick={() => {
+                onChange(it.value);
+                setOpen(false);
+              }}
+              className="flex w-full items-center gap-1.5 px-2 py-1 text-left text-xs text-text-primary hover:bg-surface-600"
+            >
+              {it.icon}
+              {it.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -225,10 +290,9 @@ export function AclsPage() {
                 return (
                 <tr key={i} data-testid={`acl-${prefix}-rule-${i}`} className={isDisabled ? "opacity-50" : ""}>
                   <td className="px-2 py-1">
-                    <CellSelect
+                    <ActionDropdown
                       value={r.action ?? "allow"}
                       onChange={(v) => setRules(updateRule(rules, i, { action: v }))}
-                      options={ACTIONS.map((a) => ({ value: a, label: a }))}
                       dataTestId={`acl-${prefix}-action-${i}`}
                     />
                   </td>
