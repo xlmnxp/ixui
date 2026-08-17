@@ -11,6 +11,7 @@ import { Input } from "../components/input";
 import { Select } from "../components/select";
 import { EmptyState } from "../components/empty-state";
 import { Loading } from "../components/loading";
+import { Window } from "../components/window";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
@@ -34,13 +35,15 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
   const [aliasBusy, setAliasBusy] = useState(false);
   const [aliasDelete, setAliasDelete] = useState<ImageAlias | null>(null);
   const [loading, setLoading] = useState(true);
+  const [aliasesLoading, setAliasesLoading] = useState(false);
 
   const refresh = useCallback(() => {
     void infraApi.listImages().then(setImages).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const refreshAliases = useCallback(() => {
-    void infraApi.listAliases().then(setAliases).catch(() => {});
+    setAliasesLoading(true);
+    void infraApi.listAliases().then(setAliases).catch(() => {}).finally(() => setAliasesLoading(false));
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -176,15 +179,28 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
         <Table columns={columns} rows={images} rowKey={(i) => i.fingerprint} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
       )}
 
-      {aliasesOpen && (
-        <div className="space-y-2" data-testid="aliases-section">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-text-primary">Aliases</h3>
+      <Window
+        open={aliasesOpen}
+        onClose={() => setAliasesOpen(false)}
+        title="Image aliases"
+        subtitle="Aliases map friendly names to image fingerprints."
+        width={900}
+        bodyMaxHeight={520}
+        footer={
+          <Button variant="secondary" onClick={() => setAliasesOpen(false)}><X size={14} /> Close</Button>
+        }
+      >
+        <div className="space-y-3" data-testid="aliases-section">
+          <div className="flex items-center justify-end">
             <Button size="sm" data-testid="alias-create-open" onClick={() => setAliasCreateOpen(true)}><Plus size={14} /> New alias</Button>
           </div>
-          <Table columns={aliasColumns} rows={aliases} rowKey={(a) => a.name} dataTestId="aliases-table" emptyMessage="No aliases" />
+          {aliasesLoading ? (
+            <Loading dataTestId="aliases-loading" label="Loading aliases…" />
+          ) : (
+            <Table columns={aliasColumns} rows={aliases} rowKey={(a) => a.name} dataTestId="aliases-table" emptyMessage="No aliases" />
+          )}
         </div>
-      )}
+      </Window>
 
       <Dialog open={pullOpen} onClose={() => setPullOpen(false)} title="Pull image" footer={
         <>
