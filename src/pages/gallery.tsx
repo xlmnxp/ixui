@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, FilePlus2, FolderPlus, Maximize2, MoveRight, Play, Plus, ShieldAlert, Square, Trash2 } from "lucide-react";
+import { Bell, Check, FilePlus2, FolderPlus, Maximize2, MoveRight, Play, Plus, ShieldAlert, Square, Trash2, X } from "lucide-react";
 import { Button } from "../components/button";
 import { Badge } from "../components/badge";
 import { StatusDot } from "../components/status-dot";
@@ -23,6 +23,7 @@ import { EmptyState } from "../components/empty-state";
 import { SplitPane } from "../components/split-pane";
 import { PageBar } from "../components/page-bar";
 import { KeyValueEditor } from "../components/key-value-editor";
+import { Dropdown } from "../components/dropdown";
 import { toast } from "../components/toast";
 import { Window } from "../components/window";
 import { VerticalTabs } from "../components/vertical-tabs";
@@ -59,6 +60,8 @@ export function Gallery() {
   const [ssEnabled, setSsEnabled] = useState(true);
   const [ssSchedule, setSsSchedule] = useState("");
   const [ssExpiry, setSsExpiry] = useState("");
+  const [ddAction, setDdAction] = useState("allow");
+  const [ddProtocol, setDdProtocol] = useState("tcp");
 
   const explorerNavigate = (path: string) => {
     setExplorerCwd(path);
@@ -131,6 +134,37 @@ export function Gallery() {
         <Textarea label="Notes" placeholder="Optional" />
         <Checkbox label="Ephemeral" />
         <Switch checked onChange={() => {}} label="Auto start" />
+      </Section>
+
+      <Section title="Dropdown">
+        <div className="w-32">
+          <Dropdown
+            value={ddAction}
+            onChange={setDdAction}
+            dataTestId="gallery-dropdown-sm"
+            size="sm"
+            options={[
+              { value: "allow", label: "allow", icon: <Check size={12} className="text-success" /> },
+              { value: "drop", label: "drop", icon: <X size={12} className="text-text-tertiary" /> },
+              { value: "reject", label: "reject", icon: <ShieldAlert size={12} className="text-danger" /> },
+            ]}
+          />
+        </div>
+        <div className="w-40">
+          <Dropdown
+            value={ddProtocol}
+            onChange={setDdProtocol}
+            dataTestId="gallery-dropdown-md"
+            options={[
+              { value: "", label: "All protocols" },
+              { value: "tcp", label: "TCP" },
+              { value: "udp", label: "UDP" },
+              { value: "icmp4", label: "ICMPv4" },
+              { value: "icmp6", label: "ICMPv6" },
+              { value: "disabled", label: "Disabled option", disabled: true },
+            ]}
+          />
+        </div>
       </Section>
 
       <Section title="Overlay">

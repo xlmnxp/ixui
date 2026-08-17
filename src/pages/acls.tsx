@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { Ban, Check, ChevronDown, FileText, Pencil, Play, Plus, ShieldAlert, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Ban, Check, FileText, Pencil, Play, Plus, ShieldAlert, Trash2, X } from "lucide-react";
 import { networkExtrasApi } from "../api";
 import { ApiError } from "../api/client";
 import type { Acl } from "../api/network-extras";
@@ -10,6 +9,7 @@ import { Button } from "../components/button";
 import { Dialog } from "../components/dialog";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { Window } from "../components/window";
+import { Dropdown } from "../components/dropdown";
 import { Input } from "../components/input";
 import { EmptyState } from "../components/empty-state";
 import { Loading } from "../components/loading";
@@ -61,85 +61,11 @@ function CellSelect({ value, onChange, options, dataTestId }: CellSelectProps) {
   );
 }
 
-const ACTION_ITEMS = [
+const ACTION_OPTIONS = [
   { value: "allow", label: "allow", icon: <Check size={12} className="text-success" /> },
   { value: "drop", label: "drop", icon: <X size={12} className="text-text-tertiary" /> },
   { value: "reject", label: "reject", icon: <ShieldAlert size={12} className="text-danger" /> },
-] as const;
-
-interface ActionDropdownProps {
-  value: string;
-  onChange: (value: string) => void;
-  dataTestId: string;
-}
-
-function ActionDropdown({ value, onChange, dataTestId }: ActionDropdownProps) {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ left: number; top: number; width: number; up: boolean } | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
-  const current = ACTION_ITEMS.find((it) => it.value === value) ?? ACTION_ITEMS[0];
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        data-testid={dataTestId}
-        onClick={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          setPos({
-            left: rect.left,
-            top: rect.top,
-            width: Math.max(rect.width, 96),
-            up: window.innerHeight - rect.bottom < 130,
-          });
-          setOpen((o) => !o);
-        }}
-        className="flex h-7 w-full items-center gap-1.5 rounded border border-border bg-surface-500 px-1.5 text-xs text-text-primary hover:bg-surface-600"
-      >
-        {current.icon}
-        <span className="min-w-0 flex-1 truncate text-left">{current.label}</span>
-        <ChevronDown size={12} className="shrink-0 text-text-tertiary" />
-      </button>
-      {open && pos && createPortal(
-        <div
-          onMouseDown={(e) => e.stopPropagation()}
-          className="fixed z-[60] overflow-hidden rounded border border-border bg-surface-700 py-0.5 shadow-xl"
-          style={
-            pos.up
-              ? { left: pos.left, width: pos.width, bottom: window.innerHeight - pos.top + 4 }
-              : { left: pos.left, width: pos.width, top: pos.top + 32 }
-          }
-        >
-          {ACTION_ITEMS.map((it) => (
-            <button
-              key={it.value}
-              type="button"
-              data-testid={`${dataTestId}-${it.value}`}
-              onClick={() => {
-                onChange(it.value);
-                setOpen(false);
-              }}
-              className="flex w-full items-center gap-1.5 px-2 py-1 text-left text-xs text-text-primary hover:bg-surface-600"
-            >
-              {it.icon}
-              {it.label}
-            </button>
-          ))}
-        </div>,
-        document.body
-      )}
-    </div>
-  );
-}
+];
 
 interface CellInputProps {
   value: string;
@@ -314,10 +240,12 @@ export function AclsPage() {
                 return (
                 <tr key={i} data-testid={`acl-${prefix}-rule-${i}`} className={isDisabled ? "opacity-50" : ""}>
                   <td className="px-2 py-1">
-                    <ActionDropdown
+                    <Dropdown
                       value={r.action ?? "allow"}
                       onChange={(v) => setRules(updateRule(rules, i, { action: v }))}
+                      options={ACTION_OPTIONS}
                       dataTestId={`acl-${prefix}-action-${i}`}
+                      size="sm"
                     />
                   </td>
                   <td className="px-2 py-1">
