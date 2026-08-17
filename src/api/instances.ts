@@ -136,11 +136,24 @@ export class InstancesApi {
   }
 
   listLogs(name: string, project?: string): Promise<string[]> {
-    return this.client.get<string[]>(`/instances/${name}/logs${projectQueryFor(name, project)}`);
+    // incus returns canonical log API paths (e.g. /1.0/instances/web1/logs/qemu.log);
+    // reduce them to bare file names for display.
+    return this.client
+      .get<string[]>(`/instances/${name}/logs${projectQueryFor(name, project)}`)
+      .then((entries) =>
+        entries.map((entry) => {
+          const last = entry.split("/").pop() ?? entry;
+          try {
+            return decodeURIComponent(last);
+          } catch {
+            return last;
+          }
+        })
+      );
   }
 
   readLog(name: string, file: string, project?: string): Promise<string> {
-    return this.client.get<string>(`/instances/${name}/logs/${file}${projectQueryFor(name, project)}`);
+    return this.client.get<string>(`/instances/${name}/logs/${encodeURIComponent(file)}${projectQueryFor(name, project)}`);
   }
 
   copy(

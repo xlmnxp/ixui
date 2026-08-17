@@ -9,6 +9,22 @@ describe("API endpoints", () => {
   const jsonResponse = (status: number, body: unknown) =>
     new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
+  it("instances logs list normalizes canonical log paths", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { type: "sync", status_code: 200, metadata: ["/1.0/instances/web1/logs/qemu.log", "/1.0/instances/web1/logs/qemu.early.log"] }));
+    vi.stubGlobal("fetch", fetchMock);
+    const list = await instancesApi.listLogs("web1");
+    expect(list).toEqual(["qemu.log", "qemu.early.log"]);
+  });
+
+  it("instances readLog encodes the file name", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { type: "sync", status_code: 200, metadata: "raw log line" }));
+    vi.stubGlobal("fetch", fetchMock);
+    const content = await instancesApi.readLog("web1", "qemu.log");
+    expect(content).toBe("raw log line");
+    const [url] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("/1.0/instances/web1/logs/qemu.log?project=default");
+  });
+
   it("instances list hits recursion=1", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, [{ name: "web1", status: "Started" }]));
     vi.stubGlobal("fetch", fetchMock);
