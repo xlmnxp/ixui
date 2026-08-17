@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Tree } from "../components/tree";
-import { ChevronsDownUp, ChevronsUpDown } from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown, Plus } from "lucide-react";
 import { ProjectDropdown } from "../components/project-dropdown";
 import { buildTree } from "./tree-model";
 import { useTreeData } from "./use-tree-data";
@@ -21,8 +21,9 @@ export function Sidebar() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardTarget, setWizardTarget] = useState<string | undefined>(undefined);
   const [treeEpoch, setTreeEpoch] = useState(0);
-  // Subtrees start collapsed; rows open them on click, the Expand-all button opens everything.
-  const [treeExpanded, setTreeExpanded] = useState(false);
+  // Subtrees start collapsed with only root nodes open; Expand all opens
+  // everything, Collapse all closes everything including root nodes.
+  const [treeExpanded, setTreeExpanded] = useState<boolean | "roots">("roots");
   const [ctxMenu, setCtxMenu] = useState<{ instance: Instance; x: number; y: number } | null>(null);
 
   const nodes = buildTree({
@@ -71,6 +72,14 @@ export function Sidebar() {
       </div>
       <ProjectDropdown />
       <div className="flex items-center justify-end gap-1 px-2">
+        <button
+          type="button"
+          data-testid="tree-new-instance"
+          onClick={() => { setWizardTarget(undefined); setWizardOpen(true); }}
+          className="mr-auto flex items-center gap-1 rounded border border-border bg-surface-600 px-1.5 py-0.5 text-[11px] text-text-primary hover:bg-surface-700"
+        >
+          <Plus size={12} /> New instance
+        </button>
         <button
           type="button"
           data-testid="tree-expand-all"

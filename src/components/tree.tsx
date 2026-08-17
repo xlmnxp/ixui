@@ -15,10 +15,11 @@ export interface TreeProps {
   nodes: TreeNode[];
   selectedId?: string | null;
   onSelect?: (id: string) => void;
-  initialExpanded?: boolean;
+  /** true: all subtrees open; false: everything closed; "roots": only depth-0 nodes open (default). */
+  initialExpanded?: boolean | "roots";
 }
 
-export function Tree({ nodes, selectedId, onSelect, initialExpanded = false }: TreeProps) {
+export function Tree({ nodes, selectedId, onSelect, initialExpanded = "roots" }: TreeProps) {
   return (
     <ul role="tree" data-testid="tree" className="space-y-0.5">
       {nodes.map((node) => (
@@ -39,9 +40,9 @@ function TreeNodeItem({
   selectedId?: string | null;
   onSelect?: (id: string) => void;
   depth: number;
-  initialExpanded: boolean;
+  initialExpanded: boolean | "roots";
 }) {
-  const [expanded, setExpanded] = useState(initialExpanded || depth === 0);
+  const [expanded, setExpanded] = useState(initialExpanded === true || (initialExpanded === "roots" && depth === 0));
   const hasChildren = (node.children?.length ?? 0) > 0;
 
   // Clicking a row selects it and opens closed subtrees — never collapses.

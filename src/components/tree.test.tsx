@@ -40,6 +40,12 @@ describe("Tree", () => {
     expect(onSelect).toHaveBeenCalledWith("instances");
   });
 
+  it("collapses everything, including roots, with initialExpanded=false", () => {
+    render(<Tree nodes={nodes} initialExpanded={false} />);
+    expect(screen.queryByRole("group")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("tree-instances")).not.toBeInTheDocument();
+  });
+
   it("fires a node's onContextMenu on right-click", () => {
     const onContextMenu = vi.fn();
     render(<Tree nodes={[{ id: "n", label: "node", onContextMenu }]} />);
