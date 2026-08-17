@@ -100,6 +100,7 @@ export function AclsPage() {
   const [draftIngress, setDraftIngress] = useState<AclRule[]>([]);
   const [draftEgress, setDraftEgress] = useState<AclRule[]>([]);
   const [rulesBusy, setRulesBusy] = useState(false);
+  const [editingRules, setEditingRules] = useState(false);
   const [removeRuleTarget, setRemoveRuleTarget] = useState<{ direction: Direction; index: number } | null>(null);
 
   const refresh = useCallback(() => {
@@ -146,6 +147,16 @@ export function AclsPage() {
     setEditing(acl);
     setDraftIngress([...(acl.ingress as AclRule[])]);
     setDraftEgress([...(acl.egress as AclRule[])]);
+    setEditingRules(false);
+  };
+
+  const startRulesEdit = () => setEditingRules(true);
+
+  const cancelRulesEdit = () => {
+    if (!editing) return;
+    setDraftIngress([...(editing.ingress as AclRule[])]);
+    setDraftEgress([...(editing.egress as AclRule[])]);
+    setEditingRules(false);
   };
 
   const cleanRules = (rules: AclRule[]): AclRule[] =>
@@ -205,11 +216,19 @@ export function AclsPage() {
     },
   ];
 
-  const ruleSection = (prefix: Direction, title: string, rules: AclRule[], setRules: (rules: AclRule[]) => void) => (
+  const viewCell = (text: string, muted = false) => (
+    <td className="px-2 py-1">
+      <span className={`block truncate text-xs ${muted ? "text-text-tertiary" : "text-text-primary"}`}>{text}</span>
+    </td>
+  );
+
+  const ruleSection = (prefix: Direction, title: string, rules: AclRule[], setRules: (rules: AclRule[]) => void, editable: boolean) => (
     <div data-testid={`acl-${prefix}-section`}>
       <div className="mb-1 flex items-center justify-between">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{title} ({rules.length})</h4>
-        <Button size="sm" variant="secondary" data-testid={`acl-add-${prefix}`} onClick={() => setRules([...rules, {}])}><Plus size={13} /> Add {prefix} rules</Button>
+        {editable && (
+          <Button size="sm" variant="secondary" data-testid={`acl-add-${prefix}`} onClick={() => setRules([...rules, {}])}><Plus size={13} /> Add {prefix} rules</Button>
+        )}
       </div>
       <div className="overflow-x-auto rounded border border-border">
         <table className="w-full table-fixed border-separate border-spacing-0 text-[13px]">
@@ -231,23 +250,33 @@ export function AclsPage() {
           <tbody className="divide-y divide-border bg-surface-800">
             {rules.length === 0 ? (
               <tr>
-                <td colSpan={11} className="px-2 py-2 text-xs text-text-tertiary">No {prefix} rules. Click "Add {prefix} rules" to create the first one.</td>
+                <td colSpan={11} className="px-2 py-2 text-xs text-text-tertiary">
+                  No {prefix} rules.{editable ? ` Click "Add ${prefix} rules" to create the first one.` : ""}
+                </td>
               </tr>
             ) : (
               rules.map((r, i) => {
                 const isDisabled = r.state === "disabled";
                 const isLogged = r.state === "logged";
+                const action = ACTION_OPTIONS.find((a) => a.value === (r.action ?? "allow")) ?? ACTION_OPTIONS[0]!;
+                const protocolLabel = PROTOCOLS.find((p) => p.value === (r.protocol ?? ""))?.label ?? r.protocol ?? "All protocols";
                 return (
                 <tr key={i} data-testid={`acl-${prefix}-rule-${i}`} className={isDisabled ? "opacity-50" : ""}>
-                  <td className="px-2 py-1">
-                    <Dropdown
-                      value={r.action ?? "allow"}
-                      onChange={(v) => setRules(updateRule(rules, i, { action: v }))}
-                      options={ACTION_OPTIONS}
-                      dataTestId={`acl-${prefix}-action-${i}`}
-                      size="sm"
-                    />
-                  </td>
+                  {editable ? (
+                    <td className="px-2 py-1">
+                      <Dropdown
+                        value={r.action ?? "allow"}
+                        onChange={(v) => setRules(updateRule(rules, i, { action: v }))}
+                        options={ACTION_OPTIONS}
+                        dataTestId={`acl-${prefix}-action-${i}`}
+                        size="sm"
+                      />
+                    </td>
+                  ) : (
+                    <td className="px-2 py-1">
+                      <span className="flex items-center gap-1.5 text-xs text-text-primary">{action.icon}{action.label}</span>
+                    </td>
+                  )}
                   <td className="px-2 py-1">
                     <div className="flex items-center justify-center gap-1">
                       <button
@@ -273,35 +302,67 @@ export function AclsPage() {
                       </button>
                     </div>
                   </td>
-                  <td className="px-2 py-1">
-                    <CellSelect
-                      value={r.protocol ?? ""}
-                      onChange={(v) => setRules(updateRule(rules, i, { protocol: v }))}
-                      options={PROTOCOLS}
-                      dataTestId={`acl-${prefix}-protocol-${i}`}
-                    />
-                  </td>
-                  <td className="px-2 py-1">
-                    <CellInput value={r.source ?? ""} onChange={(v) => setRules(updateRule(rules, i, { source: v }))} placeholder="0.0.0.0/0" dataTestId={`acl-${prefix}-source-${i}`} />
-                  </td>
-                  <td className="px-2 py-1">
-                    <CellInput value={r.destination ?? ""} onChange={(v) => setRules(updateRule(rules, i, { destination: v }))} placeholder="0.0.0.0/0" dataTestId={`acl-${prefix}-destination-${i}`} />
-                  </td>
-                  <td className="px-2 py-1">
-                    <CellInput value={r.source_port ?? ""} onChange={(v) => setRules(updateRule(rules, i, { source_port: v }))} placeholder="All" dataTestId={`acl-${prefix}-srcport-${i}`} />
-                  </td>
-                  <td className="px-2 py-1">
-                    <CellInput value={r.destination_port ?? ""} onChange={(v) => setRules(updateRule(rules, i, { destination_port: v }))} placeholder="All" dataTestId={`acl-${prefix}-dstport-${i}`} />
-                  </td>
-                  <td className="px-2 py-1">
-                    <CellInput value={r.icmp_type ?? ""} onChange={(v) => setRules(updateRule(rules, i, { icmp_type: v }))} placeholder="type" dataTestId={`acl-${prefix}-icmptype-${i}`} />
-                  </td>
-                  <td className="px-2 py-1">
-                    <CellInput value={r.icmp_code ?? ""} onChange={(v) => setRules(updateRule(rules, i, { icmp_code: v }))} placeholder="code" dataTestId={`acl-${prefix}-icmpcode-${i}`} />
-                  </td>
-                  <td className="px-2 py-1">
-                    <CellInput value={r.description ?? ""} onChange={(v) => setRules(updateRule(rules, i, { description: v }))} placeholder="Optional" dataTestId={`acl-${prefix}-description-${i}`} />
-                  </td>
+                  {editable ? (
+                    <td className="px-2 py-1">
+                      <CellSelect
+                        value={r.protocol ?? ""}
+                        onChange={(v) => setRules(updateRule(rules, i, { protocol: v }))}
+                        options={PROTOCOLS}
+                        dataTestId={`acl-${prefix}-protocol-${i}`}
+                      />
+                    </td>
+                  ) : (
+                    viewCell(protocolLabel)
+                  )}
+                  {editable ? (
+                    <td className="px-2 py-1">
+                      <CellInput value={r.source ?? ""} onChange={(v) => setRules(updateRule(rules, i, { source: v }))} placeholder="0.0.0.0/0" dataTestId={`acl-${prefix}-source-${i}`} />
+                    </td>
+                  ) : (
+                    viewCell(r.source || "Any", !r.source)
+                  )}
+                  {editable ? (
+                    <td className="px-2 py-1">
+                      <CellInput value={r.destination ?? ""} onChange={(v) => setRules(updateRule(rules, i, { destination: v }))} placeholder="0.0.0.0/0" dataTestId={`acl-${prefix}-destination-${i}`} />
+                    </td>
+                  ) : (
+                    viewCell(r.destination || "Any", !r.destination)
+                  )}
+                  {editable ? (
+                    <td className="px-2 py-1">
+                      <CellInput value={r.source_port ?? ""} onChange={(v) => setRules(updateRule(rules, i, { source_port: v }))} placeholder="All" dataTestId={`acl-${prefix}-srcport-${i}`} />
+                    </td>
+                  ) : (
+                    viewCell(r.source_port || "All", !r.source_port)
+                  )}
+                  {editable ? (
+                    <td className="px-2 py-1">
+                      <CellInput value={r.destination_port ?? ""} onChange={(v) => setRules(updateRule(rules, i, { destination_port: v }))} placeholder="All" dataTestId={`acl-${prefix}-dstport-${i}`} />
+                    </td>
+                  ) : (
+                    viewCell(r.destination_port || "All", !r.destination_port)
+                  )}
+                  {editable ? (
+                    <td className="px-2 py-1">
+                      <CellInput value={r.icmp_type ?? ""} onChange={(v) => setRules(updateRule(rules, i, { icmp_type: v }))} placeholder="type" dataTestId={`acl-${prefix}-icmptype-${i}`} />
+                    </td>
+                  ) : (
+                    viewCell(r.icmp_type || "—", !r.icmp_type)
+                  )}
+                  {editable ? (
+                    <td className="px-2 py-1">
+                      <CellInput value={r.icmp_code ?? ""} onChange={(v) => setRules(updateRule(rules, i, { icmp_code: v }))} placeholder="code" dataTestId={`acl-${prefix}-icmpcode-${i}`} />
+                    </td>
+                  ) : (
+                    viewCell(r.icmp_code || "—", !r.icmp_code)
+                  )}
+                  {editable ? (
+                    <td className="px-2 py-1">
+                      <CellInput value={r.description ?? ""} onChange={(v) => setRules(updateRule(rules, i, { description: v }))} placeholder="Optional" dataTestId={`acl-${prefix}-description-${i}`} />
+                    </td>
+                  ) : (
+                    viewCell(r.description || "—", !r.description)
+                  )}
                   <td className="px-2 py-1 text-center">
                     <button type="button" data-testid={`acl-${prefix}-remove-${i}`} onClick={() => setRemoveRuleTarget({ direction: prefix, index: i })} className="text-text-tertiary hover:text-danger" aria-label={`Remove ${prefix} rule`}><Trash2 size={12} /></button>
                   </td>
@@ -376,15 +437,22 @@ export function AclsPage() {
         width={1100}
         bodyMaxHeight={560}
         footer={
-          <>
-            <Button variant="secondary" onClick={() => setEditing(null)}><X size={14} /> Cancel</Button>
-            <Button onClick={saveRules} loading={rulesBusy} data-testid="acl-rules-save"><Check size={14} /> Save</Button>
-          </>
+          editingRules ? (
+            <>
+              <Button variant="secondary" onClick={cancelRulesEdit}><X size={14} /> Cancel</Button>
+              <Button onClick={saveRules} loading={rulesBusy} data-testid="acl-rules-save"><Check size={14} /> Save</Button>
+            </>
+          ) : (
+            <>
+              <Button variant="secondary" onClick={startRulesEdit} data-testid="acl-rules-edit"><Pencil size={14} /> Edit rules</Button>
+              <Button variant="secondary" onClick={() => setEditing(null)}><X size={14} /> Close</Button>
+            </>
+          )
         }
       >
         <div className="space-y-4">
-          {ruleSection("ingress", "Ingress rules", draftIngress, setDraftIngress)}
-          {ruleSection("egress", "Egress rules", draftEgress, setDraftEgress)}
+          {ruleSection("ingress", "Ingress rules", draftIngress, setDraftIngress, editingRules)}
+          {ruleSection("egress", "Egress rules", draftEgress, setDraftEgress, editingRules)}
         </div>
       </Window>
     </div>
