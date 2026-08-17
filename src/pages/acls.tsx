@@ -115,8 +115,8 @@ function ActionDropdown({ value, onChange, dataTestId }: ActionDropdownProps) {
           className="fixed z-[60] overflow-hidden rounded border border-border bg-surface-700 py-0.5 shadow-xl"
           style={
             pos.up
-              ? { left: pos.left, width: pos.width, bottom: window.innerHeight - pos.top + 2 }
-              : { left: pos.left, width: pos.width, top: pos.top + 26 }
+              ? { left: pos.left, width: pos.width, bottom: window.innerHeight - pos.top + 4 }
+              : { left: pos.left, width: pos.width, top: pos.top + 32 }
           }
         >
           {ACTION_ITEMS.map((it) => (
