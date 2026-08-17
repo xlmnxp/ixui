@@ -9,6 +9,8 @@ import { currentProjectStore } from "../state/projects";
 import { uiTitleStore } from "../state/ui-title";
 import { useStore } from "../state/store";
 import { CreateInstanceWizard } from "../components/create-instance-wizard";
+import { InstanceContextMenu } from "./instance-context-menu";
+import type { Instance } from "../api/types";
 
 export function Sidebar() {
   const location = useLocation();
@@ -21,8 +23,16 @@ export function Sidebar() {
   const [treeEpoch, setTreeEpoch] = useState(0);
   // Subtrees start collapsed; rows open them on click, the Expand-all button opens everything.
   const [treeExpanded, setTreeExpanded] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState<{ instance: Instance; x: number; y: number } | null>(null);
 
-  const nodes = buildTree({ project, members, instancesByMember, unassigned, onCreate: (target) => { setWizardTarget(target); setWizardOpen(true); } });
+  const nodes = buildTree({
+    project,
+    members,
+    instancesByMember,
+    unassigned,
+    onCreate: (target) => { setWizardTarget(target); setWizardOpen(true); },
+    onInstanceMenu: (instance, e) => setCtxMenu({ instance, x: e.clientX, y: e.clientY }),
+  });
 
   let selectedId: string | null = null;
   const p = location.pathname;
@@ -82,6 +92,15 @@ export function Sidebar() {
         <Tree key={treeEpoch} nodes={nodes} selectedId={selectedId} onSelect={(id) => navigate(routeFor(id))} initialExpanded={treeExpanded} />
       </div>
       <CreateInstanceWizard open={wizardOpen} onClose={() => setWizardOpen(false)} targetMember={wizardTarget} />
+      {ctxMenu && (
+        <InstanceContextMenu
+          instance={ctxMenu.instance}
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          members={members}
+          onClose={() => setCtxMenu(null)}
+        />
+      )}
     </aside>
   );
 }

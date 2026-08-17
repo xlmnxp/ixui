@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ReactNode } from "react";
+import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 export interface TreeNode {
@@ -7,6 +7,7 @@ export interface TreeNode {
   label: ReactNode;
   badge?: ReactNode;
   action?: ReactNode;
+  onContextMenu?: (e: ReactMouseEvent) => void;
   children?: TreeNode[];
 }
 
@@ -53,6 +54,7 @@ function TreeNodeItem({
     <li role="treeitem" aria-expanded={hasChildren ? expanded : undefined} aria-selected={selectedId === node.id}>
       <div
         onClick={handleClick}
+        onContextMenu={node.onContextMenu}
         className={`group flex cursor-pointer items-center gap-1.5 px-2 py-0.5 ${selectedId === node.id ? "bg-accent-600/15 text-accent-300" : "text-text-secondary hover:bg-surface-700/60 hover:text-text-primary"}`}
         style={{ paddingLeft: `${depth * 14 + 8}px` }}
       >
