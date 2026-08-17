@@ -12,7 +12,11 @@ export function Shell() {
       <SplitPane
         initial={18}
         min={12}
-        left={<Sidebar />}
+        left={
+          <div className={`h-full ${taskCollapsed ? "pb-8" : ""}`}>
+            <Sidebar />
+          </div>
+        }
         right={
           <main className={`h-full overflow-auto bg-surface-950 ${taskCollapsed ? "pb-8" : ""}`}>
             <Outlet />
