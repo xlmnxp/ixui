@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
+import "@fontsource/ubuntu-mono/400.css";
+import "@fontsource/ubuntu-mono/700.css";
 import { Monitor, RotateCw, SquareTerminal, Terminal as TerminalIcon } from "lucide-react";
 import { SpiceMainConn, handle_resize } from "../../lib/spice/src/main.js";
 import { instancesApi } from "../api";
@@ -155,7 +157,17 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
         return;
       }
 
-      const terminal = new Terminal({ cursorBlink: true, fontSize: 13, theme: { background: "#191817" } });
+      // xterm measures glyph metrics at open(); the font must be loaded first
+      // or the grid is sized against the fallback font.
+      await document.fonts?.load('13px "Ubuntu Mono"').catch(() => {});
+      if (session !== sessionRef.current || !containerRef.current) return;
+
+      const terminal = new Terminal({
+        cursorBlink: true,
+        fontSize: 13,
+        fontFamily: '"Ubuntu Mono", monospace',
+        theme: { background: "#191817" },
+      });
       const fit = new FitAddon();
       terminal.loadAddon(fit);
       terminal.open(containerRef.current);

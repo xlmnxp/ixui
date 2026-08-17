@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Tree } from "./tree";
 import { EmptyState } from "./empty-state";
@@ -38,6 +38,19 @@ describe("Tree", () => {
     render(<Tree nodes={nodes} onSelect={onSelect} />);
     await user.click(screen.getByTestId("tree-instances"));
     expect(onSelect).toHaveBeenCalledWith("instances");
+  });
+
+  it("collapses everything, including roots, with initialExpanded=false", () => {
+    render(<Tree nodes={nodes} initialExpanded={false} />);
+    expect(screen.queryByRole("group")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("tree-instances")).not.toBeInTheDocument();
+  });
+
+  it("fires a node's onContextMenu on right-click", () => {
+    const onContextMenu = vi.fn();
+    render(<Tree nodes={[{ id: "n", label: "node", onContextMenu }]} />);
+    fireEvent.contextMenu(screen.getByTestId("tree-n"));
+    expect(onContextMenu).toHaveBeenCalledTimes(1);
   });
 
   it("renders a hover action and stops propagation", async () => {

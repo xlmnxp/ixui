@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, FilePlus2, FolderPlus, Maximize2, Plus, ShieldAlert } from "lucide-react";
+import { Bell, FilePlus2, FolderPlus, Maximize2, MoveRight, Play, Plus, ShieldAlert, Square, Trash2 } from "lucide-react";
 import { Button } from "../components/button";
 import { Badge } from "../components/badge";
 import { StatusDot } from "../components/status-dot";
@@ -18,6 +18,7 @@ import { Tabs } from "../components/tabs";
 import { Breadcrumbs } from "../components/breadcrumbs";
 import { Progress } from "../components/progress";
 import { Tree } from "../components/tree";
+import { ContextMenu } from "../components/context-menu";
 import { EmptyState } from "../components/empty-state";
 import { SplitPane } from "../components/split-pane";
 import { PageBar } from "../components/page-bar";
@@ -46,6 +47,7 @@ export function Gallery() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [tab, setTab] = useState("a");
   const [windowOpen, setWindowOpen] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
   const [vtab, setVtab] = useState("a");
   const [kvValues, setKvValues] = useState<Record<string, string>>({ "limits.memory": "512MiB", "server.name": "ix" });
   const [kvSelected, setKvSelected] = useState<string[]>([]);
@@ -133,6 +135,40 @@ export function Gallery() {
         <Button onClick={() => setDialogOpen(true)}><Maximize2 size={14} /> Open dialog</Button>
         <Button onClick={() => setConfirmOpen(true)}><ShieldAlert size={14} /> Open confirm</Button>
         <Tooltip label="Tooltip text"><Button>Hover me</Button></Tooltip>
+      </Section>
+
+      <Section title="ContextMenu">
+        <div
+          data-testid="gallery-context-target"
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setCtxMenu({ x: e.clientX, y: e.clientY });
+          }}
+          className="flex h-20 w-full items-center justify-center rounded border border-dashed border-border text-sm text-text-tertiary"
+        >
+          Right-click here
+        </div>
+        {ctxMenu && (
+          <ContextMenu
+            x={ctxMenu.x}
+            y={ctxMenu.y}
+            onClose={() => setCtxMenu(null)}
+            items={[
+              { id: "demo-start", label: "Start", icon: <Play size={14} />, onSelect: () => { toast("info", "Start selected"); setCtxMenu(null); } },
+              { id: "demo-stop", label: "Stop", icon: <Square size={14} />, disabled: true },
+              {
+                id: "demo-move",
+                label: "Move to node",
+                icon: <MoveRight size={14} />,
+                children: [
+                  { id: "demo-move-incus-1", label: "incus-1", onSelect: () => { toast("info", "Move to incus-1"); setCtxMenu(null); } },
+                  { id: "demo-move-incus-2", label: "incus-2", onSelect: () => { toast("info", "Move to incus-2"); setCtxMenu(null); } },
+                ],
+              },
+              { id: "demo-delete", label: "Delete", icon: <Trash2 size={14} />, danger: true, onSelect: () => { toast("danger", "Delete selected"); setCtxMenu(null); } },
+            ]}
+          />
+        )}
       </Section>
 
       <Section title="Window">

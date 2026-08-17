@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { Boxes, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, FolderCog, History, Settings, ShieldCheck, TriangleAlert } from "lucide-react";
-import type { ReactNode } from "react";
+import { BookOpen, Boxes, Bug, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, FolderCog, History, Settings, ShieldCheck, TriangleAlert } from "lucide-react";
+import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import type { TreeNode } from "../components/tree";
 import { ALL_PROJECTS } from "../api/client";
 import type { ClusterMember, Instance } from "../api/types";
@@ -12,10 +12,17 @@ export interface TreeParams {
   instancesByMember: Record<string, Instance[]>;
   unassigned: Instance[];
   onCreate?: (targetMember?: string) => void;
+  onInstanceMenu?: (instance: Instance, e: ReactMouseEvent) => void;
 }
 
-const instanceNode = (i: Instance): TreeNode => ({
+const instanceNode = (i: Instance, onMenu?: TreeParams["onInstanceMenu"]): TreeNode => ({
   id: `instance-${i.name}`,
+  onContextMenu: onMenu
+    ? (e) => {
+        e.preventDefault();
+        onMenu(i, e);
+      }
+    : undefined,
   label: (
     <span className="flex items-center gap-2">
       <InstanceIcon status={i.status} type={i.type} />
@@ -24,7 +31,7 @@ const instanceNode = (i: Instance): TreeNode => ({
   ),
 });
 
-export function buildTree({ project, members, instancesByMember, unassigned, onCreate }: TreeParams): TreeNode[] {
+export function buildTree({ project, members, instancesByMember, unassigned, onCreate, onInstanceMenu }: TreeParams): TreeNode[] {
   const isAll = project === ALL_PROJECTS;
 
   const createAction = (testId: string, target?: string): ReactNode => (
@@ -52,15 +59,24 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
       ),
       children: (instancesByMember[m.server_name] ?? [])
         .sort((a, b) => a.name.localeCompare(b.name))
-        .map(instanceNode),
+        .map((i) => instanceNode(i, onInstanceMenu)),
     }));
 
   if (unassigned.length > 0) {
-    memberNodes.push({
-      id: "unassigned",
-      label: <span className="text-text-tertiary">unassigned</span>,
-      children: [...unassigned].sort((a, b) => a.name.localeCompare(b.name)).map(instanceNode),
-    });
+    const unassignedNodes = [...unassigned]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((i) => instanceNode(i, onInstanceMenu));
+    // On a standalone server every instance is "unassigned"; skip the bucket
+    // and list instances directly under the project.
+    if (members.length === 0) {
+      memberNodes.push(...unassignedNodes);
+    } else {
+      memberNodes.push({
+        id: "unassigned",
+        label: <span className="text-text-tertiary">unassigned</span>,
+        children: unassignedNodes,
+      });
+    }
   }
 
   return [
@@ -166,6 +182,26 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
           ),
         },
       ],
+    },
+    {
+      id: "documentation",
+      label: (
+        <span className="flex items-center gap-2">
+          <BookOpen size={14} className="text-text-secondary" />
+          <a href="/documentation/" target="_blank" rel="noreferrer">Documentation</a>
+          <ExternalLink size={12} className="text-text-tertiary" />
+        </span>
+      ),
+    },
+    {
+      id: "report-bug",
+      label: (
+        <span className="flex items-center gap-2">
+          <Bug size={14} className="text-text-secondary" />
+          <a href="https://github.com/xlmnxp/ixui/issues" target="_blank" rel="noreferrer">Report a bug</a>
+          <ExternalLink size={12} className="text-text-tertiary" />
+        </span>
+      ),
     },
   ];
 }

@@ -31,6 +31,15 @@
   --color-danger: #f85149;
 }
 
+/* Tailwind v4 resets buttons to cursor: default; interactive buttons should
+   show a pointer, disabled ones keep the default arrow. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 @keyframes indeterminate {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(400%); }

@@ -38,12 +38,20 @@ export function initRealtime(stream: EventStream): () => void {
         }
       }
     } else if (event.type === "lifecycle") {
-      const meta = event.metadata as { action: string; source: string; requestor?: { username?: string; address?: string } | null };
+      const meta = event.metadata as {
+        action: string;
+        source: string;
+        context?: { old_name?: string } | null;
+        requestor?: { username?: string; address?: string } | null;
+      };
       const name = instanceNameFromSource(meta.source);
       const project = projectFromSource(meta.source);
       if (name) {
         if (meta.action === "instance-deleted") unregisterInstanceProject(name, project ?? undefined);
         else if (project) registerInstanceProject(name, project);
+        if (meta.action === "instance-renamed" && meta.context?.old_name) {
+          unregisterInstanceProject(meta.context.old_name, project ?? undefined);
+        }
       }
       recordActivity(meta, event.timestamp);
       instancesStore.setState((prev) => applyInstanceLifecycle(prev, meta));

@@ -71,6 +71,36 @@ describe("instances store", () => {
     expect(Object.keys(del)).toEqual(["prod/web1"]);
   });
 
+  it("rekeys the entry on instance-renamed", () => {
+    const state = { "default/web1": { name: "web1", project: "default", status: "Stopped" } } as never;
+    const next = applyInstanceLifecycle(state, {
+      action: "instance-renamed",
+      source: "/1.0/instances/web2",
+      context: { old_name: "web1" },
+    });
+    expect(Object.keys(next)).toEqual(["default/web2"]);
+    expect(next["default/web2"]?.name).toBe("web2");
+  });
+
+  it("scopes instance-renamed to the event's project", () => {
+    const state = {
+      "dev/web1": { name: "web1", project: "dev", status: "Stopped" },
+      "prod/web1": { name: "web1", project: "prod", status: "Stopped" },
+    } as never;
+    const next = applyInstanceLifecycle(state, {
+      action: "instance-renamed",
+      source: "/1.0/instances/web2?project=dev",
+      context: { old_name: "web1" },
+    });
+    expect(Object.keys(next).sort()).toEqual(["dev/web2", "prod/web1"]);
+  });
+
+  it("ignores instance-renamed without an old name", () => {
+    const state = { "default/web1": { name: "web1", project: "default", status: "Stopped" } } as never;
+    const next = applyInstanceLifecycle(state, { action: "instance-renamed", source: "/1.0/instances/web2" });
+    expect(next).toBe(state);
+  });
+
   it("ignores sources it cannot parse", () => {
     const state = { "default/web1": { name: "web1", project: "default", status: "Stopped" } } as never;
     expect(applyInstanceLifecycle(state, { action: "instance-started", source: "" })).toBe(state);

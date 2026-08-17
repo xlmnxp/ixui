@@ -59,6 +59,22 @@ describe("Shell", () => {
     expect(screen.getByTestId("tree")).toBeInTheDocument();
   });
 
+  it("opens the create wizard from the sidebar New button", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByTestId("sidebar");
+    await user.click(screen.getByTestId("tree-new-instance"));
+    expect(await screen.findByTestId("wizard-next")).toBeInTheDocument();
+  });
+
   it("shows the configured UI title in the sidebar header", async () => {
     uiTitleStore.setState("My Cloud");
     render(

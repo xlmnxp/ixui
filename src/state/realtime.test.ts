@@ -98,6 +98,22 @@ describe("initRealtime", () => {
     expect(Object.keys(instancesStore.getState())).toEqual(["prod/web1"]);
   });
 
+  it("rekeys the store and project registry on instance-renamed", () => {
+    const { stream, emit } = fakeStream();
+    registerInstanceProject("web1", "dev");
+    instancesStore.setState({ "dev/web1": instance("web1", "dev", "Stopped") });
+    initRealtime(stream);
+    emit({
+      type: "lifecycle",
+      timestamp: "t",
+      metadata: { action: "instance-renamed", source: "/1.0/instances/web2?project=dev", context: { old_name: "web1" } },
+    });
+    expect(Object.keys(instancesStore.getState())).toEqual(["dev/web2"]);
+    expect(instancesStore.getState()["dev/web2"]?.name).toBe("web2");
+    expect(projectFor("web2")).toBe("dev");
+    expect(projectFor("web1")).not.toBe("dev");
+  });
+
   it("refreshes every project entry with the operation's instance name", async () => {
     const { stream, emit } = fakeStream();
     instancesStore.setState({
