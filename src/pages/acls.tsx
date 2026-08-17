@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Ban, Check, ChevronDown, FileText, Pencil, Plus, ShieldAlert, Trash2, X } from "lucide-react";
+import { Ban, Check, ChevronDown, FileText, Pencil, Play, Plus, ShieldAlert, Trash2, X } from "lucide-react";
 import { networkExtrasApi } from "../api";
 import { ApiError } from "../api/client";
 import type { Acl } from "../api/network-extras";
@@ -315,7 +315,7 @@ export function AclsPage() {
                         aria-label={isDisabled ? "Enable rule" : "Disable rule"}
                         className={isDisabled ? "text-text-tertiary hover:text-text-primary" : "text-success hover:opacity-80"}
                       >
-                        {isDisabled ? <Ban size={14} /> : <Check size={14} />}
+                        {isDisabled ? <Ban size={14} /> : <Play size={14} className="fill-current" />}
                       </button>
                       <button
                         type="button"
