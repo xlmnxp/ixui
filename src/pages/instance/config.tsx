@@ -57,7 +57,7 @@ export function ConfigTab({ instanceName, project, registerActions }: ConfigTabP
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
     try {
-      await instancesApi.update(instanceName, { config, description }, project);
+      await instancesApi.mergeUpdate(instanceName, { config, description }, project);
       toast("success", "Configuration saved");
       setInitialConfig(config);
       setInitialDescription(description);

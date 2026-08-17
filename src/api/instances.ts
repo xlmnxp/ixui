@@ -45,10 +45,41 @@ export class InstancesApi {
       description?: string;
       ephemeral?: boolean;
       devices?: Record<string, Record<string, string>>;
+      profiles?: string[];
     },
     project?: string
   ): Promise<AsyncResponse | SyncResponse | null> {
     return this.client.put(`/instances/${name}${projectQueryFor(name, project)}`, body);
+  }
+
+  /**
+   * Replace-safe update: merge partial changes into the freshly fetched instance
+   * document before PUT. The API replaces the whole instance, so sending only
+   * {config} or {devices} would silently drop the root disk device and fail.
+   */
+  async mergeUpdate(
+    name: string,
+    changes: {
+      config?: Record<string, string>;
+      description?: string;
+      ephemeral?: boolean;
+      devices?: Record<string, Record<string, string>>;
+      profiles?: string[];
+    },
+    project?: string
+  ): Promise<AsyncResponse | SyncResponse | null> {
+    const current = await this.get(name, project);
+    return this.update(
+      name,
+      {
+        config: changes.config ?? current.config,
+        description: changes.description ?? current.description,
+        ephemeral: changes.ephemeral ?? current.ephemeral,
+        devices: changes.devices ?? current.devices,
+        profiles: changes.profiles ?? current.profiles,
+      },
+      project
+    );
   }
 
   delete(name: string, project?: string): Promise<void> {

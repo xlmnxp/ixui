@@ -74,11 +74,15 @@ export class InfraApi {
     return this.client.delete(`/networks/${name}${projectQuery()}`);
   }
 
+  setNetworkState(name: string, action: "up" | "down"): Promise<OpResponse> {
+    return this.client.put(`/networks/${name}/state${projectQuery()}`, { action });
+  }
+
   listPools(): Promise<StoragePool[]> {
     return this.client.list<StoragePool>("/storage-pools", projectListParam());
   }
 
-  createPool(body: { name: string; driver: string; description?: string }): Promise<OpResponse> {
+  createPool(body: { name: string; driver: string; description?: string; config?: Record<string, string> }): Promise<OpResponse> {
     return this.client.post(`/storage-pools${projectQuery()}`, body);
   }
 

@@ -6,19 +6,29 @@ let devices: Record<string, Record<string, string>> = {
   eth0: { type: "nic", nictype: "bridged", parent: "br0" },
 };
 
-vi.mock("../../api", () => ({
-  instancesApi: {
-    get: vi.fn().mockImplementation(async () => ({
-      name: "web1", status: "Stopped", type: "container", description: "",
-      created_at: "2026-01-01T00:00:00Z", last_used_at: "2026-01-01T00:00:00Z",
-      config: {}, devices, profiles: ["default"], project: "default", ephemeral: false,
-    })),
-    update: vi.fn().mockImplementation(async (_name: string, body: { devices?: Record<string, Record<string, string>> }) => {
-      if (body.devices) devices = body.devices;
-      return null;
-    }),
-  },
-}));
+vi.mock("../../api", () => {
+  const get = vi.fn().mockImplementation(async () => ({
+    name: "web1", status: "Stopped", type: "container", description: "",
+    created_at: "2026-01-01T00:00:00Z", last_used_at: "2026-01-01T00:00:00Z",
+    config: {}, devices, profiles: ["default"], project: "default", ephemeral: false,
+  }));
+  const update = vi.fn().mockImplementation(async (_name: string, body: { devices?: Record<string, Record<string, string>> }) => {
+    if (body.devices) devices = body.devices;
+    return null;
+  });
+  const mergeUpdate = vi.fn().mockImplementation(async (name: string, changes: { devices?: Record<string, Record<string, string>>; config?: Record<string, string>; description?: string; profiles?: string[]; ephemeral?: boolean }, project?: string) => {
+    const current = await get(name, project);
+    await update(name, {
+      config: changes.config ?? current.config,
+      description: changes.description ?? current.description,
+      ephemeral: changes.ephemeral ?? current.ephemeral,
+      devices: changes.devices ?? current.devices,
+      profiles: changes.profiles ?? current.profiles,
+    }, project);
+    return null;
+  });
+  return { instancesApi: { get, update, mergeUpdate } };
+});
 
 describe("DevicesTab", () => {
   let actions: { add: () => void } | null = null;
@@ -104,12 +114,12 @@ describe("DevicesTab", () => {
     await user.keyboard("{Enter}");
     await user.click(screen.getByTestId("device-save"));
     await waitFor(() =>
-      expect(instancesApi.update).toHaveBeenCalledWith("web1", {
+      expect(instancesApi.update).toHaveBeenCalledWith("web1", expect.objectContaining({
         devices: {
           eth0: { type: "nic", nictype: "bridged", parent: "br0" },
           disk1: { type: "disk", pool: "default", path: "/data" },
         },
-      }, undefined)
+      }), undefined)
     );
     await waitFor(() => expect(screen.queryByTestId("dialog")).not.toBeInTheDocument());
     expect(await screen.findByTestId("device-row-disk1")).toBeInTheDocument();
@@ -130,9 +140,9 @@ describe("DevicesTab", () => {
     await user.keyboard("{Enter}");
     await user.click(screen.getByTestId("device-save"));
     await waitFor(() =>
-      expect(instancesApi.update).toHaveBeenCalledWith("web1", {
+      expect(instancesApi.update).toHaveBeenCalledWith("web1", expect.objectContaining({
         devices: { eth0: { type: "nic", nictype: "bridged", parent: "br1" } },
-      }, undefined)
+      }), undefined)
     );
   });
 
@@ -146,9 +156,9 @@ describe("DevicesTab", () => {
     await user.type(screen.getByTestId("kv-value-edit-parent"), "br1");
     await user.keyboard("{Enter}");
     await waitFor(() =>
-      expect(instancesApi.update).toHaveBeenCalledWith("web1", {
+      expect(instancesApi.update).toHaveBeenCalledWith("web1", expect.objectContaining({
         devices: { eth0: { type: "nic", nictype: "bridged", parent: "br1" } },
-      }, undefined)
+      }), undefined)
     );
   });
 
@@ -161,7 +171,7 @@ describe("DevicesTab", () => {
     await user.click(screen.getByTestId("device-remove-eth0"));
     expect(instancesApi.update).not.toHaveBeenCalled();
     await user.click(screen.getByTestId("confirm-confirm"));
-    await waitFor(() => expect(instancesApi.update).toHaveBeenCalledWith("web1", { devices: {} }, undefined));
+    await waitFor(() => expect(instancesApi.update).toHaveBeenCalledWith("web1", expect.objectContaining({ devices: {} }), undefined));
     await waitFor(() => expect(screen.queryByTestId("device-row-eth0")).not.toBeInTheDocument());
   });
 
@@ -203,12 +213,12 @@ describe("DevicesTab", () => {
     await user.keyboard("{Enter}");
     await user.click(screen.getByTestId("device-save"));
     await waitFor(() =>
-      expect(instancesApi.update).toHaveBeenCalledWith("web1", {
+      expect(instancesApi.update).toHaveBeenCalledWith("web1", expect.objectContaining({
         devices: {
           eth0: { type: "nic", nictype: "bridged", parent: "br0" },
           disk1: { type: "disk", pool: "default", path: "/data" },
         },
-      }, undefined)
+      }), undefined)
     );
   });
 });

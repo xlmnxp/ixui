@@ -22,6 +22,7 @@ vi.mock("../api", () => ({
     }),
     updateNetworkConfig: vi.fn().mockResolvedValue(null),
     deleteNetwork: vi.fn().mockResolvedValue(undefined),
+    setNetworkState: vi.fn().mockResolvedValue(null),
   },
   networkExtrasApi: {
     listLeases: vi.fn().mockResolvedValue([
@@ -44,6 +45,17 @@ describe("NetworksPage", () => {
     render(<NetworksPage />);
     expect(await screen.findByText("br0")).toBeInTheDocument();
     expect(screen.getByText("bridge")).toBeInTheDocument();
+  });
+
+  it("brings a network up and down", async () => {
+    const user = userEvent.setup();
+    const { infraApi } = await import("../api");
+    render(<NetworksPage />);
+    await screen.findByText("br0");
+    await user.click(screen.getByTestId("network-up-br0"));
+    await waitFor(() => expect(infraApi.setNetworkState).toHaveBeenCalledWith("br0", "up"));
+    await user.click(screen.getByTestId("network-down-br0"));
+    await waitFor(() => expect(infraApi.setNetworkState).toHaveBeenCalledWith("br0", "down"));
   });
 
   it("creates a bridge network", async () => {

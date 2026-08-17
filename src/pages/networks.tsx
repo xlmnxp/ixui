@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeftRight, Check, Laptop, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowLeftRight, ArrowUp, Check, Laptop, Pencil, Plus, Trash2, X } from "lucide-react";
 import { infraApi, networkExtrasApi } from "../api";
 import type { Network } from "../api/types";
 import type { Forward, Lease } from "../api/network-extras";
@@ -120,6 +120,16 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
     }
   };
 
+  const setNetworkUpDown = async (network: Network, action: "up" | "down") => {
+    try {
+      await infraApi.setNetworkState(network.name, action);
+      toast("success", `Network ${network.name} ${action === "up" ? "started" : "stopped"}`);
+      refresh();
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Action failed");
+    }
+  };
+
   const openLeases = async (network: Network) => {
     setLeasesNetwork(network);
     setLeases([]);
@@ -184,6 +194,8 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
         <div className="flex justify-end gap-1">
           {n.managed && (
             <>
+              <Button size="sm" variant="ghost" data-testid={`network-up-${n.name}`} onClick={() => void setNetworkUpDown(n, "up")}><ArrowUp size={14} /> Up</Button>
+              <Button size="sm" variant="ghost" data-testid={`network-down-${n.name}`} onClick={() => void setNetworkUpDown(n, "down")}><ArrowDown size={14} /> Down</Button>
               <Button size="sm" variant="ghost" data-testid={`network-leases-${n.name}`} onClick={() => openLeases(n)}><Laptop size={14} /> Leases</Button>
               <Button size="sm" variant="ghost" data-testid={`network-forwards-${n.name}`} onClick={() => openForwards(n)}><ArrowLeftRight size={14} /> Forwards</Button>
             </>

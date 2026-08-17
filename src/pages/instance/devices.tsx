@@ -95,7 +95,7 @@ export function DevicesTab({ instanceName, project, registerActions }: DevicesTa
     next[name] = { type: draftType, ...cleanProps };
     setBusy(true);
     try {
-      await instancesApi.update(instanceName, { devices: next }, project);
+      await instancesApi.mergeUpdate(instanceName, { devices: next }, project);
       toast("success", editingName ? `Device ${name} updated` : `Device ${name} added`);
       setDialogOpen(false);
       refresh();
@@ -112,7 +112,7 @@ export function DevicesTab({ instanceName, project, registerActions }: DevicesTa
     const next = { ...instance.devices, [name]: { ...instance.devices[name], ...clean } };
     setInstance({ ...instance, devices: next });
     try {
-      await instancesApi.update(instanceName, { devices: next }, project);
+      await instancesApi.mergeUpdate(instanceName, { devices: next }, project);
       toast("success", `Device ${name} updated`);
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Save failed");
@@ -128,7 +128,7 @@ export function DevicesTab({ instanceName, project, registerActions }: DevicesTa
     delete next[name];
     setInstance({ ...instance, devices: next });
     try {
-      await instancesApi.update(instanceName, { devices: next }, project);
+      await instancesApi.mergeUpdate(instanceName, { devices: next }, project);
       toast("success", `Device ${name} removed`);
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Remove failed");

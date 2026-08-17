@@ -71,7 +71,7 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
         delete config["snapshots.schedule"];
         delete config["snapshots.expiry"];
       }
-      await instancesApi.update(instanceName, { config }, project);
+      await instancesApi.mergeUpdate(instanceName, { config }, project);
       toast("success", enabled ? "Snapshot schedule saved" : "Automatic snapshots disabled");
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Save failed");

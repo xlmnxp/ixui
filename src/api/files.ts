@@ -1,4 +1,5 @@
 import { projectFor, type ApiClient } from "./client";
+import { joinPath } from "../lib/path";
 
 function filesUrl(instance: string, path: string, project?: string): string {
   const resolved = project ?? projectFor(instance);
@@ -49,21 +50,19 @@ export class FilesApi {
     return this.client.putRaw(filesUrl(instance, path, project), content, { "Content-Type": "application/octet-stream" });
   }
 
-  /** Create a new file under parent (POST with X-Incus-Type/X-Incus-Name). */
+  /** Create a new file under parent. The POST path must be the full file path —
+      the daemon ignores X-Incus-Name and opens path itself. */
   create(instance: string, parent: string, name: string, content: BodyInit, project?: string): Promise<void> {
-    return this.client.postRaw(filesUrl(instance, parent, project), content, {
+    return this.client.postRaw(filesUrl(instance, joinPath(parent, name), project), content, {
       "Content-Type": "application/octet-stream",
-      "X-Incus-Type": "file",
-      "X-Incus-Name": name,
     });
   }
 
-  /** Create a new directory under parent. */
+  /** Create a new directory under parent (full path of the new directory). */
   mkdir(instance: string, parent: string, name: string, project?: string): Promise<void> {
-    return this.client.postRaw(filesUrl(instance, parent, project), "", {
+    return this.client.postRaw(filesUrl(instance, joinPath(parent, name), project), "", {
       "Content-Type": "application/octet-stream",
       "X-Incus-Type": "directory",
-      "X-Incus-Name": name,
     });
   }
 

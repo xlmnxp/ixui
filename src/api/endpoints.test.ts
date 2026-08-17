@@ -201,32 +201,27 @@ describe("API endpoints", () => {
     expect(init?.body).toBe("hello world");
   });
 
-  it("files create posts with file type and name headers", async () => {
+  it("files create posts to the full file path", async () => {
     const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
     vi.stubGlobal("fetch", fetchMock);
     await filesApi.create("web1", "/etc/nginx/conf.d", "site.conf", "server {}");
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe("/1.0/instances/web1/files?project=default&path=%2Fetc%2Fnginx%2Fconf.d");
+    expect(url).toBe("/1.0/instances/web1/files?project=default&path=%2Fetc%2Fnginx%2Fconf.d%2Fsite.conf");
     expect(init?.method).toBe("POST");
-    expect(init?.headers).toEqual({
-      "Content-Type": "application/octet-stream",
-      "X-Incus-Type": "file",
-      "X-Incus-Name": "site.conf",
-    });
+    expect(init?.headers).toEqual({ "Content-Type": "application/octet-stream" });
     expect(init?.body).toBe("server {}");
   });
 
-  it("files mkdir posts with directory type", async () => {
+  it("files mkdir posts to the full directory path", async () => {
     const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, null)));
     vi.stubGlobal("fetch", fetchMock);
     await filesApi.mkdir("web1", "/srv", "uploads");
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe("/1.0/instances/web1/files?project=default&path=%2Fsrv");
+    expect(url).toBe("/1.0/instances/web1/files?project=default&path=%2Fsrv%2Fuploads");
     expect(init?.method).toBe("POST");
     expect(init?.headers).toEqual({
       "Content-Type": "application/octet-stream",
       "X-Incus-Type": "directory",
-      "X-Incus-Name": "uploads",
     });
   });
 

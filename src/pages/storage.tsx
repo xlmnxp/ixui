@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Camera, Database, Disc, HardDrive, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Archive, Camera, Database, Disc, HardDrive, Pencil, Plus, Trash2, X } from "lucide-react";
 import { infraApi, instancesApi, volumesApi } from "../api";
 import type { Instance, StoragePool, StorageVolume, StorageVolumeDetail } from "../api/types";
 import { Table } from "../components/table";
@@ -46,6 +46,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
   const [deletePoolTarget, setDeletePoolTarget] = useState<StoragePool | null>(null);
   const [name, setName] = useState("");
   const [driver, setDriver] = useState("dir");
+  const [poolSource, setPoolSource] = useState("");
   const [busy, setBusy] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [deleteManyOpen, setDeleteManyOpen] = useState(false);
@@ -82,6 +83,12 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
   const [attachTarget, setAttachTarget] = useState<VolumeRef | null>(null);
   const [instances, setInstances] = useState<Instance[]>([]);
   const [attachInstance, setAttachInstance] = useState("");
+
+  const [buckets, setBuckets] = useState<Record<string, StorageVolumeDetail[]>>({});
+  const [bucketPool, setBucketPool] = useState<string | null>(null);
+  const [bucketName, setBucketName] = useState("");
+  const [bucketBusy, setBucketBusy] = useState(false);
+  const [deleteBucketTarget, setDeleteBucketTarget] = useState<{ pool: string; name: string } | null>(null);
 
   const [isoOpen, setIsoOpen] = useState(false);
   const [isoPool, setIsoPool] = useState("");
@@ -123,13 +130,64 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
     await refreshVolumes(pool);
   };
 
+  const refreshBuckets = async (pool: string) => {
+    try {
+      const list = await volumesApi.listBuckets(pool);
+      setBuckets((prev) => ({ ...prev, [pool]: list }));
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Failed to load buckets");
+    }
+  };
+
+  const toggleBuckets = async (pool: string) => {
+    if (buckets[pool]) {
+      const next = { ...buckets };
+      delete next[pool];
+      setBuckets(next);
+      return;
+    }
+    await refreshBuckets(pool);
+  };
+
+  const createBucket = async () => {
+    if (!bucketPool) return;
+    setBucketBusy(true);
+    try {
+      await volumesApi.createBucket(bucketPool, { name: bucketName.trim() });
+      toast("success", `Bucket ${bucketName.trim()} created`);
+      setBucketPool(null);
+      setBucketName("");
+      void refreshBuckets(bucketPool);
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Create failed");
+    } finally {
+      setBucketBusy(false);
+    }
+  };
+
+  const removeBucket = async () => {
+    if (!deleteBucketTarget) return;
+    const { pool, name: bucketName } = deleteBucketTarget;
+    try {
+      await volumesApi.deleteBucket(pool, bucketName);
+      toast("success", `Bucket ${bucketName} deleted`);
+      setDeleteBucketTarget(null);
+      void refreshBuckets(pool);
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Delete failed");
+    }
+  };
+
   const create = async () => {
     setBusy(true);
     try {
-      await infraApi.createPool({ name: name.trim(), driver });
+      const config: Record<string, string> = {};
+      if (poolSource.trim()) config.source = poolSource.trim();
+      await infraApi.createPool({ name: name.trim(), driver, config: Object.keys(config).length > 0 ? config : undefined });
       toast("success", `Pool ${name} created`);
       setCreateOpen(false);
       setName("");
+      setPoolSource("");
       refresh();
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Create failed");
@@ -397,7 +455,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
       let index = 0;
       while (devices[`disk${index}`]) index++;
       devices[`disk${index}`] = { type: "disk", pool: attachTarget.pool, source: attachTarget.name, path: `/mnt/${attachTarget.name}` };
-      await instancesApi.update(instance.name, { devices });
+      await instancesApi.mergeUpdate(instance.name, { devices });
       toast("success", `Volume ${attachTarget.name} attached to ${instance.name}`);
       setAttachTarget(null);
     } catch (err) {
@@ -503,6 +561,9 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
       render: (p) => (
         <div className="flex justify-end gap-1">
           <Button size="sm" variant="ghost" data-testid={`pool-volumes-${p.name}`} onClick={() => void toggleVolumes(p.name)}><Database size={14} /> Volumes</Button>
+          {p.driver === "cephobject" && (
+            <Button size="sm" variant="ghost" data-testid={`pool-buckets-${p.name}`} onClick={() => void toggleBuckets(p.name)}><Archive size={14} /> Buckets</Button>
+          )}
           <Button size="sm" variant="ghost" data-testid={`pool-delete-${p.name}`} onClick={() => setDeletePoolTarget(p)}><Trash2 size={14} /> Delete</Button>
         </div>
       ),
@@ -545,6 +606,49 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
         </div>
       ))}
 
+      {Object.entries(buckets).map(([poolName, list]) => (
+        <div key={poolName} className="rounded border border-border bg-surface-900 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-text-primary">Buckets in {poolName}</h2>
+            <Button size="sm" data-testid={`bucket-create-${poolName}`} onClick={() => { setBucketName(""); setBucketPool(poolName); }}><Plus size={13} /> Create bucket</Button>
+          </div>
+          <Table
+            dataTestId={`bucket-table-${poolName}`}
+            columns={[
+              { key: "name", header: "Name", render: (b: StorageVolumeDetail) => <span className="font-mono text-xs">{b.name}</span> },
+              {
+                key: "actions", header: "", align: "right",
+                render: (b: StorageVolumeDetail) => (
+                  <Button size="sm" variant="ghost" data-testid={`bucket-delete-${b.name}`} onClick={() => setDeleteBucketTarget({ pool: poolName, name: b.name })}><Trash2 size={13} /> Delete</Button>
+                ),
+              },
+            ]}
+            rows={list}
+            rowKey={(b) => b.name}
+            emptyMessage="No buckets"
+          />
+        </div>
+      ))}
+
+      <Dialog open={bucketPool !== null} onClose={() => setBucketPool(null)} title={`Create bucket in ${bucketPool ?? ""}`} footer={
+        <>
+          <Button variant="secondary" onClick={() => setBucketPool(null)}><X size={14} /> Cancel</Button>
+          <Button onClick={createBucket} loading={bucketBusy} disabled={!bucketName.trim()} data-testid="bucket-create-submit"><Plus size={14} /> Create</Button>
+        </>
+      }>
+        <Input label="Bucket name" name="bucket-name" data-testid="bucket-name" value={bucketName} onChange={(e) => setBucketName(e.target.value)} />
+      </Dialog>
+
+      <ConfirmDialog
+        open={deleteBucketTarget !== null}
+        title={`Delete bucket ${deleteBucketTarget?.name ?? ""}`}
+        body={`Delete the ${deleteBucketTarget?.name ?? ""} bucket from ${deleteBucketTarget?.pool ?? ""}? Its objects will be lost.`}
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={() => void removeBucket()}
+        onCancel={() => setDeleteBucketTarget(null)}
+      />
+
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create storage pool" footer={
         <>
           <Button variant="secondary" onClick={() => setCreateOpen(false)}><X size={14} /> Cancel</Button>
@@ -556,9 +660,17 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
           <Select label="Driver" name="pool-driver" data-testid="pool-driver" value={driver} onChange={(e) => setDriver(e.target.value)}>
             <option value="dir">dir</option>
             <option value="btrfs">btrfs</option>
+            <option value="ceph">ceph</option>
+            <option value="cephfs">cephfs</option>
+            <option value="cephobject">cephobject (S3)</option>
             <option value="lvm">lvm</option>
+            <option value="lvmcluster">lvmcluster</option>
+            <option value="nfs">nfs</option>
+            <option value="powerflex">powerflex</option>
+            <option value="pure">pure</option>
             <option value="zfs">zfs</option>
           </Select>
+          <Input label="Source (optional)" name="pool-source" data-testid="pool-source" value={poolSource} onChange={(e) => setPoolSource(e.target.value)} placeholder="source=/path or ceph config, e.g. cephuser=admin,ceph.mon=…" />
         </div>
       </Dialog>
 

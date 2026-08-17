@@ -13,17 +13,33 @@ function renderTab() {
   return { actions, ...view };
 }
 
-vi.mock("../../api", () => ({
-  instancesApi: {
-    listSnapshots: vi.fn().mockResolvedValue([snapshot("snap1"), snapshot("snap2")]),
-    createSnapshot: vi.fn().mockResolvedValue(null),
-    restoreSnapshot: vi.fn().mockResolvedValue(null),
-    deleteSnapshot: vi.fn().mockResolvedValue(undefined),
-    get: vi.fn().mockResolvedValue({ ...snapshot("web1"), config: { "snapshots.schedule": "@daily", "snapshots.expiry": "1d" } }),
-    update: vi.fn().mockResolvedValue(null),
-  },
-  serverApi: { metadata: vi.fn().mockResolvedValue({ configs: {} }) },
-}));
+vi.mock("../../api", () => {
+  const get = vi.fn().mockResolvedValue({ ...snapshot("web1"), config: { "snapshots.schedule": "@daily", "snapshots.expiry": "1d" } });
+  const update = vi.fn().mockResolvedValue(null);
+  const mergeUpdate = vi.fn().mockImplementation(async (name: string, changes: { config?: Record<string, string>; devices?: Record<string, Record<string, string>>; profiles?: string[]; ephemeral?: boolean; description?: string }, project?: string) => {
+    const current = await get(name, project);
+    await update(name, {
+      config: changes.config ?? current.config,
+      description: changes.description ?? current.description,
+      ephemeral: changes.ephemeral ?? current.ephemeral,
+      devices: changes.devices ?? current.devices,
+      profiles: changes.profiles ?? current.profiles,
+    }, project);
+    return null;
+  });
+  return {
+    instancesApi: {
+      listSnapshots: vi.fn().mockResolvedValue([snapshot("snap1"), snapshot("snap2")]),
+      createSnapshot: vi.fn().mockResolvedValue(null),
+      restoreSnapshot: vi.fn().mockResolvedValue(null),
+      deleteSnapshot: vi.fn().mockResolvedValue(undefined),
+      get,
+      update,
+      mergeUpdate,
+    },
+    serverApi: { metadata: vi.fn().mockResolvedValue({ configs: {} }) },
+  };
+});
 
 describe("SnapshotsTab", () => {
   beforeEach(() => {

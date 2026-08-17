@@ -11,15 +11,27 @@ function instance(): Instance {
   };
 }
 
-vi.mock("../../api", () => ({
-  instancesApi: {
-    get: vi.fn().mockResolvedValue(instance()),
-    update: vi.fn().mockResolvedValue(null),
-  },
-  serverApi: {
-    metadata: vi.fn().mockResolvedValue({ configs: { instance: { instance: { keys: [{ "limits.memory": { shortdesc: "Memory limit" } }] } } } }),
-  },
-}));
+vi.mock("../../api", () => {
+  const get = vi.fn().mockResolvedValue(instance());
+  const update = vi.fn().mockResolvedValue(null);
+  const mergeUpdate = vi.fn().mockImplementation(async (name: string, changes: { config?: Record<string, string>; description?: string; devices?: Record<string, Record<string, string>>; profiles?: string[]; ephemeral?: boolean }, project?: string) => {
+    const current = await get(name, project);
+    await update(name, {
+      config: changes.config ?? current.config,
+      description: changes.description ?? current.description,
+      ephemeral: changes.ephemeral ?? current.ephemeral,
+      devices: changes.devices ?? current.devices,
+      profiles: changes.profiles ?? current.profiles,
+    }, project);
+    return null;
+  });
+  return {
+    instancesApi: { get, update, mergeUpdate },
+    serverApi: {
+      metadata: vi.fn().mockResolvedValue({ configs: { instance: { instance: { keys: [{ "limits.memory": { shortdesc: "Memory limit" } }] } } } }),
+    },
+  };
+});
 
 function renderTab() {
   let actions: ConfigActions | null = null;
