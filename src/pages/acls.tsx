@@ -8,6 +8,7 @@ import type { Column } from "../components/table";
 import { Button } from "../components/button";
 import { Dialog } from "../components/dialog";
 import { ConfirmDialog } from "../components/confirm-dialog";
+import { Window } from "../components/window";
 import { Input } from "../components/input";
 import { EmptyState } from "../components/empty-state";
 import { Loading } from "../components/loading";
@@ -321,17 +322,25 @@ export function AclsPage() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      <Dialog open={editing !== null} onClose={() => setEditing(null)} title={`ACL ${editing?.name ?? ""}`} wide footer={
-        <>
-          <Button variant="secondary" onClick={() => setEditing(null)}><X size={14} /> Cancel</Button>
-          <Button onClick={saveRules} loading={rulesBusy} data-testid="acl-rules-save"><Check size={14} /> Save</Button>
-        </>
-      }>
+      <Window
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        title={`ACL ${editing?.name ?? ""}`}
+        subtitle={`${draftIngress.length} ingress rules · ${draftEgress.length} egress rules`}
+        width={1100}
+        bodyMaxHeight={560}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setEditing(null)}><X size={14} /> Cancel</Button>
+            <Button onClick={saveRules} loading={rulesBusy} data-testid="acl-rules-save"><Check size={14} /> Save</Button>
+          </>
+        }
+      >
         <div className="space-y-4">
           {ruleSection("ingress", "Ingress rules", draftIngress, setDraftIngress)}
           {ruleSection("egress", "Egress rules", draftEgress, setDraftEgress)}
         </div>
-      </Dialog>
+      </Window>
     </div>
   );
 }

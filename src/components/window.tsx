@@ -10,6 +10,10 @@ export interface WindowProps {
   subtitle?: string;
   children: ReactNode;
   footer?: ReactNode;
+  /** Panel width in px (default 640). */
+  width?: number;
+  /** Body max height in px (default 420). */
+  bodyMaxHeight?: number;
 }
 
 interface DragState {
@@ -19,7 +23,7 @@ interface DragState {
   origY: number;
 }
 
-export function Window({ open, onClose, title, subtitle, children, footer }: WindowProps) {
+export function Window({ open, onClose, title, subtitle, children, footer, width = 640, bodyMaxHeight = 420 }: WindowProps) {
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const dragRef = useRef<DragState | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -68,8 +72,8 @@ export function Window({ open, onClose, title, subtitle, children, footer }: Win
         aria-modal="true"
         aria-label={title}
         data-testid="window"
-        className="w-[640px] overflow-hidden rounded-lg border border-border bg-surface-800 shadow-2xl"
-        style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}
+        className="overflow-hidden rounded-lg border border-border bg-surface-800 shadow-2xl"
+        style={{ width: `${width}px`, transform: `translate(${pos.x}px, ${pos.y}px)` }}
         onClick={(e) => e.stopPropagation()}
       >
         <div
@@ -87,7 +91,7 @@ export function Window({ open, onClose, title, subtitle, children, footer }: Win
             <X size={16} />
           </button>
         </div>
-        <div className="max-h-[420px] overflow-auto p-4 text-sm text-text-secondary">{children}</div>
+        <div className="overflow-auto p-4 text-sm text-text-secondary" style={{ maxHeight: `${bodyMaxHeight}px` }}>{children}</div>
         {footer && <div className="flex justify-end gap-2 border-t border-border bg-surface-900 px-4 py-3">{footer}</div>}
       </div>
     </div>,
