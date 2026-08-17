@@ -69,7 +69,6 @@ describe("AclsPage", () => {
     expect(row.className).not.toContain("opacity-50");
     await user.click(screen.getByTestId("acl-ingress-toggle-0"));
     expect(row.className).toContain("opacity-50");
-    await user.click(screen.getByTestId("acl-rules-edit"));
     await user.click(screen.getByTestId("acl-rules-save"));
     await waitFor(() =>
       expect(networkExtrasApi.updateAcl).toHaveBeenCalledWith(
@@ -79,6 +78,19 @@ describe("AclsPage", () => {
         })
       )
     );
+  });
+
+  it("edits a rule in place via the row pencil", async () => {
+    const user = userEvent.setup();
+    render(<AclsPage />);
+    await screen.findByText("web");
+    await user.click(screen.getByTestId("acl-rules-web"));
+    await screen.findByTestId("acl-ingress-rule-0");
+    expect(screen.queryByTestId("acl-ingress-protocol-0")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("acl-ingress-edit-0"));
+    expect(screen.getByTestId("acl-ingress-protocol-0")).toBeInTheDocument();
+    await user.click(screen.getByTestId("acl-ingress-done-0"));
+    expect(screen.queryByTestId("acl-ingress-protocol-0")).not.toBeInTheDocument();
   });
 
   it("removes a rule after confirmation", async () => {
@@ -102,7 +114,6 @@ describe("AclsPage", () => {
     await user.click(screen.getByTestId("acl-rules-web"));
     await screen.findByTestId("acl-ingress-rule-0");
     expect(screen.queryByTestId("acl-ingress-protocol-0")).not.toBeInTheDocument();
-    await user.click(screen.getByTestId("acl-rules-edit"));
     await user.click(screen.getByTestId("acl-add-ingress"));
     await screen.findByTestId("acl-ingress-rule-1");
     await user.selectOptions(screen.getByTestId("acl-ingress-protocol-1"), "tcp");
