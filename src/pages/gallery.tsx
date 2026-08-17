@@ -47,6 +47,8 @@ export function Gallery() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [tab, setTab] = useState("a");
   const [windowOpen, setWindowOpen] = useState(false);
+  const [largeWindowOpen, setLargeWindowOpen] = useState(false);
+  const [wideDialogOpen, setWideDialogOpen] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
   const [vtab, setVtab] = useState("a");
   const [kvValues, setKvValues] = useState<Record<string, string>>({ "limits.memory": "512MiB", "server.name": "ix" });
@@ -133,6 +135,7 @@ export function Gallery() {
 
       <Section title="Overlay">
         <Button onClick={() => setDialogOpen(true)}><Maximize2 size={14} /> Open dialog</Button>
+        <Button onClick={() => setWideDialogOpen(true)}><Maximize2 size={14} /> Open wide dialog</Button>
         <Button onClick={() => setConfirmOpen(true)}><ShieldAlert size={14} /> Open confirm</Button>
         <Tooltip label="Tooltip text"><Button>Hover me</Button></Tooltip>
       </Section>
@@ -172,9 +175,13 @@ export function Gallery() {
       </Section>
 
       <Section title="Window">
-        <Button onClick={() => setWindowOpen(true)}>Open window</Button>
+        <Button onClick={() => setWindowOpen(true)}>Open window (640 × 420)</Button>
+        <Button onClick={() => setLargeWindowOpen(true)}>Open large window (1100 × 560)</Button>
         <Window open={windowOpen} onClose={() => setWindowOpen(false)} title="Example window" footer={<Button size="sm">OK</Button>}>
           A floating window body.
+        </Window>
+        <Window open={largeWindowOpen} onClose={() => setLargeWindowOpen(false)} title="Large window" subtitle="width=1100, bodyMaxHeight=560 — for table editors like ACL rules" width={1100} bodyMaxHeight={560} footer={<Button size="sm">OK</Button>}>
+          A larger, draggable window body with a scrollable area for wide tables.
         </Window>
       </Section>
 
@@ -350,6 +357,9 @@ export function Gallery() {
       </Section>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} title="Dialog">Dialog body.</Dialog>
+      <Dialog open={wideDialogOpen} onClose={() => setWideDialogOpen(false)} title="Wide dialog" wide>
+        The <code>wide</code> variant (max-w-5xl) hosts table-heavy editors, e.g. ACL rules.
+      </Dialog>
       <ConfirmDialog open={confirmOpen} title="Confirm" body="Are you sure?" onConfirm={() => setConfirmOpen(false)} onCancel={() => setConfirmOpen(false)} />
     </div>
   );

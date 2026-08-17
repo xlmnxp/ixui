@@ -23,11 +23,12 @@ instance views, and a floating create-instance wizard.
   node).
 - **Instances** — create wizard (simplestreams catalog + cached images,
   profiles, storage pool, cluster member targeting); detail view with
-  Overview, Snapshots (create/restore/delete), Config editor with server-side
-  key descriptions, Devices editor, Logs, Files, and per-instance Activity
-  tabs; lifecycle actions (start/stop/restart/freeze), rename, copy,
-  move (across projects and cluster members, optionally live), delete, and
-  backup export download; VM display thumbnail.
+  Overview, Snapshots (create/restore/delete + an automatic-snapshots editor
+  for `snapshots.schedule`/`snapshots.expiry` with an enable switch), Config
+  editor with server-side key descriptions, Devices editor, Logs, Files, and
+  per-instance Activity tabs; lifecycle actions (start/stop/restart/freeze),
+  rename, copy, move (across projects and cluster members, optionally live),
+  delete, and backup export download; VM display thumbnail.
 - **File explorer** — browse an instance's filesystem with back/forward and a
   path bar, open and edit text files in place, upload and download files,
   create directories, and delete entries.
@@ -36,6 +37,11 @@ instance views, and a floating create-instance wizard.
 - **Images** — local image list, pull from simplestreams remotes, alias
   management.
 - **Networks** — create/delete networks and manage network forwards.
+- **Network ACLs** — project-scoped ACLs with an Oracle Cloud-style inline
+  rule editor (ingress/egress tables, action dropdown with icons, prefilled
+  protocol list, pfSense-like enable/disable and logging indicators, confirmed
+  rule removal) in a large draggable window; attach to NICs via the
+  `security.acls` device option.
 - **Storage** — create pools, manage custom volumes (create, rename, delete,
   snapshots), upload ISOs.
 - **Profiles & projects** — full CRUD with config editors.
@@ -50,8 +56,8 @@ instance views, and a floating create-instance wizard.
 
 ## Not yet implemented
 
-- Network ACLs, zones, peers, and load balancers (API client groundwork
-  exists, no UI).
+- Network zones, peers, address sets, and load balancers (API client
+  groundwork exists, no UI).
 - Storage buckets.
 - Backup management — only one-off export downloads today; no backup
   list/restore/import.
@@ -113,8 +119,9 @@ browser has the server's client certificate installed, or via OIDC otherwise.
 ## Component system
 
 Design tokens live in `src/styles/theme.css` (`@theme`). Primitives live in
-`src/components/`, each with unit + component tests — including Window,
-VerticalTabs, and ProjectDropdown. The gallery at
+`src/components/`, each with unit + component tests — including Window
+(now with configurable size), Dialog (regular + wide), Loading,
+SnapshotSchedule, VerticalTabs, and ProjectDropdown. The gallery at
 http://localhost:5173/ui/gallery shows every component and its variants.
 
 ## AI-assisted development
