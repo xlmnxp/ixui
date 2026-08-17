@@ -224,11 +224,8 @@ export function AclsPage() {
 
   const ruleSection = (prefix: Direction, title: string, rules: AclRule[], setRules: (rules: AclRule[]) => void, editable: boolean) => (
     <div data-testid={`acl-${prefix}-section`}>
-      <div className="mb-1 flex items-center justify-between">
+      <div className="mb-1">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{title} ({rules.length})</h4>
-        {editable && (
-          <Button size="sm" variant="secondary" data-testid={`acl-add-${prefix}`} onClick={() => setRules([...rules, {}])}><Plus size={13} /> Add {prefix} rules</Button>
-        )}
       </div>
       <div className="overflow-x-auto rounded border border-border">
         <table className="w-full table-fixed border-separate border-spacing-0 text-[13px]">
@@ -443,14 +440,27 @@ export function AclsPage() {
               <Button onClick={saveRules} loading={rulesBusy} data-testid="acl-rules-save"><Check size={14} /> Save</Button>
             </>
           ) : (
-            <>
-              <Button variant="secondary" onClick={startRulesEdit} data-testid="acl-rules-edit"><Pencil size={14} /> Edit rules</Button>
-              <Button variant="secondary" onClick={() => setEditing(null)}><X size={14} /> Close</Button>
-            </>
+            <Button variant="secondary" onClick={() => setEditing(null)}><X size={14} /> Close</Button>
           )
         }
       >
         <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            {editingRules ? (
+              <>
+                <span className="text-xs text-text-tertiary">Editing — changes apply when you save.</span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="secondary" data-testid="acl-add-ingress" onClick={() => setDraftIngress([...draftIngress, {}])}><Plus size={13} /> Add ingress rule</Button>
+                  <Button size="sm" variant="secondary" data-testid="acl-add-egress" onClick={() => setDraftEgress([...draftEgress, {}])}><Plus size={13} /> Add egress rule</Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="text-xs text-text-tertiary">Read-only view</span>
+                <Button size="sm" variant="secondary" data-testid="acl-rules-edit" onClick={startRulesEdit}><Pencil size={13} /> Edit rules</Button>
+              </>
+            )}
+          </div>
           {ruleSection("ingress", "Ingress rules", draftIngress, setDraftIngress, editingRules)}
           {ruleSection("egress", "Egress rules", draftEgress, setDraftEgress, editingRules)}
         </div>
