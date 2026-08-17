@@ -241,7 +241,7 @@ export function AclsPage() {
           <thead className="bg-surface-700 text-left text-xs text-text-secondary">
             <tr>
               <th className="w-24 border-b border-border px-2 py-1 font-normal">Action</th>
-              <th className="w-16 border-b border-border px-2 py-1 text-center font-normal">State</th>
+              <th className="w-20 border-b border-border px-2 py-1 text-center font-normal">State</th>
               <th className="w-28 border-b border-border px-2 py-1 font-normal">Protocol</th>
               <th className="border-b border-border px-2 py-1 font-normal">Source</th>
               <th className="border-b border-border px-2 py-1 font-normal">Destination</th>
@@ -285,28 +285,31 @@ export function AclsPage() {
                     </td>
                   )}
                   <td className="px-2 py-1">
-                    <div className="flex items-center justify-center gap-1">
-                      <button
-                        type="button"
-                        data-testid={`acl-${prefix}-toggle-${i}`}
-                        onClick={() => setRules(updateRule(rules, i, { state: isDisabled ? "enabled" : "disabled" }))}
-                        title={isDisabled ? "Enable rule" : "Disable rule"}
-                        aria-label={isDisabled ? "Enable rule" : "Disable rule"}
-                        className={isDisabled ? "text-text-tertiary hover:text-text-primary" : "text-success hover:opacity-80"}
-                      >
-                        {isDisabled ? <Ban size={14} /> : <Play size={14} className="fill-current" />}
-                      </button>
-                      <button
-                        type="button"
-                        data-testid={`acl-${prefix}-log-${i}`}
-                        disabled={isDisabled}
-                        onClick={() => setRules(updateRule(rules, i, { state: isLogged ? "enabled" : "logged" }))}
-                        title={isLogged ? "Disable logging" : "Enable logging"}
-                        aria-label={isLogged ? "Disable logging" : "Enable logging"}
-                        className={isLogged ? "text-accent-400 hover:opacity-80" : "text-text-tertiary hover:text-text-primary disabled:opacity-40"}
-                      >
-                        <FileText size={14} />
-                      </button>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          data-testid={`acl-${prefix}-toggle-${i}`}
+                          onClick={() => setRules(updateRule(rules, i, { state: isDisabled ? "enabled" : "disabled" }))}
+                          title={isDisabled ? "Enable rule" : "Disable rule"}
+                          aria-label={isDisabled ? "Enable rule" : "Disable rule"}
+                          className={isDisabled ? "text-text-tertiary hover:text-text-primary" : "text-success hover:opacity-80"}
+                        >
+                          {isDisabled ? <Ban size={14} /> : <Play size={14} className="fill-current" />}
+                        </button>
+                        <button
+                          type="button"
+                          data-testid={`acl-${prefix}-log-${i}`}
+                          disabled={isDisabled}
+                          onClick={() => setRules(updateRule(rules, i, { state: isLogged ? "enabled" : "logged" }))}
+                          title={isLogged ? "Disable logging" : "Enable logging"}
+                          aria-label={isLogged ? "Disable logging" : "Enable logging"}
+                          className={isLogged ? "text-accent-400 hover:opacity-80" : "text-text-tertiary hover:text-text-primary disabled:opacity-40"}
+                        >
+                          <FileText size={14} />
+                        </button>
+                      </div>
+                      <span className="text-[10px] leading-none text-text-tertiary">{isDisabled ? "disabled" : isLogged ? "logged" : "enabled"}</span>
                     </div>
                   </td>
                   {rowEditing ? (
