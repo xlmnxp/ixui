@@ -80,6 +80,19 @@ describe("AclsPage", () => {
     );
   });
 
+  it("removes a rule after confirmation", async () => {
+    const user = userEvent.setup();
+    render(<AclsPage />);
+    await screen.findByText("web");
+    await user.click(screen.getByTestId("acl-rules-web"));
+    await screen.findByTestId("acl-ingress-rule-0");
+    await user.click(screen.getByTestId("acl-ingress-remove-0"));
+    expect(screen.getByTestId("confirm-confirm")).toBeInTheDocument();
+    expect(screen.getByTestId("acl-ingress-rule-0")).toBeInTheDocument();
+    await user.click(screen.getByTestId("confirm-confirm"));
+    expect(screen.queryByTestId("acl-ingress-rule-0")).not.toBeInTheDocument();
+  });
+
   it("adds an ingress rule inline and saves the ACL", async () => {
     const user = userEvent.setup();
     const { networkExtrasApi } = await import("../api");

@@ -159,6 +159,7 @@ export function AclsPage() {
   const [draftIngress, setDraftIngress] = useState<AclRule[]>([]);
   const [draftEgress, setDraftEgress] = useState<AclRule[]>([]);
   const [rulesBusy, setRulesBusy] = useState(false);
+  const [removeRuleTarget, setRemoveRuleTarget] = useState<{ direction: Direction; index: number } | null>(null);
 
   const refresh = useCallback(() => {
     void networkExtrasApi
@@ -237,6 +238,14 @@ export function AclsPage() {
 
   const updateRule = (rules: AclRule[], index: number, patch: Partial<AclRule>): AclRule[] =>
     rules.map((r, i) => (i === index ? { ...r, ...patch } : r));
+
+  const confirmRemoveRule = () => {
+    if (!removeRuleTarget) return;
+    const { direction, index } = removeRuleTarget;
+    if (direction === "ingress") setDraftIngress((prev) => prev.filter((_, j) => j !== index));
+    else setDraftEgress((prev) => prev.filter((_, j) => j !== index));
+    setRemoveRuleTarget(null);
+  };
 
   const columns: Column<Acl>[] = [
     { key: "name", header: "Name", sortValue: (a) => a.name, render: (a) => <span className="font-medium">{a.name}</span> },
@@ -351,7 +360,7 @@ export function AclsPage() {
                     <CellInput value={r.description ?? ""} onChange={(v) => setRules(updateRule(rules, i, { description: v }))} placeholder="Optional" dataTestId={`acl-${prefix}-description-${i}`} />
                   </td>
                   <td className="px-2 py-1 text-center">
-                    <button type="button" data-testid={`acl-${prefix}-remove-${i}`} onClick={() => setRules(rules.filter((_, j) => j !== i))} className="text-text-tertiary hover:text-danger" aria-label={`Remove ${prefix} rule`}><Trash2 size={12} /></button>
+                    <button type="button" data-testid={`acl-${prefix}-remove-${i}`} onClick={() => setRemoveRuleTarget({ direction: prefix, index: i })} className="text-text-tertiary hover:text-danger" aria-label={`Remove ${prefix} rule`}><Trash2 size={12} /></button>
                   </td>
                 </tr>
                 );
@@ -395,6 +404,16 @@ export function AclsPage() {
           <Input label="Description" name="acl-desc" data-testid="acl-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
       </Dialog>
+
+      <ConfirmDialog
+        open={removeRuleTarget !== null}
+        title={`Remove ${removeRuleTarget?.direction ?? ""} rule`}
+        body="Remove this rule from the ACL? It will be applied when you save the rules."
+        confirmLabel="Remove"
+        tone="danger"
+        onConfirm={confirmRemoveRule}
+        onCancel={() => setRemoveRuleTarget(null)}
+      />
 
       <ConfirmDialog
         open={deleteTarget !== null}
