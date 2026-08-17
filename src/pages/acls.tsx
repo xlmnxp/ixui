@@ -10,6 +10,7 @@ import { Dialog } from "../components/dialog";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { Window } from "../components/window";
 import { Dropdown } from "../components/dropdown";
+import { Tooltip } from "../components/tooltip";
 import { Input } from "../components/input";
 import { EmptyState } from "../components/empty-state";
 import { Loading } from "../components/loading";
@@ -287,27 +288,29 @@ export function AclsPage() {
                   <td className="px-2 py-1">
                     <div className="flex flex-col items-center gap-0.5">
                       <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          data-testid={`acl-${prefix}-toggle-${i}`}
-                          onClick={() => setRules(updateRule(rules, i, { state: isDisabled ? "enabled" : "disabled" }))}
-                          title={isDisabled ? "Enable rule" : "Disable rule"}
-                          aria-label={isDisabled ? "Enable rule" : "Disable rule"}
-                          className={isDisabled ? "text-text-tertiary hover:text-text-primary" : "text-success hover:opacity-80"}
-                        >
-                          {isDisabled ? <Ban size={14} /> : <Play size={14} className="fill-current" />}
-                        </button>
-                        <button
-                          type="button"
-                          data-testid={`acl-${prefix}-log-${i}`}
-                          disabled={isDisabled}
-                          onClick={() => setRules(updateRule(rules, i, { state: isLogged ? "enabled" : "logged" }))}
-                          title={isLogged ? "Disable logging" : "Enable logging"}
-                          aria-label={isLogged ? "Disable logging" : "Enable logging"}
-                          className={isLogged ? "text-accent-400 hover:opacity-80" : "text-text-tertiary hover:text-text-primary disabled:opacity-40"}
-                        >
-                          <FileText size={14} />
-                        </button>
+                        <Tooltip label={isDisabled ? "Enable rule" : "Disable rule"}>
+                          <button
+                            type="button"
+                            data-testid={`acl-${prefix}-toggle-${i}`}
+                            onClick={() => setRules(updateRule(rules, i, { state: isDisabled ? "enabled" : "disabled" }))}
+                            aria-label={isDisabled ? "Enable rule" : "Disable rule"}
+                            className={isDisabled ? "text-text-tertiary hover:text-text-primary" : "text-success hover:opacity-80"}
+                          >
+                            {isDisabled ? <Ban size={14} /> : <Play size={14} className="fill-current" />}
+                          </button>
+                        </Tooltip>
+                        <Tooltip label={isLogged ? "Disable logging" : "Enable logging"}>
+                          <button
+                            type="button"
+                            data-testid={`acl-${prefix}-log-${i}`}
+                            disabled={isDisabled}
+                            onClick={() => setRules(updateRule(rules, i, { state: isLogged ? "enabled" : "logged" }))}
+                            aria-label={isLogged ? "Disable logging" : "Enable logging"}
+                            className={isLogged ? "text-accent-400 hover:opacity-80" : "text-text-tertiary hover:text-text-primary disabled:opacity-40"}
+                          >
+                            <FileText size={14} />
+                          </button>
+                        </Tooltip>
                       </div>
                       <span className="text-[10px] leading-none text-text-tertiary">{isDisabled ? "disabled" : isLogged ? "logged" : "enabled"}</span>
                     </div>
