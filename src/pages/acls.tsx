@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Ban, Check, ChevronDown, FileText, Pencil, Play, Plus, ShieldAlert, Trash2, X } from "lucide-react";
 import { networkExtrasApi } from "../api";
 import { ApiError } from "../api/client";
@@ -74,7 +75,7 @@ interface ActionDropdownProps {
 
 function ActionDropdown({ value, onChange, dataTestId }: ActionDropdownProps) {
   const [open, setOpen] = useState(false);
-  const [up, setUp] = useState(false);
+  const [pos, setPos] = useState<{ left: number; top: number; width: number; up: boolean } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const current = ACTION_ITEMS.find((it) => it.value === value) ?? ACTION_ITEMS[0];
 
@@ -94,7 +95,12 @@ function ActionDropdown({ value, onChange, dataTestId }: ActionDropdownProps) {
         data-testid={dataTestId}
         onClick={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
-          setUp(window.innerHeight - rect.bottom < 130);
+          setPos({
+            left: rect.left,
+            top: rect.top,
+            width: Math.max(rect.width, 96),
+            up: window.innerHeight - rect.bottom < 130,
+          });
           setOpen((o) => !o);
         }}
         className="flex h-7 w-full items-center gap-1.5 rounded border border-border bg-surface-500 px-1.5 text-xs text-text-primary hover:bg-surface-600"
@@ -103,8 +109,16 @@ function ActionDropdown({ value, onChange, dataTestId }: ActionDropdownProps) {
         <span className="min-w-0 flex-1 truncate text-left">{current.label}</span>
         <ChevronDown size={12} className="shrink-0 text-text-tertiary" />
       </button>
-      {open && (
-        <div className={`absolute left-0 z-20 min-w-full overflow-hidden rounded border border-border bg-surface-700 py-0.5 shadow-xl ${up ? "bottom-full mb-0.5" : "top-full mt-0.5"}`}>
+      {open && pos && createPortal(
+        <div
+          onMouseDown={(e) => e.stopPropagation()}
+          className="fixed z-[60] overflow-hidden rounded border border-border bg-surface-700 py-0.5 shadow-xl"
+          style={
+            pos.up
+              ? { left: pos.left, width: pos.width, bottom: window.innerHeight - pos.top + 2 }
+              : { left: pos.left, width: pos.width, top: pos.top + 26 }
+          }
+        >
           {ACTION_ITEMS.map((it) => (
             <button
               key={it.value}
@@ -120,7 +134,8 @@ function ActionDropdown({ value, onChange, dataTestId }: ActionDropdownProps) {
               {it.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
