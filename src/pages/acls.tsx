@@ -9,7 +9,6 @@ import { Button } from "../components/button";
 import { Dialog } from "../components/dialog";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
-import { Select } from "../components/select";
 import { EmptyState } from "../components/empty-state";
 import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
@@ -17,6 +16,15 @@ import { toast } from "../components/toast";
 
 const ACTIONS = ["allow", "drop", "reject"] as const;
 const STATES = ["enabled", "disabled", "logged"] as const;
+const PROTOCOLS = [
+  { value: "", label: "All protocols" },
+  { value: "tcp", label: "TCP" },
+  { value: "udp", label: "UDP" },
+  { value: "icmp4", label: "ICMPv4" },
+  { value: "icmp6", label: "ICMPv6" },
+  { value: "esp", label: "ESP" },
+  { value: "gre", label: "GRE" },
+] as const;
 
 export interface AclRule {
   action?: string;
@@ -33,18 +41,45 @@ export interface AclRule {
 
 type Direction = "ingress" | "egress";
 
-const ruleSummary = (r: AclRule): string => {
-  const parts = [
-    r.action ?? "allow",
-    r.state && r.state !== "enabled" ? r.state : "",
-    r.protocol,
-    r.source,
-    r.destination ? `→ ${r.destination}` : "",
-    r.source_port || r.destination_port ? `ports ${r.source_port ?? "*"}→${r.destination_port ?? "*"}` : "",
-    r.icmp_type !== undefined && r.icmp_type !== "" ? `icmp ${r.icmp_type}/${r.icmp_code ?? "0"}` : "",
-  ].filter((p) => p !== "");
-  return parts.join(" ") || "—";
-};
+const selectClass = "h-7 w-full rounded border border-border bg-surface-500 px-1 text-xs text-text-primary focus:border-accent-500 focus:outline-none";
+const inputClass = "h-7 w-full min-w-0 rounded border border-border bg-surface-500 px-1.5 text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:outline-none";
+
+interface CellSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: readonly { value: string; label: string }[];
+  dataTestId: string;
+}
+
+function CellSelect({ value, onChange, options, dataTestId }: CellSelectProps) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} data-testid={dataTestId} className={selectClass}>
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  );
+}
+
+interface CellInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  dataTestId: string;
+  className?: string;
+}
+
+function CellInput({ value, onChange, placeholder, dataTestId, className = "" }: CellInputProps) {
+  return (
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      data-testid={dataTestId}
+      className={`${inputClass} ${className}`}
+    />
+  );
+}
 
 export function AclsPage() {
   const [acls, setAcls] = useState<Acl[]>([]);
@@ -59,8 +94,6 @@ export function AclsPage() {
   const [draftIngress, setDraftIngress] = useState<AclRule[]>([]);
   const [draftEgress, setDraftEgress] = useState<AclRule[]>([]);
   const [rulesBusy, setRulesBusy] = useState(false);
-  const [ruleEditor, setRuleEditor] = useState<{ direction: Direction } | null>(null);
-  const [rule, setRule] = useState<AclRule>({ action: "allow", state: "enabled" });
 
   const refresh = useCallback(() => {
     void networkExtrasApi
@@ -108,11 +141,25 @@ export function AclsPage() {
     setDraftEgress([...(acl.egress as AclRule[])]);
   };
 
+  const cleanRules = (rules: AclRule[]): AclRule[] =>
+    rules.map((r) => {
+      const next: AclRule = { action: r.action ?? "allow", state: r.state ?? "enabled" };
+      if (r.protocol) next.protocol = r.protocol;
+      if (r.source) next.source = r.source;
+      if (r.destination) next.destination = r.destination;
+      if (r.source_port) next.source_port = r.source_port;
+      if (r.destination_port) next.destination_port = r.destination_port;
+      if (r.icmp_type) next.icmp_type = r.icmp_type;
+      if (r.icmp_code) next.icmp_code = r.icmp_code;
+      if (r.description) next.description = r.description;
+      return next;
+    });
+
   const saveRules = async () => {
     if (!editing) return;
     setRulesBusy(true);
     try {
-      await networkExtrasApi.updateAcl(editing.name, { ingress: draftIngress, egress: draftEgress });
+      await networkExtrasApi.updateAcl(editing.name, { ingress: cleanRules(draftIngress), egress: cleanRules(draftEgress) });
       toast("success", `Rules for ${editing.name} saved`);
       setEditing(null);
       refresh();
@@ -123,18 +170,8 @@ export function AclsPage() {
     }
   };
 
-  const addRule = () => {
-    if (!ruleEditor) return;
-    const next: AclRule = { ...rule, action: rule.action || "allow", state: rule.state || "enabled" };
-    if (ruleEditor.direction === "ingress") setDraftIngress((prev) => [...prev, next]);
-    else setDraftEgress((prev) => [...prev, next]);
-    setRuleEditor(null);
-  };
-
-  const removeRule = (direction: Direction, index: number) => {
-    if (direction === "ingress") setDraftIngress((prev) => prev.filter((_, i) => i !== index));
-    else setDraftEgress((prev) => prev.filter((_, i) => i !== index));
-  };
+  const updateRule = (rules: AclRule[], index: number, patch: Partial<AclRule>): AclRule[] =>
+    rules.map((r, i) => (i === index ? { ...r, ...patch } : r));
 
   const columns: Column<Acl>[] = [
     { key: "name", header: "Name", sortValue: (a) => a.name, render: (a) => <span className="font-medium">{a.name}</span> },
@@ -153,38 +190,91 @@ export function AclsPage() {
     },
   ];
 
-  const ruleList = (direction: Direction, rules: AclRule[]) => (
-    <div className="space-y-1" data-testid={`acl-${direction}-list`}>
-      {rules.length === 0 ? (
-        <p className="rounded border border-dashed border-border px-2 py-2 text-xs text-text-tertiary">No {direction} rules.</p>
-      ) : (
-        rules.map((r, i) => (
-          <div key={i} data-testid={`acl-${direction}-rule-${i}`} className="flex items-center gap-2 rounded border border-border bg-surface-800 px-2 py-1">
-            <code className="min-w-0 flex-1 truncate text-xs text-text-primary">{ruleSummary(r)}</code>
-            {r.description && <span className="max-w-40 truncate text-[11px] text-text-tertiary">{r.description}</span>}
-            <button type="button" data-testid={`acl-${direction}-remove-${i}`} onClick={() => removeRule(direction, i)} className="text-text-tertiary hover:text-danger" aria-label={`Remove ${direction} rule`}><X size={12} /></button>
-          </div>
-        ))
-      )}
-    </div>
-  );
-
-  const ruleEditorFields = (
-    <div className="grid grid-cols-2 gap-3">
-      <Select label="Action" name="rule-action" data-testid="rule-action" value={rule.action ?? "allow"} onChange={(e) => setRule({ ...rule, action: e.target.value })}>
-        {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
-      </Select>
-      <Select label="State" name="rule-state" data-testid="rule-state" value={rule.state ?? "enabled"} onChange={(e) => setRule({ ...rule, state: e.target.value })}>
-        {STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-      </Select>
-      <Input label="Protocol" name="rule-protocol" data-testid="rule-protocol" value={rule.protocol ?? ""} onChange={(e) => setRule({ ...rule, protocol: e.target.value })} placeholder="tcp, udp, icmp4, icmp6…" />
-      <Input label="Description" name="rule-description" data-testid="rule-description" value={rule.description ?? ""} onChange={(e) => setRule({ ...rule, description: e.target.value })} />
-      <Input label="Source" name="rule-source" data-testid="rule-source" value={rule.source ?? ""} onChange={(e) => setRule({ ...rule, source: e.target.value })} placeholder="10.0.0.0/24 or @security-group" />
-      <Input label="Destination" name="rule-destination" data-testid="rule-destination" value={rule.destination ?? ""} onChange={(e) => setRule({ ...rule, destination: e.target.value })} placeholder="10.0.0.0/24 or @security-group" />
-      <Input label="Source port" name="rule-source-port" data-testid="rule-source-port" value={rule.source_port ?? ""} onChange={(e) => setRule({ ...rule, source_port: e.target.value })} placeholder="80 or 1000-2000" />
-      <Input label="Destination port" name="rule-destination-port" data-testid="rule-destination-port" value={rule.destination_port ?? ""} onChange={(e) => setRule({ ...rule, destination_port: e.target.value })} placeholder="443 or 1000-2000" />
-      <Input label="ICMP type" name="rule-icmp-type" data-testid="rule-icmp-type" value={rule.icmp_type ?? ""} onChange={(e) => setRule({ ...rule, icmp_type: e.target.value })} placeholder="8" />
-      <Input label="ICMP code" name="rule-icmp-code" data-testid="rule-icmp-code" value={rule.icmp_code ?? ""} onChange={(e) => setRule({ ...rule, icmp_code: e.target.value })} placeholder="0" />
+  const ruleSection = (prefix: Direction, title: string, rules: AclRule[], setRules: (rules: AclRule[]) => void) => (
+    <div data-testid={`acl-${prefix}-section`}>
+      <div className="mb-1 flex items-center justify-between">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{title} ({rules.length})</h4>
+        <Button size="sm" variant="secondary" data-testid={`acl-add-${prefix}`} onClick={() => setRules([...rules, {}])}><Plus size={13} /> Add {prefix} rules</Button>
+      </div>
+      <div className="overflow-x-auto rounded border border-border">
+        <table className="w-full table-fixed border-separate border-spacing-0 text-[13px]">
+          <thead className="bg-surface-700 text-left text-xs text-text-secondary">
+            <tr>
+              <th className="w-24 border-b border-border px-2 py-1 font-normal">Action</th>
+              <th className="w-24 border-b border-border px-2 py-1 font-normal">State</th>
+              <th className="w-28 border-b border-border px-2 py-1 font-normal">Protocol</th>
+              <th className="border-b border-border px-2 py-1 font-normal">Source</th>
+              <th className="border-b border-border px-2 py-1 font-normal">Destination</th>
+              <th className="w-20 border-b border-border px-2 py-1 font-normal">Src port</th>
+              <th className="w-20 border-b border-border px-2 py-1 font-normal">Dst port</th>
+              <th className="w-14 border-b border-border px-2 py-1 font-normal">ICMP type</th>
+              <th className="w-14 border-b border-border px-2 py-1 font-normal">Code</th>
+              <th className="border-b border-border px-2 py-1 font-normal">Description</th>
+              <th className="w-8 border-b border-border px-2 py-1" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border bg-surface-800">
+            {rules.length === 0 ? (
+              <tr>
+                <td colSpan={11} className="px-2 py-2 text-xs text-text-tertiary">No {prefix} rules. Click "Add {prefix} rules" to create the first one.</td>
+              </tr>
+            ) : (
+              rules.map((r, i) => (
+                <tr key={i} data-testid={`acl-${prefix}-rule-${i}`}>
+                  <td className="px-2 py-1">
+                    <CellSelect
+                      value={r.action ?? "allow"}
+                      onChange={(v) => setRules(updateRule(rules, i, { action: v }))}
+                      options={ACTIONS.map((a) => ({ value: a, label: a }))}
+                      dataTestId={`acl-${prefix}-action-${i}`}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <CellSelect
+                      value={r.state ?? "enabled"}
+                      onChange={(v) => setRules(updateRule(rules, i, { state: v }))}
+                      options={STATES.map((s) => ({ value: s, label: s }))}
+                      dataTestId={`acl-${prefix}-state-${i}`}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <CellSelect
+                      value={r.protocol ?? ""}
+                      onChange={(v) => setRules(updateRule(rules, i, { protocol: v }))}
+                      options={PROTOCOLS}
+                      dataTestId={`acl-${prefix}-protocol-${i}`}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <CellInput value={r.source ?? ""} onChange={(v) => setRules(updateRule(rules, i, { source: v }))} placeholder="0.0.0.0/0" dataTestId={`acl-${prefix}-source-${i}`} />
+                  </td>
+                  <td className="px-2 py-1">
+                    <CellInput value={r.destination ?? ""} onChange={(v) => setRules(updateRule(rules, i, { destination: v }))} placeholder="0.0.0.0/0" dataTestId={`acl-${prefix}-destination-${i}`} />
+                  </td>
+                  <td className="px-2 py-1">
+                    <CellInput value={r.source_port ?? ""} onChange={(v) => setRules(updateRule(rules, i, { source_port: v }))} placeholder="All" dataTestId={`acl-${prefix}-srcport-${i}`} />
+                  </td>
+                  <td className="px-2 py-1">
+                    <CellInput value={r.destination_port ?? ""} onChange={(v) => setRules(updateRule(rules, i, { destination_port: v }))} placeholder="All" dataTestId={`acl-${prefix}-dstport-${i}`} />
+                  </td>
+                  <td className="px-2 py-1">
+                    <CellInput value={r.icmp_type ?? ""} onChange={(v) => setRules(updateRule(rules, i, { icmp_type: v }))} placeholder="type" dataTestId={`acl-${prefix}-icmptype-${i}`} />
+                  </td>
+                  <td className="px-2 py-1">
+                    <CellInput value={r.icmp_code ?? ""} onChange={(v) => setRules(updateRule(rules, i, { icmp_code: v }))} placeholder="code" dataTestId={`acl-${prefix}-icmpcode-${i}`} />
+                  </td>
+                  <td className="px-2 py-1">
+                    <CellInput value={r.description ?? ""} onChange={(v) => setRules(updateRule(rules, i, { description: v }))} placeholder="Optional" dataTestId={`acl-${prefix}-description-${i}`} />
+                  </td>
+                  <td className="px-2 py-1 text-center">
+                    <button type="button" data-testid={`acl-${prefix}-remove-${i}`} onClick={() => setRules(rules.filter((_, j) => j !== i))} className="text-text-tertiary hover:text-danger" aria-label={`Remove ${prefix} rule`}><X size={12} /></button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 
@@ -231,37 +321,16 @@ export function AclsPage() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      <Dialog open={editing !== null} onClose={() => setEditing(null)} title={`ACL ${editing?.name ?? ""}`} footer={
+      <Dialog open={editing !== null} onClose={() => setEditing(null)} title={`ACL ${editing?.name ?? ""}`} wide footer={
         <>
           <Button variant="secondary" onClick={() => setEditing(null)}><X size={14} /> Cancel</Button>
           <Button onClick={saveRules} loading={rulesBusy} data-testid="acl-rules-save"><Check size={14} /> Save</Button>
         </>
       }>
         <div className="space-y-4">
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Ingress ({draftIngress.length})</h4>
-              <Button size="sm" variant="secondary" data-testid="acl-add-ingress" onClick={() => { setRule({ action: "allow", state: "enabled" }); setRuleEditor({ direction: "ingress" }); }}><Plus size={13} /> Add rule</Button>
-            </div>
-            {ruleList("ingress", draftIngress)}
-          </div>
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Egress ({draftEgress.length})</h4>
-              <Button size="sm" variant="secondary" data-testid="acl-add-egress" onClick={() => { setRule({ action: "allow", state: "enabled" }); setRuleEditor({ direction: "egress" }); }}><Plus size={13} /> Add rule</Button>
-            </div>
-            {ruleList("egress", draftEgress)}
-          </div>
+          {ruleSection("ingress", "Ingress rules", draftIngress, setDraftIngress)}
+          {ruleSection("egress", "Egress rules", draftEgress, setDraftEgress)}
         </div>
-      </Dialog>
-
-      <Dialog open={ruleEditor !== null} onClose={() => setRuleEditor(null)} title={`Add ${ruleEditor?.direction ?? ""} rule`} footer={
-        <>
-          <Button variant="secondary" onClick={() => setRuleEditor(null)}><X size={14} /> Cancel</Button>
-          <Button onClick={addRule} data-testid="rule-add-submit"><Plus size={14} /> Add rule</Button>
-        </>
-      }>
-        {ruleEditorFields}
       </Dialog>
     </div>
   );

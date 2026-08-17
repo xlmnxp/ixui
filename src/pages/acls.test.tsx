@@ -58,7 +58,7 @@ describe("AclsPage", () => {
     await waitFor(() => expect(networkExtrasApi.deleteAcl).toHaveBeenCalledWith("db"));
   });
 
-  it("adds an ingress rule and saves the ACL", async () => {
+  it("adds an ingress rule inline and saves the ACL", async () => {
     const user = userEvent.setup();
     const { networkExtrasApi } = await import("../api");
     render(<AclsPage />);
@@ -66,11 +66,10 @@ describe("AclsPage", () => {
     await user.click(screen.getByTestId("acl-rules-web"));
     await screen.findByTestId("acl-ingress-rule-0");
     await user.click(screen.getByTestId("acl-add-ingress"));
-    await user.type(screen.getByTestId("rule-protocol"), "tcp");
-    await user.type(screen.getByTestId("rule-source"), "10.0.1.0/24");
-    await user.type(screen.getByTestId("rule-destination-port"), "443");
-    await user.click(screen.getByTestId("rule-add-submit"));
     await screen.findByTestId("acl-ingress-rule-1");
+    await user.selectOptions(screen.getByTestId("acl-ingress-protocol-1"), "tcp");
+    await user.type(screen.getByTestId("acl-ingress-source-1"), "10.0.1.0/24");
+    await user.type(screen.getByTestId("acl-ingress-dstport-1"), "443");
     await user.click(screen.getByTestId("acl-rules-save"));
     await waitFor(() =>
       expect(networkExtrasApi.updateAcl).toHaveBeenCalledWith(
