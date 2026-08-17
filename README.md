@@ -74,3 +74,9 @@ ixui is developed with substantial help from AI / LLM coding tools. Generated
 code is human-reviewed and covered by the test suite, but given the pre-alpha
 state you should apply the usual scrutiny before trusting it with your servers.
 Bug reports are very welcome.
+
+## License
+
+Copyright 2026 Salem Alsaiari
+
+ixui is licensed under the [Apache License 2.0](LICENSE).
