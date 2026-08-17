@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Ban, Check, FileText, Pencil, Play, Plus, ShieldAlert, Trash2, X } from "lucide-react";
+import { Ban, Check, FileText, Pencil, Play, Plus, Save, ShieldAlert, Trash2, X } from "lucide-react";
 import { networkExtrasApi } from "../api";
 import { ApiError } from "../api/client";
 import type { Acl } from "../api/network-extras";
@@ -373,7 +373,7 @@ export function AclsPage() {
                   <td className="px-2 py-1 text-center">
                     <div className="flex items-center justify-center gap-1">
                       {rowEditing ? (
-                        <button type="button" data-testid={`acl-${prefix}-done-${i}`} onClick={() => setEditingRow(null)} title="Finish editing" aria-label="Finish editing" className="text-success hover:opacity-80"><Check size={13} /></button>
+                        <button type="button" data-testid={`acl-${prefix}-done-${i}`} onClick={() => setEditingRow(null)} title="Finish editing" aria-label="Finish editing" className="text-success hover:opacity-80"><Save size={13} /></button>
                       ) : (
                         <button type="button" data-testid={`acl-${prefix}-edit-${i}`} onClick={() => setEditingRow({ direction: prefix, index: i })} title="Edit rule" aria-label="Edit rule" className="text-text-tertiary hover:text-text-primary"><Pencil size={13} /></button>
                       )}
@@ -453,7 +453,7 @@ export function AclsPage() {
         footer={
           <>
             <Button variant="secondary" onClick={cancelRulesEdit}><X size={14} /> Cancel</Button>
-            <Button onClick={saveRules} loading={rulesBusy} data-testid="acl-rules-save"><Check size={14} /> Save</Button>
+            <Button onClick={saveRules} loading={rulesBusy} data-testid="acl-rules-save"><Save size={14} /> Save</Button>
           </>
         }
       >
