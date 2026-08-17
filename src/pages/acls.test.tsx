@@ -58,6 +58,28 @@ describe("AclsPage", () => {
     await waitFor(() => expect(networkExtrasApi.deleteAcl).toHaveBeenCalledWith("db"));
   });
 
+  it("toggles a rule disabled via the state icon", async () => {
+    const user = userEvent.setup();
+    const { networkExtrasApi } = await import("../api");
+    render(<AclsPage />);
+    await screen.findByText("web");
+    await user.click(screen.getByTestId("acl-rules-web"));
+    await screen.findByTestId("acl-ingress-rule-0");
+    const row = screen.getByTestId("acl-ingress-rule-0");
+    expect(row.className).not.toContain("opacity-50");
+    await user.click(screen.getByTestId("acl-ingress-toggle-0"));
+    expect(row.className).toContain("opacity-50");
+    await user.click(screen.getByTestId("acl-rules-save"));
+    await waitFor(() =>
+      expect(networkExtrasApi.updateAcl).toHaveBeenCalledWith(
+        "web",
+        expect.objectContaining({
+          ingress: expect.arrayContaining([expect.objectContaining({ state: "disabled" })]),
+        })
+      )
+    );
+  });
+
   it("adds an ingress rule inline and saves the ACL", async () => {
     const user = userEvent.setup();
     const { networkExtrasApi } = await import("../api");

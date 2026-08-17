@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Ban, Check, FileText, Pencil, Plus, Trash2, X } from "lucide-react";
 import { networkExtrasApi } from "../api";
 import { ApiError } from "../api/client";
 import type { Acl } from "../api/network-extras";
@@ -16,7 +16,6 @@ import { PageBar } from "../components/page-bar";
 import { toast } from "../components/toast";
 
 const ACTIONS = ["allow", "drop", "reject"] as const;
-const STATES = ["enabled", "disabled", "logged"] as const;
 const PROTOCOLS = [
   { value: "", label: "All protocols" },
   { value: "tcp", label: "TCP" },
@@ -202,7 +201,7 @@ export function AclsPage() {
           <thead className="bg-surface-700 text-left text-xs text-text-secondary">
             <tr>
               <th className="w-24 border-b border-border px-2 py-1 font-normal">Action</th>
-              <th className="w-24 border-b border-border px-2 py-1 font-normal">State</th>
+              <th className="w-16 border-b border-border px-2 py-1 text-center font-normal">State</th>
               <th className="w-28 border-b border-border px-2 py-1 font-normal">Protocol</th>
               <th className="border-b border-border px-2 py-1 font-normal">Source</th>
               <th className="border-b border-border px-2 py-1 font-normal">Destination</th>
@@ -220,8 +219,11 @@ export function AclsPage() {
                 <td colSpan={11} className="px-2 py-2 text-xs text-text-tertiary">No {prefix} rules. Click "Add {prefix} rules" to create the first one.</td>
               </tr>
             ) : (
-              rules.map((r, i) => (
-                <tr key={i} data-testid={`acl-${prefix}-rule-${i}`}>
+              rules.map((r, i) => {
+                const isDisabled = r.state === "disabled";
+                const isLogged = r.state === "logged";
+                return (
+                <tr key={i} data-testid={`acl-${prefix}-rule-${i}`} className={isDisabled ? "opacity-50" : ""}>
                   <td className="px-2 py-1">
                     <CellSelect
                       value={r.action ?? "allow"}
@@ -231,12 +233,29 @@ export function AclsPage() {
                     />
                   </td>
                   <td className="px-2 py-1">
-                    <CellSelect
-                      value={r.state ?? "enabled"}
-                      onChange={(v) => setRules(updateRule(rules, i, { state: v }))}
-                      options={STATES.map((s) => ({ value: s, label: s }))}
-                      dataTestId={`acl-${prefix}-state-${i}`}
-                    />
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        type="button"
+                        data-testid={`acl-${prefix}-toggle-${i}`}
+                        onClick={() => setRules(updateRule(rules, i, { state: isDisabled ? "enabled" : "disabled" }))}
+                        title={isDisabled ? "Enable rule" : "Disable rule"}
+                        aria-label={isDisabled ? "Enable rule" : "Disable rule"}
+                        className={isDisabled ? "text-text-tertiary hover:text-text-primary" : "text-success hover:opacity-80"}
+                      >
+                        {isDisabled ? <Ban size={14} /> : <Check size={14} />}
+                      </button>
+                      <button
+                        type="button"
+                        data-testid={`acl-${prefix}-log-${i}`}
+                        disabled={isDisabled}
+                        onClick={() => setRules(updateRule(rules, i, { state: isLogged ? "enabled" : "logged" }))}
+                        title={isLogged ? "Disable logging" : "Enable logging"}
+                        aria-label={isLogged ? "Disable logging" : "Enable logging"}
+                        className={isLogged ? "text-accent-400 hover:opacity-80" : "text-text-tertiary hover:text-text-primary disabled:opacity-40"}
+                      >
+                        <FileText size={14} />
+                      </button>
+                    </div>
                   </td>
                   <td className="px-2 py-1">
                     <CellSelect
@@ -268,10 +287,11 @@ export function AclsPage() {
                     <CellInput value={r.description ?? ""} onChange={(v) => setRules(updateRule(rules, i, { description: v }))} placeholder="Optional" dataTestId={`acl-${prefix}-description-${i}`} />
                   </td>
                   <td className="px-2 py-1 text-center">
-                    <button type="button" data-testid={`acl-${prefix}-remove-${i}`} onClick={() => setRules(rules.filter((_, j) => j !== i))} className="text-text-tertiary hover:text-danger" aria-label={`Remove ${prefix} rule`}><X size={12} /></button>
+                    <button type="button" data-testid={`acl-${prefix}-remove-${i}`} onClick={() => setRules(rules.filter((_, j) => j !== i))} className="text-text-tertiary hover:text-danger" aria-label={`Remove ${prefix} rule`}><Trash2 size={12} /></button>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
