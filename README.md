@@ -37,10 +37,10 @@ instance views, and a floating create-instance wizard.
 - **Images** — local image list, pull from simplestreams remotes, alias
   management.
 - **Networks** — create/delete networks and manage network forwards.
-- **Network ACLs** — project-scoped ACLs with an Oracle Cloud-style inline
-  rule editor (ingress/egress tables, action dropdown with icons, prefilled
-  protocol list, pfSense-like enable/disable and logging indicators, confirmed
-  rule removal) in a large draggable window; attach to NICs via the
+- **Network ACLs** — project-scoped ACLs with an inline rule editor
+  (ingress/egress tables, action dropdown with icons, prefilled protocol
+  list, pfSense-like enable/disable and logging indicators, confirmed rule
+  removal) in a large draggable window; attach to NICs via the
   `security.acls` device option.
 - **Storage** — create pools, manage custom volumes (create, rename, delete,
   snapshots), upload ISOs.
