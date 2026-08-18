@@ -42,7 +42,7 @@ export function SplitPane({ left, right, initial = 40, min = 15, vertical = fals
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           className={[
-            "absolute",
+            "absolute z-30",
             vertical ? "left-0 top-1/2 h-1 w-full -translate-y-1/2 cursor-row-resize" : "left-1/2 top-0 h-full w-1 -translate-x-1/2 cursor-col-resize",
             dragging || hovered ? (vertical ? "h-0.5 bg-accent-500" : "w-0.5 bg-accent-500") : "bg-transparent",
           ].join(" ")}
