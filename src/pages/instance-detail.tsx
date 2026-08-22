@@ -167,7 +167,7 @@ export function InstanceDetailPage() {
     const modePart = mode === "vga" ? "&mode=vga" : "";
     window.open(
       `/ui/terminal/${instance.name}?${projectPart}${modePart}`,
-      `terminal-${instance.name}`,
+      `terminal-${instance.name}-${Date.now()}`,
       "width=1000,height=640"
     );
     setConsoleMenuOpen(false);
@@ -252,7 +252,7 @@ export function InstanceDetailPage() {
                   onClick={() =>
                     window.open(
                       `/ui/terminal/${instance.name}?project=${encodeURIComponent(instance.project)}&mode=vga`,
-                      `terminal-${instance.name}`,
+                      `terminal-${instance.name}-${Date.now()}`,
                       "width=1000,height=640"
                     )
                   }
