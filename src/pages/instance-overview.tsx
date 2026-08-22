@@ -3,7 +3,11 @@ import { instancesApi } from "../api";
 import type { Instance, InstanceStateInfo } from "../api/types";
 import { Badge } from "../components/badge";
 import { KeyValueTable } from "../components/key-value-table";
+import { Sparkline } from "../components/sparkline";
 import { instanceStatusTone, instanceIps } from "../lib/instance-status";
+import { formatBytes } from "../lib/format";
+import { useStore } from "../state/store";
+import { metricsStore, startMetricsPolling, stopMetricsPolling } from "../state/metrics";
 
 export interface OverviewTabProps {
   instance: Instance;
@@ -11,9 +15,17 @@ export interface OverviewTabProps {
 
 export function OverviewTab({ instance }: OverviewTabProps) {
   const [state, setState] = useState<InstanceStateInfo | null>(null);
+  const metrics = useStore(metricsStore);
+  const metricsKey = `${instance.project}/${instance.name}`;
+  const live = metrics[metricsKey];
 
   useEffect(() => {
     void instancesApi.state(instance.name, instance.project).then(setState).catch(() => setState(null));
+  }, [instance.name, instance.project]);
+
+  useEffect(() => {
+    startMetricsPolling(instance.name, instance.project);
+    return () => stopMetricsPolling(instance.name, instance.project);
   }, [instance.name, instance.project]);
 
   const ips = instanceIps(state);
@@ -29,6 +41,33 @@ export function OverviewTab({ instance }: OverviewTabProps) {
       : [{ key: "IP addresses", value: "—" }]),
     { key: "Memory limit", value: instance.config["limits.memory"] ?? "—" },
     { key: "CPU limit", value: instance.config["limits.cpu"] ?? "—" },
+    ...(live && live.cpu.length > 0
+      ? [{
+          id: "cpu-usage",
+          key: "CPU usage",
+          value: (
+            <span className="flex items-center gap-2">
+              <Sparkline points={live.cpu.map((p) => p.value)} />
+              <span className="text-xs text-text-secondary">{live.cpu[live.cpu.length - 1]!.value.toFixed(1)}%</span>
+            </span>
+          ),
+        }]
+      : []),
+    ...(live && live.memory.length > 0
+      ? [{
+          id: "memory-usage",
+          key: "Memory usage",
+          value: (
+            <span className="flex items-center gap-2">
+              <Sparkline points={live.memory.map((p) => p.value)} color="#58a6ff" />
+              <span className="text-xs text-text-secondary">
+                {formatBytes(live.memory[live.memory.length - 1]!.value)}
+                {instance.config["limits.memory"] ? ` / ${instance.config["limits.memory"]}` : ""}
+              </span>
+            </span>
+          ),
+        }]
+      : []),
   ];
 
   return (
