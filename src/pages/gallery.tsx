@@ -318,7 +318,6 @@ export function Gallery() {
       </Section>
 
       <Section title="TabStrip">
-        <p className="mb-2 text-[11px] text-text-tertiary">Drag to reorder, double-click to rename, + to add, scroll to see overflow fades.</p>
         <div className="w-[520px] rounded border border-border">
           <TabStrip
             tabs={galleryTabs}
@@ -333,6 +332,7 @@ export function Gallery() {
             dataTestId="gallery-tabstrip"
           />
         </div>
+        <p className="mt-2 text-[11px] text-text-tertiary">Drag to reorder, double-click to rename, + to add, scroll to see overflow fades.</p>
       </Section>
 
       <Section title="Breadcrumbs">
