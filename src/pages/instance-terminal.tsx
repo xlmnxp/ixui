@@ -56,12 +56,25 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
   const connectTimerRef = useRef<number | null>(null);
   const fitResizeRef = useRef<(() => void) | null>(null);
 
-  // The vendored spice handle_resize dereferences window.spice_connection
-  // without a guard; only invoke it when a connection is actually present to
-  // avoid "Cannot set properties of undefined (setting 'spice_resize_timer')".
+  // Fit the SPICE display to the actual container size. Reads the container
+  // rect directly (more reliable than the vendored helper, which can see a
+  // zero-width element while the popup is still settling) and calls the
+  // connection's resize_window, which asks the guest agent to resize.
   const safeHandleResize = () => {
-    const sc = (window as { spice_connection?: unknown }).spice_connection;
-    if (sc) handle_resize();
+    const el = containerRef.current;
+    const conn = spiceRef.current as { resize_window?: (f: number, w: number, h: number, d: number, x: number, y: number) => void } | null;
+    if (!el || !conn?.resize_window) {
+      // Fall back to the vendored helper for the global connection.
+      const sc = (window as { spice_connection?: unknown }).spice_connection;
+      if (sc) handle_resize();
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    let w = Math.floor(rect.width);
+    let h = Math.floor(rect.height);
+    if (w % 8 > 0) w -= w % 8;
+    if (h % 8 > 0) h -= h % 8;
+    if (w > 0 && h > 0) conn.resize_window(0, w, h, 32, 0, 0);
   };
 
   const clearConnectTimer = () => {
