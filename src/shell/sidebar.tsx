@@ -97,7 +97,7 @@ export function Sidebar() {
           onClick={() => { setWizardTarget(undefined); setWizardOpen(true); }}
           className="mr-auto flex shrink-0 items-center gap-1 whitespace-nowrap rounded border border-border bg-surface-600 px-1.5 py-0.5 text-[11px] text-text-primary hover:bg-surface-700"
         >
-          <Plus size={12} /> {!compact && <span>New instance</span>}
+          <Plus size={12} /> <span>New instance</span>
         </button>
         <button
           type="button"
