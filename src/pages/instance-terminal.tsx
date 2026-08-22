@@ -347,6 +347,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const [overflow, setOverflow] = useState({ left: false, right: false });
   const nextIdRef = useRef(1);
   const stripRef = useRef<HTMLDivElement>(null);
+  const dragTargetRef = useRef<string | null>(null);
 
   const updateOverflow = () => {
     const el = stripRef.current;
@@ -450,12 +451,19 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                 onDragStart={(e) => {
                   e.dataTransfer.setData("text/plain", tab.id);
                   e.dataTransfer.effectAllowed = "move";
+                  dragTargetRef.current = null;
                 }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
+                onDragOver={(e) => {
                   e.preventDefault();
                   const fromId = e.dataTransfer.getData("text/plain");
-                  if (fromId) reorderTab(fromId, tab.id);
+                  if (fromId && fromId !== tab.id && dragTargetRef.current !== tab.id) {
+                    dragTargetRef.current = tab.id;
+                    reorderTab(fromId, tab.id);
+                  }
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  dragTargetRef.current = null;
                 }}
                 aria-label={`Switch to ${label}`}
                 onClick={() => setActiveId(tab.id)}
