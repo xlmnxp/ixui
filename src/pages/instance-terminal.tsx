@@ -4,14 +4,16 @@ import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
 import "@fontsource/ubuntu-mono/400.css";
 import "@fontsource/ubuntu-mono/700.css";
-import { Monitor, Plus, RotateCw, SquareTerminal, X } from "lucide-react";
+import { Check, Monitor, Plus, RotateCw, SquareTerminal, X } from "lucide-react";
 import { SpiceMainConn, handle_resize } from "../../lib/spice/src/main.js";
 import { instancesApi } from "../api";
 import { registerInstanceProject } from "../api/client";
 import { createSubprotocolShim } from "../lib/ws-shim";
 import type { AsyncResponse } from "../api/types";
 import { Button } from "../components/button";
+import { Dialog } from "../components/dialog";
 import { EmptyState } from "../components/empty-state";
+import { Input } from "../components/input";
 import { Spinner } from "../components/spinner";
 import { toast } from "../components/toast";
 
@@ -303,7 +305,11 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch }: Sessio
 interface TabDef {
   id: string;
   kind: "exec" | "console";
+  name?: string;
+  color?: string;
 }
+
+const TAB_COLORS = ["#3fb950", "#58a6ff", "#d29922", "#f85149", "#bc8cff", "#39c5cf", "#f0883e", "#e3b341"];
 
 export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const project = new URLSearchParams(window.location.search).get("project") ?? undefined;
@@ -316,6 +322,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
     new URLSearchParams(window.location.search).get("mode") === "vga" ? "console" : "exec";
   const [tabs, setTabs] = useState<TabDef[]>([{ id: "t0", kind: initialKind }]);
   const [activeId, setActiveId] = useState("t0");
+  const [renameTab, setRenameTab] = useState<{ id: string; name: string; color: string } | null>(null);
   const nextIdRef = useRef(1);
   const stripRef = useRef<HTMLDivElement>(null);
 
@@ -351,11 +358,20 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   for (const tab of tabs) {
     if (tab.kind === "exec") {
       shellIndex++;
-      shellLabels.set(tab.id, `Shell ${shellIndex}`);
+      shellLabels.set(tab.id, tab.name ?? `Shell ${shellIndex}`);
     } else {
-      shellLabels.set(tab.id, "Console");
+      shellLabels.set(tab.id, tab.name ?? "Console");
     }
   }
+
+  const saveTabName = () => {
+    if (!renameTab) return;
+    const { id, name, color } = renameTab;
+    setTabs((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, name: name.trim() || undefined, color: color || undefined } : t))
+    );
+    setRenameTab(null);
+  };
 
   return (
     <div className="flex h-screen flex-col" data-testid="instance-terminal">
@@ -382,8 +398,10 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                 tabIndex={0}
                 aria-label={`Switch to ${label}`}
                 onClick={() => setActiveId(tab.id)}
+                onDoubleClick={() => setRenameTab({ id: tab.id, name: label, color: tab.color ?? "" })}
                 className={`group flex h-full max-w-52 shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-t-md px-3 text-xs ${active ? "bg-surface-950 text-text-primary" : "bg-surface-700/50 text-text-secondary hover:bg-surface-700 hover:text-text-primary"}`}
               >
+                {tab.color && <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: tab.color }} />}
                 {tab.kind === "console" ? <Monitor size={13} /> : <SquareTerminal size={13} />}
                 <span className="min-w-0 truncate">{label}</span>
                 {tabs.length > 1 && (
@@ -426,6 +444,49 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
           />
         ))}
       </div>
+
+      <Dialog open={renameTab !== null} onClose={() => setRenameTab(null)} title="Rename tab" footer={
+        <>
+          <Button variant="secondary" onClick={() => setRenameTab(null)}><X size={14} /> Cancel</Button>
+          <Button onClick={saveTabName} data-testid="tab-rename-save"><Check size={14} /> Save</Button>
+        </>
+      }>
+        {renameTab && (
+          <div className="space-y-3">
+            <Input
+              label="Name"
+              name="tab-name"
+              data-testid="tab-name"
+              value={renameTab.name}
+              onChange={(e) => setRenameTab({ ...renameTab, name: e.target.value })}
+            />
+            <div>
+              <span className="text-xs font-medium text-text-secondary">Color</span>
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                {TAB_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    data-testid={`tab-color-${c}`}
+                    aria-label={`Color ${c}`}
+                    onClick={() => setRenameTab({ ...renameTab, color: renameTab.color === c ? "" : c })}
+                    className={`h-5 w-5 rounded-full border ${renameTab.color === c ? "border-white" : "border-transparent"}`}
+                    style={{ background: c }}
+                  />
+                ))}
+                <button
+                  type="button"
+                  data-testid="tab-color-none"
+                  onClick={() => setRenameTab({ ...renameTab, color: "" })}
+                  className="ml-1 text-[11px] text-text-tertiary hover:text-text-primary"
+                >
+                  None
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Dialog>
     </div>
   );
 }

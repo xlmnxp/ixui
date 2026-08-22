@@ -292,6 +292,20 @@ describe("InstanceTerminal", () => {
     expect(screen.getByTestId("term-tab-t0")).toBeInTheDocument();
   });
 
+  it("renames a tab and sets its color via double-click", async () => {
+    const user = userEvent.setup();
+    render(<InstanceTerminal instanceName="web1" />);
+    const tab = await screen.findByTestId("term-tab-t0");
+    await user.dblClick(tab);
+    const nameInput = await screen.findByTestId("tab-name");
+    await user.clear(nameInput);
+    await user.type(nameInput, "prod shell");
+    await user.click(screen.getByTestId("tab-color-#d29922"));
+    await user.click(screen.getByTestId("tab-rename-save"));
+    expect(screen.getByTestId("term-tab-t0")).toHaveTextContent("prod shell");
+    expect(screen.getByTestId("term-tab-t0").querySelector("span[style]")).toBeInTheDocument();
+  });
+
   it("starts in VGA mode when the URL requests it", async () => {
     window.history.replaceState({}, "", "/ui/terminal/web1?project=default&mode=vga");
     render(<InstanceTerminal instanceName="web1" />);
