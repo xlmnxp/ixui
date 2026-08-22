@@ -403,16 +403,16 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
               </div>
             );
           })}
+          <button
+            type="button"
+            data-testid="term-add-tab"
+            aria-label="Add shell tab"
+            onClick={addShellTab}
+            className="mb-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
+          >
+            <Plus size={14} />
+          </button>
         </div>
-        <button
-          type="button"
-          data-testid="term-add-tab"
-          aria-label="Add shell tab"
-          onClick={addShellTab}
-          className="mb-1 ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
-        >
-          <Plus size={14} />
-        </button>
       </div>
       <div className="flex min-h-0 flex-1 flex-col">
         {tabs.map((tab) => (
