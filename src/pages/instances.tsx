@@ -114,10 +114,12 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
     {
       key: "status", header: "Status", sortValue: (i) => i.status,
       render: (i) => (
-        <span className="inline-flex items-center gap-1">
-          <InstanceStatusIcon status={i.status} />
-          <Badge tone={instanceStatusTone(i.status)}>{i.status}</Badge>
-        </span>
+        <Badge tone={instanceStatusTone(i.status)}>
+          <span className="inline-flex items-center gap-1">
+            <InstanceStatusIcon status={i.status} />
+            {i.status}
+          </span>
+        </Badge>
       ),
     },
     { key: "type", header: "Type", render: (i) => (i.type === "container" ? "Container" : "VM") },
