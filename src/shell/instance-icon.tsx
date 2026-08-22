@@ -25,12 +25,14 @@ export interface InstanceIconProps {
 export function InstanceIcon({ status, type }: InstanceIconProps) {
   const Icon = type === "virtual-machine" ? Monitor : Box;
   const isRunning = status === "Running" || status === "Started";
+  const isStopped = status === "Stopped";
   return (
     <span className="relative inline-flex" data-testid="instance-icon">
-      <Icon size={15} className="text-text-secondary" />
-      {isRunning ? (
+      <Icon size={15} className={isStopped ? "text-text-tertiary/50" : "text-text-secondary"} />
+      {isRunning && (
         <Play size={9} className="absolute -right-1 bottom-0 text-success" fill="currentColor" />
-      ) : (
+      )}
+      {!isRunning && !isStopped && (
         <span className={`absolute -right-1 bottom-0 flex h-2.5 w-2.5 items-center justify-center rounded-full ring-1 ring-sidebar ${
           instanceDotClass(status)
         }`} />

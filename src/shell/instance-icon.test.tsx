@@ -19,8 +19,11 @@ describe("InstanceIcon", () => {
     expect(screen.getByTestId("instance-icon").querySelector(".text-success")).toBeInTheDocument();
   });
 
-  it("renders a VM icon with a status dot for stopped", () => {
+  it("renders a stopped VM icon dimmed without a sub icon", () => {
     render(<InstanceIcon status="Stopped" type="virtual-machine" />);
-    expect(screen.getByTestId("instance-icon").querySelector(".bg-text-tertiary")).toBeInTheDocument();
+    const icon = screen.getByTestId("instance-icon");
+    expect(icon.querySelector("svg")).toBeInTheDocument();
+    expect(icon.querySelector(".text-success")).not.toBeInTheDocument();
+    expect(icon.querySelector(".bg-text-tertiary")).not.toBeInTheDocument();
   });
 });
