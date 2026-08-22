@@ -119,7 +119,7 @@ export function Table<T>({
                   data-testid="row"
                   data-selected={selected}
                   onClick={() => onRowClick?.(row)}
-                  className={`text-text-primary ${onRowClick ? "cursor-pointer" : ""} ${selected ? "bg-accent-600/10" : "hover:bg-surface-700/60"}`}
+                  className={`text-text-primary ${onRowClick ? "cursor-pointer" : ""} ${selected ? "bg-accent-600/10" : "hover:bg-surface-700"}`}
                 >
                   {onSelectionChange ? (
                     <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>

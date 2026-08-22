@@ -34,6 +34,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
   const [history, setHistory] = useState<string[]>(["/"]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [entries, setEntries] = useState<string[] | null>(null);
+  const [sweepDone, setSweepDone] = useState(false);
   const [stats, setStats] = useState<Record<string, FileStat>>({});
   const [editPath, setEditPath] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
@@ -99,6 +100,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
   }, [cwd, navigateTo, instanceName, project]);
 
   const sweepStats = useCallback((dir: string, names: string[]) => {
+    setSweepDone(false);
     void Promise.all(
       names.slice(0, MAX_STAT_SWEEP).map(async (name) => {
         try {
@@ -111,6 +113,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
       const next: Record<string, FileStat> = {};
       for (const [name, stat] of pairs) next[name] = stat;
       setStats(next);
+      setSweepDone(true);
     });
   }, [instanceName, project]);
 
@@ -126,10 +129,12 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
           setEditPath(cwd);
           setEditContent(result);
           setEntries([]);
+          setSweepDone(true);
         }
       })
       .catch(() => {
         setEntries([]);
+        setSweepDone(true);
         toast("danger", `Cannot list ${cwd}`);
       });
   }, [instanceName, cwd, project, sweepStats]);
@@ -335,7 +340,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
     },
   ];
 
-  if (entries === null) return <Loading dataTestId="files-tab" label="Loading files…" />;
+  if (entries === null || !sweepDone) return <Loading dataTestId="files-tab" label="Loading files…" />;
 
   return (
     <div data-testid="files-tab">
