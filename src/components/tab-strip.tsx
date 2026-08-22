@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Monitor, Plus, SquareTerminal, X } from "lucide-react";
 import { ColorPicker } from "./color-picker";
 import { Dialog } from "./dialog";
@@ -58,6 +58,22 @@ export function TabStrip({
       right: el.scrollLeft + el.clientWidth < el.scrollWidth - 1,
     });
   };
+
+  // Auto-scroll to the right when a new tab is added, then refresh overflow state.
+  useEffect(() => {
+    const el = stripRef.current;
+    if (el) {
+      el.scrollLeft = el.scrollWidth;
+      requestAnimationFrame(updateOverflow);
+    }
+  }, [tabs.length]);
+
+  // Initial overflow check + window resize listener.
+  useEffect(() => {
+    updateOverflow();
+    window.addEventListener("resize", updateOverflow);
+    return () => window.removeEventListener("resize", updateOverflow);
+  }, []);
 
   const reorderTab = (fromId: string, toId: string) => {
     if (fromId === toId) return;
