@@ -17,6 +17,7 @@ import { Table } from "../components/table";
 import { Tabs } from "../components/tabs";
 import { Breadcrumbs } from "../components/breadcrumbs";
 import { Progress } from "../components/progress";
+import { Sparkline } from "../components/sparkline";
 import { Tree } from "../components/tree";
 import { ContextMenu } from "../components/context-menu";
 import { EmptyState } from "../components/empty-state";
@@ -277,6 +278,25 @@ export function Gallery() {
         <Progress size="md" />
       </Section>
 
+      <Section title="Sparkline">
+        <div>
+          <p className="mb-1 text-[11px] text-text-tertiary">CPU (green, with fill)</p>
+          <Sparkline points={[5, 12, 8, 20, 15, 30, 22, 40]} />
+        </div>
+        <div>
+          <p className="mb-1 text-[11px] text-text-tertiary">Memory (blue)</p>
+          <Sparkline points={[40, 42, 39, 45, 50, 48, 55, 60]} color="#58a6ff" />
+        </div>
+        <div>
+          <p className="mb-1 text-[11px] text-text-tertiary">Line only (no fill)</p>
+          <Sparkline points={[30, 28, 33, 25, 27, 22]} color="#d29922" fill={false} width={120} height={24} />
+        </div>
+        <div>
+          <p className="mb-1 text-[11px] text-text-tertiary">Single sample (baseline placeholder)</p>
+          <Sparkline points={[10]} width={120} height={24} />
+        </div>
+      </Section>
+
       <Section title="Tabs">
         <Tabs tabs={[{ key: "a", label: "Tab A" }, { key: "b", label: "Tab B" }]} active={tab} onChange={setTab} />
       </Section>
@@ -315,6 +335,17 @@ export function Gallery() {
             ]}
             rows={Array.from({ length: 10 }, (_, i) => ({ name: `entry-${i}`, status: "Ready" }))}
             rowKey={(r) => r.name}
+          />
+        </div>
+        <div className="w-full overflow-hidden rounded border border-border">
+          <Table
+            columns={[
+              { key: "name", header: "Name", render: (r: { name: string }) => r.name },
+              { key: "status", header: "Status", render: (r: { status: string }) => r.status },
+            ]}
+            rows={[] as { name: string; status: string }[]}
+            rowKey={(r) => r.name}
+            emptyNode={<Loading dataTestId="gallery-table-loading" label="Loading entries…" />}
           />
         </div>
       </Section>
