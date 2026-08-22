@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { instancesApi } from "../api";
+import { instancesApi, resourcesApi } from "../api";
 import type { Instance, InstanceStateInfo } from "../api/types";
 import { Badge } from "../components/badge";
 import { KeyValueTable } from "../components/key-value-table";
@@ -15,6 +15,7 @@ export interface OverviewTabProps {
 
 export function OverviewTab({ instance }: OverviewTabProps) {
   const [state, setState] = useState<InstanceStateInfo | null>(null);
+  const [hostMemoryTotal, setHostMemoryTotal] = useState<number | null>(null);
   const metrics = useStore(metricsStore);
   const metricsKey = `${instance.project}/${instance.name}`;
   const live = metrics[metricsKey];
@@ -22,6 +23,20 @@ export function OverviewTab({ instance }: OverviewTabProps) {
   useEffect(() => {
     void instancesApi.state(instance.name, instance.project).then(setState).catch(() => setState(null));
   }, [instance.name, instance.project]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = instance.location
+          ? await resourcesApi.getMemberResources(instance.location)
+          : await resourcesApi.get();
+        setHostMemoryTotal(typeof res.memory?.total === "number" ? res.memory.total : null);
+      } catch {
+        setHostMemoryTotal(null);
+      }
+    };
+    void load();
+  }, [instance.location]);
 
   useEffect(() => {
     startMetricsPolling(instance.name, instance.project);
@@ -39,7 +54,14 @@ export function OverviewTab({ instance }: OverviewTabProps) {
     ...(ips.length > 0
       ? ips.map((ip) => ({ id: `ip-${ip}`, key: "IP address", value: ip }))
       : [{ key: "IP addresses", value: "—" }]),
-    { key: "Memory limit", value: instance.config["limits.memory"] ?? "—" },
+    {
+      key: "Memory limit",
+      value:
+        instance.config["limits.memory"] ??
+        (instance.type === "container" && hostMemoryTotal !== null
+          ? `${formatBytes(hostMemoryTotal)} (unlimited)`
+          : "—"),
+    },
     { key: "CPU limit", value: instance.config["limits.cpu"] ?? "—" },
     ...(live && live.cpu.length > 0
       ? [{
