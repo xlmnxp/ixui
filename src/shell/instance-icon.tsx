@@ -24,12 +24,17 @@ export interface InstanceIconProps {
 
 export function InstanceIcon({ status, type }: InstanceIconProps) {
   const Icon = type === "virtual-machine" ? Monitor : Box;
+  const isRunning = status === "Running" || status === "Started";
   return (
     <span className="relative inline-flex" data-testid="instance-icon">
       <Icon size={15} className="text-text-secondary" />
-      <span className={`absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full ring-1 ring-sidebar ${
-        instanceDotClass(status)
-      }`} />
+      {isRunning ? (
+        <Play size={9} className="absolute -right-0.5 -top-0.5 text-success" fill="currentColor" />
+      ) : (
+        <span className={`absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full ring-1 ring-sidebar ${
+          instanceDotClass(status)
+        }`} />
+      )}
     </span>
   );
 }

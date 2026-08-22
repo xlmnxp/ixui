@@ -13,9 +13,14 @@ describe("instanceDotClass", () => {
 });
 
 describe("InstanceIcon", () => {
-  it("renders a container icon with a status dot", () => {
+  it("renders a container icon with a green play icon for running", () => {
     render(<InstanceIcon status="Running" type="container" />);
     expect(screen.getByTestId("instance-icon")).toHaveTextContent("");
-    expect(screen.getByTestId("instance-icon").querySelector(".bg-success")).toBeInTheDocument();
+    expect(screen.getByTestId("instance-icon").querySelector(".text-success")).toBeInTheDocument();
+  });
+
+  it("renders a VM icon with a status dot for stopped", () => {
+    render(<InstanceIcon status="Stopped" type="virtual-machine" />);
+    expect(screen.getByTestId("instance-icon").querySelector(".bg-text-tertiary")).toBeInTheDocument();
   });
 });
