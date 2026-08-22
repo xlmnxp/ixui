@@ -317,6 +317,13 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const [tabs, setTabs] = useState<TabDef[]>([{ id: "t0", kind: initialKind }]);
   const [activeId, setActiveId] = useState("t0");
   const nextIdRef = useRef(1);
+  const stripRef = useRef<HTMLDivElement>(null);
+
+  // Keep the newest tab in view when the strip overflows.
+  useEffect(() => {
+    const el = stripRef.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, [tabs.length]);
 
   const addShellTab = () => {
     const id = `t${nextIdRef.current++}`;
@@ -352,45 +359,57 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
 
   return (
     <div className="flex h-screen flex-col" data-testid="instance-terminal">
-      <div className="flex h-9 shrink-0 items-end gap-1.5 bg-surface-800 px-2 pt-1">
-        {tabs.map((tab) => {
-          const label = shellLabels.get(tab.id) ?? "";
-          const active = tab.id === activeId;
-          return (
-            <div
-              key={tab.id}
-              data-testid={`term-tab-${tab.id}`}
-              role="button"
-              tabIndex={0}
-              aria-label={`Switch to ${label}`}
-              onClick={() => setActiveId(tab.id)}
-              className={`group flex h-full cursor-pointer select-none items-center gap-1.5 rounded-t-md px-3 text-xs ${active ? "bg-surface-950 text-text-primary" : "bg-surface-700/50 text-text-secondary hover:bg-surface-700 hover:text-text-primary"}`}
-            >
-              {tab.kind === "console" ? <Monitor size={13} /> : <SquareTerminal size={13} />}
-              <span className="whitespace-nowrap">{label}</span>
-              {tabs.length > 1 && (
-                <button
-                  type="button"
-                  data-testid={`term-close-${tab.id}`}
-                  aria-label={`Close ${label}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    closeTab(tab.id);
-                  }}
-                  className="ml-0.5 rounded-full p-0.5 text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-600 hover:text-text-primary"
-                >
-                  <X size={12} />
-                </button>
-              )}
-            </div>
-          );
-        })}
+      <div className="flex h-9 shrink-0 items-end bg-surface-800 pl-2 pr-1.5 pt-1">
+        <div
+          ref={stripRef}
+          data-testid="term-tab-strip"
+          onWheel={(e) => {
+            const el = e.currentTarget;
+            if (el.scrollWidth > el.clientWidth) {
+              el.scrollLeft += e.deltaY;
+            }
+          }}
+          className="flex h-full min-w-0 flex-1 items-end gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {tabs.map((tab) => {
+            const label = shellLabels.get(tab.id) ?? "";
+            const active = tab.id === activeId;
+            return (
+              <div
+                key={tab.id}
+                data-testid={`term-tab-${tab.id}`}
+                role="button"
+                tabIndex={0}
+                aria-label={`Switch to ${label}`}
+                onClick={() => setActiveId(tab.id)}
+                className={`group flex h-full max-w-52 shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-t-md px-3 text-xs ${active ? "bg-surface-950 text-text-primary" : "bg-surface-700/50 text-text-secondary hover:bg-surface-700 hover:text-text-primary"}`}
+              >
+                {tab.kind === "console" ? <Monitor size={13} /> : <SquareTerminal size={13} />}
+                <span className="min-w-0 truncate">{label}</span>
+                {tabs.length > 1 && (
+                  <button
+                    type="button"
+                    data-testid={`term-close-${tab.id}`}
+                    aria-label={`Close ${label}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeTab(tab.id);
+                    }}
+                    className="ml-0.5 shrink-0 rounded-full p-0.5 text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-600 hover:text-text-primary"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
         <button
           type="button"
           data-testid="term-add-tab"
           aria-label="Add shell tab"
           onClick={addShellTab}
-          className="mb-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
+          className="mb-1 ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
         >
           <Plus size={14} />
         </button>
