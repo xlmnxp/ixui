@@ -276,6 +276,22 @@ describe("InstanceTerminal", () => {
     expect(screen.queryByTestId("term-vga")).not.toBeInTheDocument();
   });
 
+  it("adds, switches, and closes shell tabs", async () => {
+    const user = userEvent.setup();
+    render(<InstanceTerminal instanceName="web1" />);
+    await screen.findByTestId("term-tab-t0");
+    expect(screen.getByTestId("term-tab-t0")).toHaveTextContent("Shell 1");
+    await user.click(screen.getByTestId("term-add-tab"));
+    const tab1 = await screen.findByTestId("term-tab-t1");
+    expect(tab1).toHaveTextContent("Shell 2");
+    // Both shell sessions connect (data + control websockets each).
+    await waitFor(() => expect(FakeWebSocket.instances.length).toBeGreaterThanOrEqual(4));
+    await user.click(screen.getByTestId("term-close-t1"));
+    expect(screen.queryByTestId("term-tab-t1")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("term-tab-t0"));
+    expect(screen.getByTestId("term-tab-t0")).toBeInTheDocument();
+  });
+
   it("starts in VGA mode when the URL requests it", async () => {
     window.history.replaceState({}, "", "/ui/terminal/web1?project=default&mode=vga");
     render(<InstanceTerminal instanceName="web1" />);

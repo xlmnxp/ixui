@@ -4,7 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
 import "@fontsource/ubuntu-mono/400.css";
 import "@fontsource/ubuntu-mono/700.css";
-import { Monitor, RotateCw, SquareTerminal } from "lucide-react";
+import { Monitor, Plus, RotateCw, SquareTerminal, X } from "lucide-react";
 import { SpiceMainConn, handle_resize } from "../../lib/spice/src/main.js";
 import { instancesApi } from "../api";
 import { registerInstanceProject } from "../api/client";
@@ -33,17 +33,16 @@ const SHELL_CANDIDATES: string[][] = [["/bin/bash"], ["/bin/sh"]];
 /** Fallback for sockets that hang instead of closing. */
 const CONNECT_TIMEOUT_MS = 10_000;
 
-export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
-  const project = new URLSearchParams(window.location.search).get("project") ?? undefined;
+interface SessionProps {
+  instanceName: string;
+  kind: "exec" | "console";
+  active: boolean;
+  tabId: string;
+  onSwitch: () => void;
+}
 
-  useEffect(() => {
-    if (project) registerInstanceProject(instanceName, project);
-  }, [instanceName, project]);
-
+function TerminalSession({ instanceName, kind, active, tabId, onSwitch }: SessionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const initialKind: "exec" | "console" =
-    new URLSearchParams(window.location.search).get("mode") === "vga" ? "console" : "exec";
-  const [kind, setKind] = useState<"exec" | "console">(initialKind);
   const [status, setStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");
   const termRef = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -143,7 +142,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
         const conn = new SpiceMainConn({
           uri: toWsUrl(wsPath),
           password: "",
-          screen_id: "spice-screen",
+          screen_id: `spice-screen-${tabId}`,
           onerror: onError,
           onsuccess: () => {
             clearConnectTimer();
@@ -249,49 +248,159 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   };
 
   useEffect(() => {
-    void connect(initialKind);
+    void connect(kind);
     return disconnect;
-  }, []);
+  }, [kind]);
 
-  const switchKind = (nextKind: "exec" | "console") => {
-    setKind(nextKind);
-    void connect(nextKind);
+  // Refit when this tab becomes visible again (xterm in a hidden pane loses its size).
+  useEffect(() => {
+    if (!active) return;
+    if (kind === "console") handle_resize();
+    else fitResizeRef.current?.();
+  }, [active, kind]);
+
+  return (
+    <div
+      ref={containerRef}
+      id={`spice-screen-${tabId}`}
+      className={`relative min-h-0 flex-1 bg-surface-950 ${active ? "" : "hidden"}`}
+    >
+      {status === "connecting" && (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-surface-950/80 text-sm text-text-secondary"
+          data-testid="term-connecting"
+        >
+          <Spinner size="sm" /> Connecting…
+        </div>
+      )}
+      {status === "error" && (
+        <div className="flex h-full items-center justify-center p-6" data-testid="term-error">
+          <EmptyState
+            icon={kind === "console" ? <Monitor size={28} className="text-text-tertiary" /> : <SquareTerminal size={28} className="text-text-tertiary" />}
+            title={kind === "console" ? "Console unavailable" : "Shell unavailable"}
+            description={
+              kind === "console"
+                ? "The console could not connect. Check that the instance is running, then retry or open a Shell tab."
+                : "The shell could not connect. Check that the instance is running, then retry or switch to the Console."
+            }
+            action={
+              <div className="flex items-center justify-center gap-2">
+                <Button size="sm" data-testid="term-retry" onClick={() => void connect(kind)}>
+                  <RotateCw size={14} /> Retry
+                </Button>
+                <Button size="sm" variant="secondary" data-testid="term-switch" onClick={onSwitch}>
+                  {kind === "console" ? <SquareTerminal size={14} /> : <Monitor size={14} />} Switch to {kind === "console" ? "Shell" : "Console"}
+                </Button>
+              </div>
+            }
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface TabDef {
+  id: string;
+  kind: "exec" | "console";
+}
+
+export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
+  const project = new URLSearchParams(window.location.search).get("project") ?? undefined;
+
+  useEffect(() => {
+    if (project) registerInstanceProject(instanceName, project);
+  }, [instanceName, project]);
+
+  const initialKind: "exec" | "console" =
+    new URLSearchParams(window.location.search).get("mode") === "vga" ? "console" : "exec";
+  const [tabs, setTabs] = useState<TabDef[]>([{ id: "t0", kind: initialKind }]);
+  const [activeId, setActiveId] = useState("t0");
+  const nextIdRef = useRef(1);
+
+  const addShellTab = () => {
+    const id = `t${nextIdRef.current++}`;
+    setTabs((prev) => [...prev, { id, kind: "exec" }]);
+    setActiveId(id);
   };
+
+  const closeTab = (id: string) => {
+    setTabs((prev) => {
+      if (prev.length === 1) return prev;
+      const next = prev.filter((t) => t.id !== id);
+      setActiveId((cur) => (cur === id ? (next[next.length - 1]?.id ?? "t0") : cur));
+      return next;
+    });
+  };
+
+  const switchKindOf = (id: string) => {
+    setTabs((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, kind: t.kind === "console" ? "exec" : "console" } : t))
+    );
+  };
+
+  const shellLabels = new Map<string, string>();
+  let shellIndex = 0;
+  for (const tab of tabs) {
+    if (tab.kind === "exec") {
+      shellIndex++;
+      shellLabels.set(tab.id, `Shell ${shellIndex}`);
+    } else {
+      shellLabels.set(tab.id, "Console");
+    }
+  }
 
   return (
     <div className="flex h-screen flex-col" data-testid="instance-terminal">
-      <div ref={containerRef} id="spice-screen" className="relative min-h-0 flex-1 bg-surface-950">
-        {status === "connecting" && (
-          <div
-            className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-surface-950/80 text-sm text-text-secondary"
-            data-testid="term-connecting"
-          >
-            <Spinner size="sm" /> Connecting…
-          </div>
-        )}
-        {status === "error" && (
-          <div className="flex h-full items-center justify-center p-6" data-testid="term-error">
-            <EmptyState
-              icon={kind === "console" ? <Monitor size={28} className="text-text-tertiary" /> : <SquareTerminal size={28} className="text-text-tertiary" />}
-              title={kind === "console" ? "Console unavailable" : "Shell unavailable"}
-              description={
-                kind === "console"
-                  ? "The console could not connect. Check that the instance is running, then retry or switch to the Shell."
-                  : "The shell could not connect. Check that the instance is running, then retry or switch to the Console."
-              }
-              action={
-                <div className="flex items-center justify-center gap-2">
-                  <Button size="sm" data-testid="term-retry" onClick={() => void connect(kind)}>
-                    <RotateCw size={14} /> Retry
-                  </Button>
-                  <Button size="sm" variant="secondary" data-testid="term-switch" onClick={() => switchKind(kind === "console" ? "exec" : "console")}>
-                    {kind === "console" ? <SquareTerminal size={14} /> : <Monitor size={14} />} Switch to {kind === "console" ? "Shell" : "Console"}
-                  </Button>
-                </div>
-              }
-            />
-          </div>
-        )}
+      <div className="flex h-9 shrink-0 items-end gap-1 border-b border-border bg-surface-900 px-2">
+        {tabs.map((tab) => {
+          const label = shellLabels.get(tab.id) ?? "";
+          const active = tab.id === activeId;
+          return (
+            <div
+              key={tab.id}
+              data-testid={`term-tab-${tab.id}`}
+              className={`flex items-center gap-1.5 rounded-t border border-b-0 px-2.5 py-1 text-xs ${active ? "border-border bg-surface-950 text-text-primary" : "border-transparent text-text-secondary hover:text-text-primary"}`}
+            >
+              <button type="button" onClick={() => setActiveId(tab.id)} className="flex items-center gap-1.5">
+                {tab.kind === "console" ? <Monitor size={13} /> : <SquareTerminal size={13} />}
+                {label}
+              </button>
+              {tabs.length > 1 && (
+                <button
+                  type="button"
+                  data-testid={`term-close-${tab.id}`}
+                  aria-label={`Close ${label}`}
+                  onClick={() => closeTab(tab.id)}
+                  className="text-text-tertiary hover:text-text-primary"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          );
+        })}
+        <button
+          type="button"
+          data-testid="term-add-tab"
+          aria-label="Add shell tab"
+          onClick={addShellTab}
+          className="mb-1 ml-1 text-text-tertiary hover:text-text-primary"
+        >
+          <Plus size={14} />
+        </button>
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col">
+        {tabs.map((tab) => (
+          <TerminalSession
+            key={tab.id}
+            instanceName={instanceName}
+            kind={tab.kind}
+            active={tab.id === activeId}
+            tabId={tab.id}
+            onSwitch={() => switchKindOf(tab.id)}
+          />
+        ))}
       </div>
     </div>
   );
