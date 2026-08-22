@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { instancesApi } from "../api";
+import { instancesApi, resourcesApi } from "../api";
 import type { Instance, InstanceStateInfo } from "../api/types";
 import { Badge } from "../components/badge";
 import { KeyValueTable } from "../components/key-value-table";
@@ -15,6 +15,7 @@ export interface OverviewTabProps {
 
 export function OverviewTab({ instance }: OverviewTabProps) {
   const [state, setState] = useState<InstanceStateInfo | null>(null);
+  const [hostMemoryTotal, setHostMemoryTotal] = useState<number | null>(null);
   const metrics = useStore(metricsStore);
   const metricsKey = `${instance.project}/${instance.name}`;
   const live = metrics[metricsKey];
@@ -27,6 +28,20 @@ export function OverviewTab({ instance }: OverviewTabProps) {
     startMetricsPolling(instance.name, instance.project);
     return () => stopMetricsPolling(instance.name, instance.project);
   }, [instance.name, instance.project]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = instance.location
+          ? await resourcesApi.getMemberResources(instance.location)
+          : await resourcesApi.get();
+        setHostMemoryTotal(typeof res.memory?.total === "number" ? res.memory.total : null);
+      } catch {
+        setHostMemoryTotal(null);
+      }
+    };
+    void load();
+  }, [instance.location]);
 
   const ips = instanceIps(state);
 
@@ -62,7 +77,11 @@ export function OverviewTab({ instance }: OverviewTabProps) {
               <Sparkline points={live.memory.map((p) => p.value)} color="#58a6ff" />
               <span className="text-xs text-text-secondary">
                 {formatBytes(live.memory[live.memory.length - 1]!.value)}
-                {instance.config["limits.memory"] ? ` / ${instance.config["limits.memory"]}` : ""}
+                {instance.config["limits.memory"]
+                  ? ` / ${instance.config["limits.memory"]}`
+                  : hostMemoryTotal !== null
+                    ? ` / ${formatBytes(hostMemoryTotal)}`
+                    : ""}
               </span>
             </span>
           ),

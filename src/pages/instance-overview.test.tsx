@@ -25,6 +25,10 @@ vi.mock("../api", () => ({
       memory: { usage: 536870912 },
     }),
   },
+  resourcesApi: {
+    get: vi.fn().mockResolvedValue({ cpu: { total: 8 }, memory: { total: 17179869184, used: 0 } }),
+    getMemberResources: vi.fn().mockResolvedValue({ cpu: { total: 8 }, memory: { total: 17179869184, used: 0 } }),
+  },
 }));
 
 describe("OverviewTab", () => {
@@ -54,6 +58,6 @@ describe("OverviewTab", () => {
     expect(await screen.findByText("Memory usage")).toBeInTheDocument();
     expect(screen.getAllByTestId("sparkline")).toHaveLength(2);
     expect(screen.getByText("40.0%")).toBeInTheDocument();
-    expect(screen.getByText("512 MiB")).toBeInTheDocument();
+    expect(screen.getByText("512 MiB / 16 GiB")).toBeInTheDocument();
   });
 });
