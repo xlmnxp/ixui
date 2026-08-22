@@ -188,6 +188,9 @@ describe("InstanceDetailPage", () => {
     );
     await screen.findByText("web1");
     await user.click(screen.getByTestId("detail-terminal"));
+    expect(openSpy).toHaveBeenCalledWith("/ui/terminal/web1?project=default&mode=vga", "terminal-web1", "width=1000,height=640");
+    await user.click(screen.getByTestId("detail-console-menu"));
+    await user.click(screen.getByTestId("detail-console-shell"));
     expect(openSpy).toHaveBeenCalledWith("/ui/terminal/web1?project=default", "terminal-web1", "width=1000,height=640");
     restore();
   });

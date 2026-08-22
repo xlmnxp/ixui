@@ -280,9 +280,12 @@ describe("InstanceTerminal", () => {
     );
   });
 
-  it("shows the instance name", () => {
+  it("hides the bar but keeps the hover switch overlay", () => {
     render(<InstanceTerminal instanceName="web1" />);
-    expect(screen.getByText("web1")).toBeInTheDocument();
+    expect(screen.getByTestId("instance-terminal")).toBeInTheDocument();
+    expect(screen.queryByText("web1")).not.toBeInTheDocument();
+    expect(screen.getByTestId("term-shell")).toBeInTheDocument();
+    expect(screen.getByTestId("term-vga")).toBeInTheDocument();
   });
 
   it("starts in VGA mode when the URL requests it", async () => {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Camera, Check, Copy as CopyIcon, Cpu, Download, FileText, FolderOpen, Gauge, History, Monitor, MoreHorizontal, Plus, MoveRight, Pencil, Play, RotateCw, Settings, Square, Terminal as TerminalIcon, Trash2, X } from "lucide-react";
+import { Camera, Check, ChevronDown, Copy as CopyIcon, Cpu, Download, FileText, FolderOpen, Gauge, History, Monitor, MoreHorizontal, Plus, MoveRight, Pencil, Play, RotateCw, Settings, Square, SquareTerminal, Trash2, X } from "lucide-react";
 import { backupsApi, instancesApi, operationsApi } from "../api";
 import type { Instance } from "../api/types";
 import { instancesStore, loadInstances } from "../state/instances";
@@ -41,6 +41,7 @@ export function InstanceDetailPage() {
   const [deviceActions, setDeviceActions] = useState<DeviceActions | null>(null);
   const [snapshotsActions, setSnapshotsActions] = useState<SnapshotsActions | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [consoleMenuOpen, setConsoleMenuOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
@@ -160,6 +161,18 @@ export function InstanceDetailPage() {
     }
   };
 
+  const openConsole = (mode: "vga" | "exec") => {
+    if (!instance) return;
+    const projectPart = `project=${encodeURIComponent(instance.project)}`;
+    const modePart = mode === "vga" ? "&mode=vga" : "";
+    window.open(
+      `/ui/terminal/${instance.name}?${projectPart}${modePart}`,
+      `terminal-${instance.name}`,
+      "width=1000,height=640"
+    );
+    setConsoleMenuOpen(false);
+  };
+
   if (notFound) {
     return (
       <div className="p-6" data-testid="instance-not-found">
@@ -264,7 +277,32 @@ export function InstanceDetailPage() {
                 </Button>,
               ]
             : []),
-          <Button key="terminal" size="sm" variant="secondary" data-testid="detail-terminal" onClick={() => window.open(`/ui/terminal/${instance.name}?project=${instance.project}`, `terminal-${instance.name}`, "width=1000,height=640")}><TerminalIcon size={14} /> Terminal</Button>,
+          <div key="console" className="relative flex items-center">
+            <Button
+              size="sm"
+              variant="secondary"
+              data-testid="detail-terminal"
+              onClick={() => openConsole("vga")}
+            >
+              <Monitor size={14} /> Console
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              data-testid="detail-console-menu"
+              aria-label="Console options"
+              className="!px-1.5"
+              onClick={() => setConsoleMenuOpen((o) => !o)}
+            >
+              <ChevronDown size={12} />
+            </Button>
+            {consoleMenuOpen && (
+              <div data-testid="detail-console-items" className="absolute right-0 top-full z-40 mt-1 w-44 overflow-hidden rounded border border-border bg-surface-800 py-1 shadow-xl">
+                <button type="button" data-testid="detail-console-vga" onClick={() => openConsole("vga")} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-text-primary hover:bg-surface-700"><Monitor size={14} /> Console (VGA)</button>
+                <button type="button" data-testid="detail-console-shell" onClick={() => openConsole("exec")} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-text-primary hover:bg-surface-700"><SquareTerminal size={14} /> Terminal (shell)</button>
+              </div>
+            )}
+          </div>,
         ]}
       />
 

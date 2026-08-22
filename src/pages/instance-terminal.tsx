@@ -4,7 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
 import "@fontsource/ubuntu-mono/400.css";
 import "@fontsource/ubuntu-mono/700.css";
-import { Monitor, RotateCw, SquareTerminal, Terminal as TerminalIcon } from "lucide-react";
+import { Monitor, RotateCw, SquareTerminal } from "lucide-react";
 import { SpiceMainConn, handle_resize } from "../../lib/spice/src/main.js";
 import { instancesApi } from "../api";
 import { registerInstanceProject } from "../api/client";
@@ -259,30 +259,28 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   };
 
   return (
-    <div className="flex h-screen flex-col" data-testid="instance-terminal">
-      <div className="flex h-10 items-center gap-2 border-b border-border bg-surface-900 px-3">
-        <TerminalIcon size={14} className="text-text-secondary" />
-        <span className="text-sm font-medium text-text-primary">{instanceName}</span>
-        <div className="ml-auto flex items-center gap-1.5">
-          <Button
-            size="sm"
-            variant={kind === "exec" ? "secondary" : "ghost"}
-            disabled={status === "connecting"}
-            onClick={() => switchKind("exec")}
-            data-testid="term-shell"
-          >
-            <SquareTerminal size={14} /> Shell
-          </Button>
-          <Button
-            size="sm"
-            variant={kind === "console" ? "secondary" : "ghost"}
-            disabled={status === "connecting"}
-            onClick={() => switchKind("console")}
-            data-testid="term-vga"
-          >
-            <Monitor size={14} /> Console
-          </Button>
-        </div>
+    <div className="group relative flex h-screen flex-col" data-testid="instance-terminal">
+      <div className="absolute right-2 top-2 z-10 flex gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <Button
+          size="sm"
+          variant={kind === "exec" ? "secondary" : "ghost"}
+          disabled={status === "connecting"}
+          onClick={() => switchKind("exec")}
+          data-testid="term-shell"
+          className="bg-surface-900/80"
+        >
+          <SquareTerminal size={14} /> Shell
+        </Button>
+        <Button
+          size="sm"
+          variant={kind === "console" ? "secondary" : "ghost"}
+          disabled={status === "connecting"}
+          onClick={() => switchKind("console")}
+          data-testid="term-vga"
+          className="bg-surface-900/80"
+        >
+          <Monitor size={14} /> Console
+        </Button>
       </div>
       <div ref={containerRef} id="spice-screen" className="relative min-h-0 flex-1 bg-surface-950">
         {status === "connecting" && (
