@@ -161,19 +161,32 @@ export function TabStrip({
                 </div>
               );
             })}
-            <button
-              type="button"
-              data-testid={`${dataTestId}-add`}
-              aria-label={onAddLabel}
-              onClick={onAdd}
-              className="sticky right-0 z-10 mb-1 ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded bg-surface-800 text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
-            >
-              <Plus size={14} />
-            </button>
+            {!overflow.right && (
+              <button
+                type="button"
+                data-testid={`${dataTestId}-add`}
+                aria-label={onAddLabel}
+                onClick={onAdd}
+                className="mb-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
+              >
+                <Plus size={14} />
+              </button>
+            )}
           </div>
-          <div className={`pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-surface-800 to-transparent transition-opacity ${overflow.left ? "opacity-100" : "opacity-0"}`} />
-          <div className={`pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-surface-800 to-transparent transition-opacity ${overflow.right ? "opacity-100" : "opacity-0"}`} />
+          <div className={`pointer-events-none absolute inset-y-0 left-0 z-10 w-6 bg-gradient-to-r from-surface-800 to-transparent transition-opacity ${overflow.left ? "opacity-100" : "opacity-0"}`} />
+          <div className={`pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-gradient-to-l from-surface-800 to-transparent transition-opacity ${overflow.right ? "opacity-100" : "opacity-0"}`} />
         </div>
+        {overflow.right && (
+          <button
+            type="button"
+            data-testid={`${dataTestId}-add`}
+            aria-label={onAddLabel}
+            onClick={onAdd}
+            className="mb-1 flex h-6 w-6 shrink-0 items-center justify-center rounded bg-surface-800 text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
+          >
+            <Plus size={14} />
+          </button>
+        )}
       </div>
 
       <Dialog open={renameTab !== null} onClose={() => setRenameTab(null)} title="Rename tab" footer={
