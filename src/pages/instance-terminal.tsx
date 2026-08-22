@@ -5,7 +5,7 @@ import "xterm/css/xterm.css";
 import "@fontsource/ubuntu-mono/400.css";
 import "@fontsource/ubuntu-mono/700.css";
 import { Monitor, RotateCw, SquareTerminal } from "lucide-react";
-import { SpiceMainConn, handle_resize } from "../../lib/spice/src/main.js";
+import { SpiceMainConn } from "../../lib/spice/src/main.js";
 import { instancesApi } from "../api";
 import { registerInstanceProject } from "../api/client";
 import { createSubprotocolShim } from "../lib/ws-shim";
@@ -55,26 +55,27 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
   const shimRef = useRef(createSubprotocolShim());
   const connectTimerRef = useRef<number | null>(null);
   const fitResizeRef = useRef<(() => void) | null>(null);
+  const canvasObserverRef = useRef<{ stop: () => void } | null>(null);
 
   // Fit the SPICE display to the actual container size. Reads the container
-  // rect directly (more reliable than the vendored helper, which can see a
-  // zero-width element while the popup is still settling) and calls the
-  // connection's resize_window, which asks the guest agent to resize.
+  // Scale the guest framebuffer down (CSS zoom) so the whole screen fits
+  // inside the container, keeping the guest's native resolution. spice-html5's
+  // input mapping already accounts for CSS-scaled canvases.
   const safeHandleResize = () => {
     const el = containerRef.current;
-    const conn = spiceRef.current as { resize_window?: (f: number, w: number, h: number, d: number, x: number, y: number) => void } | null;
-    if (!el || !conn?.resize_window) {
-      // Fall back to the vendored helper for the global connection.
-      const sc = (window as { spice_connection?: unknown }).spice_connection;
-      if (sc) handle_resize();
-      return;
-    }
+    if (!el) return;
+    const canvas = el.querySelector<HTMLCanvasElement>("canvas");
+    if (!canvas) return;
+    const cw = canvas.width;
+    const ch = canvas.height;
+    if (!cw || !ch) return;
     const rect = el.getBoundingClientRect();
-    let w = Math.floor(rect.width);
-    let h = Math.floor(rect.height);
-    if (w % 8 > 0) w -= w % 8;
-    if (h % 8 > 0) h -= h % 8;
-    if (w > 0 && h > 0) conn.resize_window(0, w, h, 32, 0, 0);
+    const scale = Math.min(rect.width / cw, rect.height / ch);
+    canvas.style.transformOrigin = "top left";
+    canvas.style.transform = `scale(${scale})`;
+    canvas.style.position = "absolute";
+    canvas.style.left = `${(rect.width - cw * scale) / 2}px`;
+    canvas.style.top = `${(rect.height - ch * scale) / 2}px`;
   };
 
   const clearConnectTimer = () => {
@@ -111,6 +112,8 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
       window.removeEventListener("resize", fitResizeRef.current);
       fitResizeRef.current = null;
     }
+    canvasObserverRef.current?.stop();
+    canvasObserverRef.current = null;
   };
 
   const disconnect = () => {
@@ -173,7 +176,17 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
           onsuccess: () => {
             clearConnectTimer();
             setStatus("connected");
-            safeHandleResize();
+            // The canvas is created asynchronously; observe the container and
+            // fit as soon as it appears.
+            const el = containerRef.current;
+            if (el) {
+              const obs = new MutationObserver(() => safeHandleResize());
+              obs.observe(el, { childList: true, subtree: true });
+              const stop = () => obs.disconnect();
+              // Keep observing for future canvas resizes (guest resolution changes).
+              canvasObserverRef.current = { stop };
+              safeHandleResize();
+            }
           },
         });
         (window as { spice_connection?: unknown }).spice_connection = conn;
