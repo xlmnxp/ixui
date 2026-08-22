@@ -303,7 +303,7 @@ describe("InstanceTerminal", () => {
     await user.click(screen.getByTestId("tab-color-#d29922"));
     await user.click(screen.getByTestId("tab-rename-save"));
     expect(screen.getByTestId("term-tab-t0")).toHaveTextContent("prod shell");
-    expect(screen.getByTestId("term-tab-t0").querySelector("span[style]")).toBeInTheDocument();
+    expect((screen.getByTestId("term-tab-t0") as HTMLElement).style.backgroundColor).toContain("rgba");
   });
 
   it("starts in VGA mode when the URL requests it", async () => {

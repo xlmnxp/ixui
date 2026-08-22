@@ -311,6 +311,14 @@ interface TabDef {
 
 const TAB_COLORS = ["#3fb950", "#58a6ff", "#d29922", "#f85149", "#bc8cff", "#39c5cf", "#f0883e", "#e3b341"];
 
+function tint(hex: string, alpha: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const project = new URLSearchParams(window.location.search).get("project") ?? undefined;
 
@@ -442,9 +450,13 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                 aria-label={`Switch to ${label}`}
                 onClick={() => setActiveId(tab.id)}
                 onDoubleClick={() => setRenameTab({ id: tab.id, name: label, color: tab.color ?? "" })}
-                className={`group flex h-full max-w-52 shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-t-md px-3 text-xs ${active ? "bg-surface-950 text-text-primary" : "bg-surface-700/50 text-text-secondary hover:bg-surface-700 hover:text-text-primary"}`}
+                className={`group flex h-full max-w-52 shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-t-md px-3 text-xs ${active ? "text-text-primary" : "text-text-secondary hover:text-text-primary"}`}
+                style={
+                  tab.color
+                    ? { backgroundColor: tint(tab.color, active ? 0.45 : 0.2) }
+                    : { backgroundColor: active ? "#191817" : undefined }
+                }
               >
-                {tab.color && <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: tab.color }} />}
                 {tab.kind === "console" ? <Monitor size={13} /> : <SquareTerminal size={13} />}
                 <span className="min-w-0 truncate">{label}</span>
                 {tabs.length > 1 && (
