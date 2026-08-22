@@ -347,7 +347,8 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const [overflow, setOverflow] = useState({ left: false, right: false });
   const nextIdRef = useRef(1);
   const stripRef = useRef<HTMLDivElement>(null);
-  const dragTargetRef = useRef<string | null>(null);
+  const dragFromRef = useRef<string | null>(null);
+  const dragOverRef = useRef<string | null>(null);
 
   const updateOverflow = () => {
     const el = stripRef.current;
@@ -451,19 +452,27 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                 onDragStart={(e) => {
                   e.dataTransfer.setData("text/plain", tab.id);
                   e.dataTransfer.effectAllowed = "move";
-                  dragTargetRef.current = null;
+                  dragFromRef.current = tab.id;
+                  dragOverRef.current = null;
                 }}
                 onDragOver={(e) => {
                   e.preventDefault();
-                  const fromId = e.dataTransfer.getData("text/plain");
-                  if (fromId && fromId !== tab.id && dragTargetRef.current !== tab.id) {
-                    dragTargetRef.current = tab.id;
+                  const fromId = dragFromRef.current;
+                  if (fromId && fromId !== tab.id && dragOverRef.current !== tab.id) {
+                    dragOverRef.current = tab.id;
                     reorderTab(fromId, tab.id);
                   }
                 }}
                 onDrop={(e) => {
                   e.preventDefault();
-                  dragTargetRef.current = null;
+                  const fromId = e.dataTransfer.getData("text/plain");
+                  if (fromId) reorderTab(fromId, tab.id);
+                  dragFromRef.current = null;
+                  dragOverRef.current = null;
+                }}
+                onDragEnd={() => {
+                  dragFromRef.current = null;
+                  dragOverRef.current = null;
                 }}
                 aria-label={`Switch to ${label}`}
                 onClick={() => setActiveId(tab.id)}
