@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Check, FilePlus2, FolderPlus, Maximize2, MoveRight, Play, Plus, ShieldAlert, Square, Trash2, X } from "lucide-react";
+import { Bell, Check, FilePlus2, FolderPlus, Maximize2, MoveRight, Play, Plus, ShieldAlert, Square, SquareTerminal, Trash2, X } from "lucide-react";
 import { Button } from "../components/button";
 import { Badge } from "../components/badge";
 import { StatusDot } from "../components/status-dot";
@@ -306,6 +306,24 @@ export function Gallery() {
 
       <Section title="Tabs">
         <Tabs tabs={[{ key: "a", label: "Tab A" }, { key: "b", label: "Tab B" }]} active={tab} onChange={setTab} />
+      </Section>
+
+      <Section title="Tab chips">
+        <div className="flex flex-wrap items-end gap-1.5 rounded bg-surface-800 px-2 py-1">
+          <div className="flex h-7 items-center gap-1.5 rounded-t-md bg-surface-950 px-3 text-xs text-text-primary">
+            <SquareTerminal size={13} /> Shell 1
+            <button className="ml-0.5 rounded-full p-0.5 text-text-tertiary hover:bg-surface-600 hover:text-text-primary"><X size={12} /></button>
+          </div>
+          <div className="flex h-[calc(2rem-2px)] items-center gap-1.5 self-center rounded-md bg-surface-700/50 px-3 text-xs text-text-secondary">
+            <SquareTerminal size={13} /> Shell 2
+            <button className="ml-0.5 rounded-full p-0.5 text-text-tertiary hover:bg-surface-600 hover:text-text-primary"><X size={12} /></button>
+          </div>
+          <div className="flex h-[calc(2rem-2px)] items-center gap-1.5 self-center rounded-md px-3 text-xs text-white/80" style={{ backgroundColor: "#4a9e6b" }}>
+            <SquareTerminal size={13} /> DB
+            <button className="ml-0.5 rounded-full p-0.5 text-white/80 hover:bg-[rgba(255,255,255,0.15)] hover:text-white"><X size={12} /></button>
+          </div>
+          <button className="flex h-6 w-6 items-center justify-center rounded text-text-tertiary hover:bg-surface-700 hover:text-text-primary"><Plus size={14} /></button>
+        </div>
       </Section>
 
       <Section title="Breadcrumbs">
