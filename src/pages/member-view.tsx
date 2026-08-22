@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { Boxes, Copy, Gauge, KeyRound, Power, RotateCcw, Server } from "lucide-react";
+import { Boxes, Check, Copy, Gauge, KeyRound, Power, RotateCcw, Server, TriangleAlert } from "lucide-react";
 import { clusterApi, resourcesApi } from "../api";
 import { ApiError } from "../api/client";
 import type { ClusterMember, ClusterGroup } from "../api/types";
@@ -159,7 +159,19 @@ export function MemberView() {
     <div className="flex h-full flex-col" data-testid="member-view">
       {member && (
         <div className="flex h-10 items-center gap-3 border-b border-border bg-surface-900 px-4" data-testid="member-header">
-          <Server size={18} className="text-text-secondary" />
+          <span className="relative inline-flex">
+            <Server size={18} className="text-text-secondary" />
+            {member.status === "Online" && (
+              <span className="absolute -right-1 bottom-0 flex h-3 w-3 items-center justify-center rounded-full bg-success">
+                <Check size={7} className="text-white" strokeWidth={3} />
+              </span>
+            )}
+            {member.status === "Evacuated" && (
+              <span className="absolute -right-1 bottom-0 flex h-3 w-3 items-center justify-center rounded-full bg-warning">
+                <TriangleAlert size={7} className="text-white" />
+              </span>
+            )}
+          </span>
           <h1 className="text-base font-semibold text-text-primary">{member.server_name}</h1>
           <Badge tone={member.status === "Online" ? "success" : "neutral"}>{member.status}</Badge>
           <span className="text-xs text-text-tertiary">{member.architecture}</span>
