@@ -71,8 +71,11 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
     if (!cw || !ch) return;
     const rect = el.getBoundingClientRect();
     const scale = Math.min(rect.width / cw, rect.height / ch);
-    canvas.style.transformOrigin = "top left";
-    canvas.style.transform = `scale(${scale})`;
+    // Set CSS width/height (not a transform) so spice-html5's mouse mapping —
+    // which uses offsetX vs getBoundingClientRect — stays accurate.
+    canvas.style.width = `${Math.floor(cw * scale)}px`;
+    canvas.style.height = `${Math.floor(ch * scale)}px`;
+    canvas.style.transform = "";
     canvas.style.position = "absolute";
     canvas.style.left = `${(rect.width - cw * scale) / 2}px`;
     canvas.style.top = `${(rect.height - ch * scale) / 2}px`;
