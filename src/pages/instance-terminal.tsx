@@ -56,6 +56,14 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
   const connectTimerRef = useRef<number | null>(null);
   const fitResizeRef = useRef<(() => void) | null>(null);
 
+  // The vendored spice handle_resize dereferences window.spice_connection
+  // without a guard; only invoke it when a connection is actually present to
+  // avoid "Cannot set properties of undefined (setting 'spice_resize_timer')".
+  const safeHandleResize = () => {
+    const sc = (window as { spice_connection?: unknown }).spice_connection;
+    if (sc) handle_resize();
+  };
+
   const clearConnectTimer = () => {
     if (connectTimerRef.current !== null) {
       window.clearTimeout(connectTimerRef.current);
@@ -85,7 +93,7 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
     spiceRef.current?.stop?.();
     spiceRef.current = null;
     (window as { spice_connection?: unknown }).spice_connection = undefined;
-    window.removeEventListener("resize", handle_resize);
+    window.removeEventListener("resize", safeHandleResize);
     if (fitResizeRef.current) {
       window.removeEventListener("resize", fitResizeRef.current);
       fitResizeRef.current = null;
@@ -152,12 +160,12 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
           onsuccess: () => {
             clearConnectTimer();
             setStatus("connected");
-            handle_resize();
+            safeHandleResize();
           },
         });
         (window as { spice_connection?: unknown }).spice_connection = conn;
         spiceRef.current = conn;
-        window.addEventListener("resize", handle_resize);
+        window.addEventListener("resize", safeHandleResize);
         return;
       }
 
@@ -265,7 +273,7 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
   // Refit when this tab becomes visible again (xterm in a hidden pane loses its size).
   useEffect(() => {
     if (!active) return;
-    if (kind === "console") handle_resize();
+    if (kind === "console") safeHandleResize();
     else fitResizeRef.current?.();
   }, [active, kind]);
 
