@@ -277,6 +277,18 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
     else fitResizeRef.current?.();
   }, [active, kind]);
 
+  // Watch the container size and re-resize the SPICE display when the popup
+  // window (or the surrounding layout) changes its dimensions.
+  useEffect(() => {
+    if (kind !== "console") return;
+    const el = containerRef.current;
+    if (!el) return;
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => safeHandleResize());
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [kind]);
+
   return (
     <div
       ref={containerRef}
