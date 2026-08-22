@@ -174,7 +174,7 @@ export function TabStrip({
             </span>
           </div>
           <div className={`pointer-events-none absolute inset-y-0 left-0 z-20 w-6 bg-gradient-to-r from-surface-800 to-transparent transition-opacity ${overflow.left ? "opacity-100" : "opacity-0"}`} />
-          <div className={`pointer-events-none absolute inset-y-0 right-0 z-20 mr-10 w-6 bg-gradient-to-l from-surface-800 to-transparent transition-opacity ${overflow.right ? "opacity-100" : "opacity-0"}`} />
+          <div className={`pointer-events-none absolute inset-y-0 right-0 z-20 mr-8 w-6 bg-gradient-to-l from-surface-800 to-transparent transition-opacity ${overflow.right ? "opacity-100" : "opacity-0"}`} />
         </div>
       </div>
 
