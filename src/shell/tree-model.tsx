@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Boxes, Bug, Check, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, FolderCog, History, Settings, ShieldCheck, TriangleAlert } from "lucide-react";
+import { BookOpen, Boxes, Bug, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, FolderCog, History, Settings, ShieldCheck, TriangleAlert } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import type { TreeNode } from "../components/tree";
 import { ALL_PROJECTS } from "../api/client";
@@ -55,14 +55,10 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
           <span className="relative inline-flex">
             <Server size={15} className={m.status !== "Online" && m.status !== "Evacuated" ? "text-text-tertiary/50" : "text-text-secondary"} />
             {m.status === "Online" && (
-              <span className="absolute -right-1.5 bottom-0 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-success ring-1 ring-sidebar">
-                <Check size={10} className="text-white" fill="currentColor" />
-              </span>
+              <span className="absolute -right-1 bottom-0 h-2.5 w-2.5 rounded-full bg-success" />
             )}
             {m.status === "Evacuated" && (
-              <span className="absolute -right-1.5 bottom-0 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-warning ring-1 ring-sidebar">
-                <TriangleAlert size={10} className="text-white" fill="currentColor" />
-              </span>
+              <span className="absolute -right-1 bottom-0 h-2.5 w-2.5 rounded-full bg-warning" />
             )}
           </span>
           <Link to={`/members/${m.server_name}`}>{m.server_name}</Link>
