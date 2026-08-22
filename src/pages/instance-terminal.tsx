@@ -41,9 +41,10 @@ interface SessionProps {
   active: boolean;
   tabId: string;
   onSwitch: () => void;
+  onProcess?: (command: string) => void;
 }
 
-function TerminalSession({ instanceName, kind, active, tabId, onSwitch }: SessionProps) {
+function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProcess }: SessionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");
   const termRef = useRef<Terminal | null>(null);
@@ -108,7 +109,9 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch }: Sessio
             let lastError: unknown = null;
             for (const command of SHELL_CANDIDATES) {
               try {
-                return await instancesApi.exec(instanceName, command, true);
+                const result = await instancesApi.exec(instanceName, command, true);
+                onProcess?.(command[0] ?? "shell");
+                return result;
               } catch (err) {
                 lastError = err;
               }
@@ -307,7 +310,10 @@ interface TabDef {
   kind: "exec" | "console";
   name?: string;
   color?: string;
+  process?: string;
 }
+
+const basename = (path: string) => path.split("/").pop() ?? path;
 
 const TAB_COLORS = ["#3fb950", "#58a6ff", "#d29922", "#f85149", "#bc8cff", "#39c5cf", "#f0883e", "#e3b341"];
 
@@ -392,14 +398,11 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   };
 
   const shellLabels = new Map<string, string>();
-  let shellIndex = 0;
   for (const tab of tabs) {
-    if (tab.kind === "exec") {
-      shellIndex++;
-      shellLabels.set(tab.id, tab.name ?? `Shell ${shellIndex}`);
-    } else {
-      shellLabels.set(tab.id, tab.name ?? "Console");
-    }
+    const fallback = tab.kind === "exec"
+      ? `${instanceName} · ${tab.process ? basename(tab.process) : "shell"}`
+      : instanceName;
+    shellLabels.set(tab.id, tab.name ?? fallback);
   }
 
   const saveTabName = () => {
@@ -499,6 +502,9 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
             active={tab.id === activeId}
             tabId={tab.id}
             onSwitch={() => switchKindOf(tab.id)}
+            onProcess={(cmd) =>
+              setTabs((prev) => prev.map((t) => (t.id === tab.id ? { ...t, process: cmd } : t)))
+            }
           />
         ))}
       </div>

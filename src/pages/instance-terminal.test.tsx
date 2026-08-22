@@ -280,10 +280,10 @@ describe("InstanceTerminal", () => {
     const user = userEvent.setup();
     render(<InstanceTerminal instanceName="web1" />);
     await screen.findByTestId("term-tab-t0");
-    expect(screen.getByTestId("term-tab-t0")).toHaveTextContent("Shell 1");
+    await waitFor(() => expect(screen.getByTestId("term-tab-t0")).toHaveTextContent("web1 · bash"));
     await user.click(screen.getByTestId("term-add-tab"));
     const tab1 = await screen.findByTestId("term-tab-t1");
-    expect(tab1).toHaveTextContent("Shell 2");
+    await waitFor(() => expect(tab1).toHaveTextContent("web1 · bash"));
     // Both shell sessions connect (data + control websockets each).
     await waitFor(() => expect(FakeWebSocket.instances.length).toBeGreaterThanOrEqual(4));
     await user.click(screen.getByTestId("term-close-t1"));
