@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Tree } from "../components/tree";
 import { ChevronsDownUp, ChevronsUpDown, Plus } from "lucide-react";
@@ -12,7 +12,24 @@ import { CreateInstanceWizard } from "../components/create-instance-wizard";
 import { InstanceContextMenu } from "./instance-context-menu";
 import type { Instance } from "../api/types";
 
+const COMPACT_THRESHOLD = 190;
+
 export function Sidebar() {
+  const asideRef = useRef<HTMLElement>(null);
+  const [compact, setCompact] = useState(false);
+
+  // Respond to the sidebar's own width (not the window) for label collapsing.
+  useEffect(() => {
+    const el = asideRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? 0;
+      setCompact(width < COMPACT_THRESHOLD);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const location = useLocation();
   const navigate = useNavigate();
   const project = useStore(currentProjectStore);
@@ -67,7 +84,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="flex h-full flex-col border-r border-border bg-sidebar" data-testid="sidebar">
+    <aside ref={asideRef} className="flex h-full flex-col border-r border-border bg-sidebar" data-testid="sidebar">
       <div className="flex h-10 items-center gap-2 border-b border-border px-3">
         <span className="h-3 w-3 rounded-sm bg-accent-600" data-testid="sidebar-mark" />
         <span className="truncate text-sm font-semibold text-text-primary" data-testid="sidebar-title">{uiTitle}</span>
@@ -80,7 +97,7 @@ export function Sidebar() {
           onClick={() => { setWizardTarget(undefined); setWizardOpen(true); }}
           className="mr-auto flex shrink-0 items-center gap-1 whitespace-nowrap rounded border border-border bg-surface-600 px-1.5 py-0.5 text-[11px] text-text-primary hover:bg-surface-700"
         >
-          <Plus size={12} /> New instance
+          <Plus size={12} /> {!compact && <span>New instance</span>}
         </button>
         <button
           type="button"
@@ -88,7 +105,7 @@ export function Sidebar() {
           onClick={() => { setTreeExpanded(true); setTreeEpoch((e) => e + 1); }}
           className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
         >
-          <ChevronsUpDown size={12} /> Expand all
+          <ChevronsUpDown size={12} /> {!compact && <span>Expand all</span>}
         </button>
         <button
           type="button"
@@ -96,7 +113,7 @@ export function Sidebar() {
           onClick={() => { setTreeExpanded(false); setTreeEpoch((e) => e + 1); }}
           className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
         >
-          <ChevronsDownUp size={12} /> Collapse all
+          <ChevronsDownUp size={12} /> {!compact && <span>Collapse all</span>}
         </button>
       </div>
       <div className="flex-1 overflow-y-auto py-2">
