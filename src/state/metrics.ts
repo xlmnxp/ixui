@@ -7,10 +7,14 @@ export interface MetricPoint {
 }
 
 export interface InstanceMetrics {
-  /** CPU usage percent samples (0-100+). */
+  /** CPU usage percent samples computed from counter deltas (0-100 per core). */
   cpu: MetricPoint[];
   /** Memory usage samples in bytes. */
   memory: MetricPoint[];
+  /** Raw cumulative cpu.usage (ns) of the previous sample. */
+  cpuRaw?: number;
+  /** Wall-clock time of the previous sample. */
+  cpuT?: number;
 }
 
 /** Instance key ("project/name") → sampled usage history (ring buffer). */
@@ -28,7 +32,11 @@ function push(samples: MetricPoint[], point: MetricPoint): MetricPoint[] {
   return next.length > MAX_POINTS ? next.slice(next.length - MAX_POINTS) : next;
 }
 
-/** Poll the instance state every few seconds and append samples to the ring buffer. */
+/**
+ * Poll the instance state every few seconds. CPU percent is derived from the
+ * cumulative cpu.usage counter (ns): delta_usage / delta_wall_clock. Memory is
+ * the per-instance cgroup usage reported by the daemon.
+ */
 export function startMetricsPolling(name: string, project?: string): void {
   const key = keyFor(name, project);
   if (pollers.has(key)) return;
@@ -36,18 +44,25 @@ export function startMetricsPolling(name: string, project?: string): void {
   const tick = async () => {
     try {
       const state = await instancesApi.state(name, project);
-      const cpuPct = typeof state.cpu?.usage === "number" ? (state.cpu.usage / 1e9) * 100 : null;
+      const cpuRaw = typeof state.cpu?.usage === "number" ? state.cpu.usage : null;
       const memory = typeof state.memory?.usage === "number" ? state.memory.usage : null;
       const now = Date.now();
       metricsStore.setState((prev) => {
         const cur = prev[key] ?? { cpu: [], memory: [] };
-        return {
-          ...prev,
-          [key]: {
-            cpu: cpuPct !== null ? push(cur.cpu, { t: now, value: cpuPct }) : cur.cpu,
-            memory: memory !== null ? push(cur.memory, { t: now, value: memory }) : cur.memory,
-          },
-        };
+        const next: InstanceMetrics = { ...cur };
+        if (cpuRaw !== null && typeof cur.cpuRaw === "number" && cpuRaw >= cur.cpuRaw && typeof cur.cpuT === "number") {
+          const dtMs = Math.max(1, now - cur.cpuT);
+          const pct = ((cpuRaw - cur.cpuRaw) / (dtMs * 1e6)) * 100;
+          next.cpu = push(cur.cpu, { t: now, value: pct });
+        }
+        if (cpuRaw !== null) {
+          next.cpuRaw = cpuRaw;
+          next.cpuT = now;
+        }
+        if (memory !== null) {
+          next.memory = push(cur.memory, { t: now, value: memory });
+        }
+        return { ...prev, [key]: next };
       });
     } catch {
       // State may be unavailable (stopped instance) — keep the last samples.

@@ -21,7 +21,7 @@ vi.mock("../api", () => ({
   instancesApi: {
     state: vi.fn().mockResolvedValue({
       status: "Running",
-      cpu: { usage: 2_500_000_000 },
+      cpu: { usage: 1_000_000_000 },
       memory: { usage: 536870912 },
     }),
   },
@@ -43,11 +43,17 @@ describe("OverviewTab", () => {
   });
 
   it("shows live CPU and memory sparklines from the polling buffer", async () => {
+    metricsStore.setState({
+      "default/web1": {
+        cpu: [{ t: 1, value: 20.5 }, { t: 2, value: 40 }],
+        memory: [{ t: 1, value: 536870912 }],
+      },
+    });
     render(<OverviewTab instance={instance("container")} />);
     expect(await screen.findByText("CPU usage")).toBeInTheDocument();
     expect(await screen.findByText("Memory usage")).toBeInTheDocument();
     expect(screen.getAllByTestId("sparkline")).toHaveLength(2);
-    expect(screen.getByText("250.0%")).toBeInTheDocument();
+    expect(screen.getByText("40.0%")).toBeInTheDocument();
     expect(screen.getByText("512 MiB")).toBeInTheDocument();
   });
 });
