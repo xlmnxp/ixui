@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Boxes, Bug, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, FolderCog, History, Settings, ShieldCheck, TriangleAlert } from "lucide-react";
+import { BookOpen, Boxes, Bug, Check, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, FolderCog, History, Settings, ShieldCheck, TriangleAlert } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import type { TreeNode } from "../components/tree";
 import { ALL_PROJECTS } from "../api/client";
@@ -51,10 +51,15 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
       id: `member-${m.server_name}`,
       action: createAction(`tree-create-${m.server_name}`, m.server_name),
       label: (
-        <span className="flex items-center gap-2">
-          <Server size={14} className="text-text-secondary" />
+        <span className="relative flex items-center gap-2">
+          <Server size={14} className={m.status !== "Online" && m.status !== "Evacuated" ? "text-text-tertiary/50" : "text-text-secondary"} />
           <Link to={`/members/${m.server_name}`}>{m.server_name}</Link>
-          <span data-testid={`member-dot-${m.server_name}`} className={`h-2 w-2 rounded-full ${m.status === "Online" ? "bg-success" : m.status === "Evacuated" ? "bg-warning" : "bg-text-tertiary"}`} />
+          {m.status === "Online" && (
+            <Check size={9} className="absolute -right-1 bottom-0 text-success" />
+          )}
+          {m.status === "Evacuated" && (
+            <TriangleAlert size={9} className="absolute -right-1 bottom-0 text-warning" />
+          )}
         </span>
       ),
       children: (instancesByMember[m.server_name] ?? [])

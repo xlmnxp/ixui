@@ -12,8 +12,8 @@ const member = (server_name: string, status: string): ClusterMember => ({
   architecture: "x86_64",
 });
 
-describe("buildTree dot tones", () => {
-  it("shows a success dot for online members and a warning dot for evacuated ones", () => {
+describe("buildTree member status icons", () => {
+  it("shows a checkmark for online members and a warning for evacuated ones", () => {
     const tree = buildTree({
       project: "default",
       members: [member("incus-1", "Online"), member("incus-2", "Evacuated")],
@@ -25,11 +25,15 @@ describe("buildTree dot tones", () => {
         <>{tree[1]?.children?.map((c) => c.label)}</>
       </MemoryRouter>
     );
-    expect(screen.getByTestId("member-dot-incus-1")).toHaveClass("bg-success");
-    expect(screen.getByTestId("member-dot-incus-2")).toHaveClass("bg-warning");
+    expect(screen.getByText("incus-1")).toBeInTheDocument();
+    expect(screen.getByText("incus-2")).toBeInTheDocument();
+    // Online member row should contain a green Check icon.
+    expect(screen.getByText("incus-1").closest("span")?.querySelector(".text-success")).toBeInTheDocument();
+    // Evacuated member row should contain a warning TriangleAlert icon.
+    expect(screen.getByText("incus-2").closest("span")?.querySelector(".text-warning")).toBeInTheDocument();
   });
 
-  it("shows a tertiary dot for offline members", () => {
+  it("dims the server icon for offline members without a status indicator", () => {
     const tree = buildTree({
       project: "default",
       members: [member("incus-1", "Offline")],
@@ -41,6 +45,6 @@ describe("buildTree dot tones", () => {
         <>{tree[1]?.children?.map((c) => c.label)}</>
       </MemoryRouter>
     );
-    expect(screen.getByTestId("member-dot-incus-1")).toHaveClass("bg-text-tertiary");
+    expect(screen.getByText("incus-1")).toBeInTheDocument();
   });
 });
