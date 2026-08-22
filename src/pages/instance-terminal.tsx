@@ -259,29 +259,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   };
 
   return (
-    <div className="group relative flex h-screen flex-col" data-testid="instance-terminal">
-      <div className="absolute right-2 top-2 z-10 flex gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
-        <Button
-          size="sm"
-          variant={kind === "exec" ? "secondary" : "ghost"}
-          disabled={status === "connecting"}
-          onClick={() => switchKind("exec")}
-          data-testid="term-shell"
-          className="bg-surface-900/80"
-        >
-          <SquareTerminal size={14} /> Shell
-        </Button>
-        <Button
-          size="sm"
-          variant={kind === "console" ? "secondary" : "ghost"}
-          disabled={status === "connecting"}
-          onClick={() => switchKind("console")}
-          data-testid="term-vga"
-          className="bg-surface-900/80"
-        >
-          <Monitor size={14} /> Console
-        </Button>
-      </div>
+    <div className="flex h-screen flex-col" data-testid="instance-terminal">
       <div ref={containerRef} id="spice-screen" className="relative min-h-0 flex-1 bg-surface-950">
         {status === "connecting" && (
           <div

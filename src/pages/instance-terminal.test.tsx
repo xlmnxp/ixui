@@ -98,6 +98,7 @@ function consoleResponse() {
 
 describe("InstanceTerminal", () => {
   beforeEach(() => {
+    window.history.replaceState({}, "", "/ui/terminal/web1");
     FakeWebSocket.instances = [];
     terminalState.lastTerminal = null;
     terminalState.terminals = [];
@@ -133,17 +134,6 @@ describe("InstanceTerminal", () => {
     expect(term.write).toHaveBeenCalledWith("hi");
   });
 
-  it("switches to VGA console via the toggle", async () => {
-    const user = userEvent.setup();
-    render(<InstanceTerminal instanceName="web1" />);
-    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
-    const data = FakeWebSocket.instances[0]!;
-    data.readyState = FakeWebSocket.OPEN;
-    act(() => data.onopen?.());
-    await user.click(screen.getByTestId("term-vga"));
-    expect(apiMocks.console).toHaveBeenCalledWith("web1", 80, 24);
-  });
-
   it("closes the previous session and disposes its terminal before reconnecting", async () => {
     const user = userEvent.setup();
     render(<InstanceTerminal instanceName="web1" />);
@@ -152,11 +142,14 @@ describe("InstanceTerminal", () => {
     const firstControl = FakeWebSocket.instances[1]!;
     firstData.readyState = FakeWebSocket.OPEN;
     act(() => firstData.onopen?.());
-    await user.click(screen.getByTestId("term-vga"));
+    // The shell dies without producing output: fail fast, then switch via the error state.
+    act(() => firstData.onclose?.());
+    await screen.findByTestId("term-error");
+    await user.click(screen.getByTestId("term-switch"));
     await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(3));
     expect(firstData.close).toHaveBeenCalled();
     expect(firstControl.close).toHaveBeenCalled();
-    expect(terminalState.disposes).toBe(1);
+    expect(apiMocks.console).toHaveBeenCalledWith("web1", 80, 24);
     const firstTerminal = terminalState.terminals[0] as { dispose: ReturnType<typeof vi.fn> };
     expect(firstTerminal.dispose).toHaveBeenCalled();
   });
@@ -251,13 +244,8 @@ describe("InstanceTerminal", () => {
   it("shows the VGA error placeholder and offers to switch to Shell", async () => {
     const user = userEvent.setup();
     apiMocks.console.mockRejectedValue(new Error("vga down"));
+    window.history.replaceState({}, "", "/ui/terminal/web1?project=default&mode=vga");
     render(<InstanceTerminal instanceName="web1" />);
-    // Let the initial shell connect, then switch to the failing VGA console.
-    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
-    const data = FakeWebSocket.instances[0]!;
-    data.readyState = FakeWebSocket.OPEN;
-    act(() => data.onopen?.());
-    await user.click(screen.getByTestId("term-vga"));
     expect(await screen.findByText("Console unavailable")).toBeInTheDocument();
     expect(screen.getByTestId("term-switch")).toHaveTextContent("Switch to Shell");
     await user.click(screen.getByTestId("term-switch"));
@@ -280,12 +268,12 @@ describe("InstanceTerminal", () => {
     );
   });
 
-  it("hides the bar but keeps the hover switch overlay", () => {
+  it("hides the bar and the console/terminal toggle buttons", () => {
     render(<InstanceTerminal instanceName="web1" />);
     expect(screen.getByTestId("instance-terminal")).toBeInTheDocument();
     expect(screen.queryByText("web1")).not.toBeInTheDocument();
-    expect(screen.getByTestId("term-shell")).toBeInTheDocument();
-    expect(screen.getByTestId("term-vga")).toBeInTheDocument();
+    expect(screen.queryByTestId("term-shell")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("term-vga")).not.toBeInTheDocument();
   });
 
   it("starts in VGA mode when the URL requests it", async () => {
