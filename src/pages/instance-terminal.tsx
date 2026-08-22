@@ -345,6 +345,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const [activeId, setActiveId] = useState("t0");
   const [renameTab, setRenameTab] = useState<{ id: string; name: string; color: string } | null>(null);
   const [overflow, setOverflow] = useState({ left: false, right: false });
+  const [dragId, setDragId] = useState<string | null>(null);
   const nextIdRef = useRef(1);
   const stripRef = useRef<HTMLDivElement>(null);
   const dragFromRef = useRef<string | null>(null);
@@ -454,6 +455,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                   e.dataTransfer.effectAllowed = "move";
                   dragFromRef.current = tab.id;
                   dragOverRef.current = null;
+                  setDragId(tab.id);
                 }}
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -469,10 +471,12 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                   if (fromId) reorderTab(fromId, tab.id);
                   dragFromRef.current = null;
                   dragOverRef.current = null;
+                  setDragId(null);
                 }}
                 onDragEnd={() => {
                   dragFromRef.current = null;
                   dragOverRef.current = null;
+                  setDragId(null);
                 }}
                 aria-label={`Switch to ${label}`}
                 onClick={() => setActiveId(tab.id)}
@@ -481,7 +485,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                   active
                     ? "h-full rounded-t-md text-text-primary"
                     : "my-1 h-[calc(100%-0.5rem)] self-center rounded-md text-text-secondary hover:text-text-primary"
-                }`}
+                } ${tab.id === dragId ? "opacity-0" : ""}`}
                 style={{
                   backgroundColor: tab.color
                     ? tint(tab.color, active ? 0.45 : 0.2)
