@@ -481,7 +481,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                       e.stopPropagation();
                       closeTab(tab.id);
                     }}
-                    className={`ml-0.5 shrink-0 rounded-full p-0.5 text-text-tertiary transition-colors ${tab.color ? "hover:bg-[var(--tab-color)] hover:text-white" : "hover:bg-surface-600 hover:text-text-primary"}`}
+                    className={`ml-0.5 shrink-0 rounded-full p-0.5 transition-colors ${tab.color ? "text-white/80 hover:bg-[var(--tab-color)] hover:text-white" : "text-text-tertiary hover:bg-surface-600 hover:text-text-primary"}`}
                   >
                     <X size={12} />
                   </button>
