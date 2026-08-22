@@ -12,7 +12,7 @@ import { CreateInstanceWizard } from "../components/create-instance-wizard";
 import { InstanceContextMenu } from "./instance-context-menu";
 import type { Instance } from "../api/types";
 
-const COMPACT_THRESHOLD = 190;
+const COMPACT_THRESHOLD = 240;
 
 export function Sidebar() {
   const asideRef = useRef<HTMLElement>(null);
@@ -21,11 +21,11 @@ export function Sidebar() {
   // Respond to the sidebar's own width (not the window) for label collapsing.
   useEffect(() => {
     const el = asideRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width ?? 0;
-      setCompact(width < COMPACT_THRESHOLD);
-    });
+    if (!el) return;
+    const measure = () => setCompact(el.offsetWidth < COMPACT_THRESHOLD);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
