@@ -323,14 +323,31 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const [tabs, setTabs] = useState<TabDef[]>([{ id: "t0", kind: initialKind }]);
   const [activeId, setActiveId] = useState("t0");
   const [renameTab, setRenameTab] = useState<{ id: string; name: string; color: string } | null>(null);
+  const [overflow, setOverflow] = useState({ left: false, right: false });
   const nextIdRef = useRef(1);
   const stripRef = useRef<HTMLDivElement>(null);
+
+  const updateOverflow = () => {
+    const el = stripRef.current;
+    if (!el) return;
+    setOverflow({
+      left: el.scrollLeft > 0,
+      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 1,
+    });
+  };
 
   // Keep the newest tab in view when the strip overflows.
   useEffect(() => {
     const el = stripRef.current;
     if (el) el.scrollLeft = el.scrollWidth;
+    updateOverflow();
   }, [tabs.length]);
+
+  useEffect(() => {
+    updateOverflow();
+    window.addEventListener("resize", updateOverflow);
+    return () => window.removeEventListener("resize", updateOverflow);
+  }, []);
 
   const addShellTab = () => {
     const id = `t${nextIdRef.current++}`;
@@ -351,6 +368,19 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
     setTabs((prev) =>
       prev.map((t) => (t.id === id ? { ...t, kind: t.kind === "console" ? "exec" : "console" } : t))
     );
+  };
+
+  const reorderTab = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    setTabs((prev) => {
+      const fromIdx = prev.findIndex((t) => t.id === fromId);
+      const toIdx = prev.findIndex((t) => t.id === toId);
+      if (fromIdx < 0 || toIdx < 0) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved!);
+      return next;
+    });
   };
 
   const shellLabels = new Map<string, string>();
@@ -376,6 +406,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   return (
     <div className="flex h-screen flex-col" data-testid="instance-terminal">
       <div className="flex h-9 shrink-0 items-end bg-surface-800 pl-2 pr-1.5 pt-1">
+        <div className="relative flex h-full min-w-0 flex-1 items-end">
         <div
           ref={stripRef}
           data-testid="term-tab-strip"
@@ -385,6 +416,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
               el.scrollLeft += e.deltaY;
             }
           }}
+          onScroll={updateOverflow}
           className="flex h-full min-w-0 flex-1 items-end gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {tabs.map((tab) => {
@@ -396,6 +428,17 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                 data-testid={`term-tab-${tab.id}`}
                 role="button"
                 tabIndex={0}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData("text/plain", tab.id);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const fromId = e.dataTransfer.getData("text/plain");
+                  if (fromId) reorderTab(fromId, tab.id);
+                }}
                 aria-label={`Switch to ${label}`}
                 onClick={() => setActiveId(tab.id)}
                 onDoubleClick={() => setRenameTab({ id: tab.id, name: label, color: tab.color ?? "" })}
@@ -430,6 +473,9 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
           >
             <Plus size={14} />
           </button>
+        </div>
+        <div className={`pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-surface-800 to-transparent transition-opacity ${overflow.left ? "opacity-100" : "opacity-0"}`} />
+        <div className={`pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-surface-800 to-transparent transition-opacity ${overflow.right ? "opacity-100" : "opacity-0"}`} />
         </div>
       </div>
       <div className="flex min-h-0 flex-1 flex-col">
