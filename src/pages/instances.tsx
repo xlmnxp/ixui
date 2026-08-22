@@ -8,9 +8,9 @@ import { ALL_PROJECTS } from "../api/client";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
 import { Badge } from "../components/badge";
-import { StatusDot } from "../components/status-dot";
+
 import { instanceStatusTone } from "../lib/instance-status";
-import { InstanceIcon } from "../shell/instance-icon";
+import { InstanceIcon, InstanceStatusIcon } from "../shell/instance-icon";
 import { Button } from "../components/button";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { EmptyState } from "../components/empty-state";
@@ -114,8 +114,8 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
     {
       key: "status", header: "Status", sortValue: (i) => i.status,
       render: (i) => (
-        <span className="inline-flex items-center gap-2">
-          <StatusDot tone={instanceStatusTone(i.status)} />
+        <span className="inline-flex items-center gap-1">
+          <InstanceStatusIcon status={i.status} />
           <Badge tone={instanceStatusTone(i.status)}>{i.status}</Badge>
         </span>
       ),
