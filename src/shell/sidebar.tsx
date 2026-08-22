@@ -80,7 +80,7 @@ export function Sidebar() {
           onClick={() => { setWizardTarget(undefined); setWizardOpen(true); }}
           className="mr-auto flex shrink-0 items-center gap-1 whitespace-nowrap rounded border border-border bg-surface-600 px-1.5 py-0.5 text-[11px] text-text-primary hover:bg-surface-700"
         >
-          <Plus size={12} /> New instance
+          <Plus size={12} /> <span className="hidden md:inline">New instance</span>
         </button>
         <button
           type="button"
@@ -88,7 +88,7 @@ export function Sidebar() {
           onClick={() => { setTreeExpanded(true); setTreeEpoch((e) => e + 1); }}
           className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
         >
-          <ChevronsUpDown size={12} /> Expand all
+          <ChevronsUpDown size={12} /> <span className="hidden md:inline">Expand all</span>
         </button>
         <button
           type="button"
@@ -96,7 +96,7 @@ export function Sidebar() {
           onClick={() => { setTreeExpanded(false); setTreeEpoch((e) => e + 1); }}
           className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
         >
-          <ChevronsDownUp size={12} /> Collapse all
+          <ChevronsDownUp size={12} /> <span className="hidden md:inline">Collapse all</span>
         </button>
       </div>
       <div className="flex-1 overflow-y-auto py-2">
