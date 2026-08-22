@@ -53,12 +53,12 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
       label: (
         <span className="flex items-center gap-2">
           <span className="relative inline-flex">
-            <Server size={14} className={m.status !== "Online" && m.status !== "Evacuated" ? "text-text-tertiary/50" : "text-text-secondary"} />
+            <Server size={15} className={m.status !== "Online" && m.status !== "Evacuated" ? "text-text-tertiary/50" : "text-text-secondary"} />
             {m.status === "Online" && (
-              <Check size={9} className="absolute -right-1 bottom-0 text-success" />
+              <Check size={9} className="absolute -right-1 bottom-0 text-success" fill="currentColor" />
             )}
             {m.status === "Evacuated" && (
-              <TriangleAlert size={9} className="absolute -right-1 bottom-0 text-warning" />
+              <TriangleAlert size={9} className="absolute -right-1 bottom-0 text-warning" fill="currentColor" />
             )}
           </span>
           <Link to={`/members/${m.server_name}`}>{m.server_name}</Link>
