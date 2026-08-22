@@ -6,12 +6,17 @@ export type StreamEvent = {
 
 const MAX_RECONNECT_DELAY_MS = 30_000;
 const BASE_RECONNECT_DELAY_MS = 1_000;
+// Proactively recycle the socket before proxies (e.g. Cloudflare Tunnel) drop
+// idle connections. Closing triggers the normal reconnect flow with a fresh
+// (and re-authenticated) session.
+const KEEPALIVE_MS = 50_000;
 
 export class EventStream {
   private ws: WebSocket | null = null;
   private listeners = new Set<(e: StreamEvent) => void>();
   private closed = false;
   private reconnectTimer: number | null = null;
+  private keepAliveTimer: number | null = null;
   private reconnectAttempts = 0;
 
   constructor(private url: string) {}
@@ -40,6 +45,11 @@ export class EventStream {
     this.ws = ws;
     ws.onopen = () => {
       this.reconnectAttempts = 0;
+      // Recycle before an idle proxy drops the connection silently.
+      this.keepAliveTimer = window.setTimeout(() => {
+        this.keepAliveTimer = null;
+        ws.close();
+      }, KEEPALIVE_MS);
     };
     ws.onmessage = (msg) => {
       void (async () => {
@@ -53,6 +63,10 @@ export class EventStream {
       })();
     };
     ws.onclose = () => {
+      if (this.keepAliveTimer !== null) {
+        window.clearTimeout(this.keepAliveTimer);
+        this.keepAliveTimer = null;
+      }
       if (this.closed) return;
       this.ws = null;
       this.scheduleReconnect();
@@ -70,6 +84,10 @@ export class EventStream {
     if (this.reconnectTimer !== null) {
       window.clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
+    }
+    if (this.keepAliveTimer !== null) {
+      window.clearTimeout(this.keepAliveTimer);
+      this.keepAliveTimer = null;
     }
     this.ws?.close();
     this.ws = null;
