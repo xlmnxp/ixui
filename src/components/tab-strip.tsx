@@ -161,7 +161,7 @@ export function TabStrip({
                 </div>
               );
             })}
-            <span className="sticky right-0 z-10 ml-1 flex h-full items-end bg-surface-800 pb-1.5 pl-2 pr-0.5">
+            <span className="sticky right-0 z-10 flex h-full items-end bg-surface-800 pb-1.5">
               <button
                 type="button"
                 data-testid={`${dataTestId}-add`}
@@ -174,7 +174,7 @@ export function TabStrip({
             </span>
           </div>
           <div className={`pointer-events-none absolute inset-y-0 left-0 z-20 w-6 bg-gradient-to-r from-surface-800 to-transparent transition-opacity ${overflow.left ? "opacity-100" : "opacity-0"}`} />
-          <div className={`pointer-events-none absolute inset-y-0 right-0 z-20 mr-8 w-6 bg-gradient-to-l from-surface-800 to-transparent transition-opacity ${overflow.right ? "opacity-100" : "opacity-0"}`} />
+          <div className={`pointer-events-none absolute inset-y-0 right-0 z-20 mr-6 w-6 bg-gradient-to-l from-surface-800 to-transparent transition-opacity ${overflow.right ? "opacity-100" : "opacity-0"}`} />
         </div>
       </div>
 
