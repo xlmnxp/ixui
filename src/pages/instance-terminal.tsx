@@ -397,20 +397,25 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
     );
   };
 
+  // The console (VGA) is a single full-screen view — no tab bar needed there.
+  const showTabs = !(tabs.length === 1 && tabs[0]?.kind === "console");
+
   return (
     <div className="flex h-screen flex-col" data-testid="instance-terminal">
-      <TabStrip
-        tabs={stripTabs}
-        activeId={activeId}
-        onSwitch={setActiveId}
-        onClose={closeTab}
-        onReorder={reorderTabs}
-        onRename={handleRename}
-        onAdd={addShellTab}
-        onAddLabel="Add shell tab"
-        minTabs={1}
-        dataTestId="term-tab"
-      />
+      {showTabs && (
+        <TabStrip
+          tabs={stripTabs}
+          activeId={activeId}
+          onSwitch={setActiveId}
+          onClose={closeTab}
+          onReorder={reorderTabs}
+          onRename={handleRename}
+          onAdd={addShellTab}
+          onAddLabel="Add shell tab"
+          minTabs={1}
+          dataTestId="term-tab"
+        />
+      )}
       <div className="flex min-h-0 flex-1 flex-col">
         {tabs.map((tab) => (
           <TerminalSession
