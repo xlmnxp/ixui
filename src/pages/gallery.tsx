@@ -318,18 +318,21 @@ export function Gallery() {
       </Section>
 
       <Section title="TabStrip">
-        <TabStrip
-          tabs={galleryTabs}
-          activeId={galleryActiveTab}
-          onSwitch={setGalleryActiveTab}
-          onClose={(id) => setGalleryTabs((prev) => prev.filter((t) => t.id !== id))}
-          onReorder={(from, to) => setGalleryTabs((prev) => { const next = [...prev]; const fi = next.findIndex(t => t.id === from); const ti = next.findIndex(t => t.id === to); if (fi < 0 || ti < 0) return prev; const [m] = next.splice(fi, 1); next.splice(ti, 0, m!); return next; })}
-          onRename={(id, name, color) => setGalleryTabs((prev) => prev.map((t) => (t.id === id ? { ...t, label: name || t.label, color: color || undefined } : t)))}
-          onAdd={() => { const id = `g${galleryNextIdRef.current++}`; setGalleryTabs((prev) => [...prev, { id, label: `Tab ${galleryNextIdRef.current}`, icon: "shell" as const, color: undefined }]); setGalleryActiveTab(id); }}
-          onAddLabel="Add tab"
-          minTabs={1}
-          dataTestId="gallery-tabstrip"
-        />
+        <p className="mb-2 text-[11px] text-text-tertiary">Drag to reorder, double-click to rename, + to add, scroll to see overflow fades.</p>
+        <div className="w-[520px] rounded border border-border">
+          <TabStrip
+            tabs={galleryTabs}
+            activeId={galleryActiveTab}
+            onSwitch={setGalleryActiveTab}
+            onClose={(id) => setGalleryTabs((prev) => prev.filter((t) => t.id !== id))}
+            onReorder={(from, to) => setGalleryTabs((prev) => { const next = [...prev]; const fi = next.findIndex(t => t.id === from); const ti = next.findIndex(t => t.id === to); if (fi < 0 || ti < 0) return prev; const [m] = next.splice(fi, 1); next.splice(ti, 0, m!); return next; })}
+            onRename={(id, name, color) => setGalleryTabs((prev) => prev.map((t) => (t.id === id ? { ...t, label: name || t.label, color: color || undefined } : t)))}
+            onAdd={() => { const id = `g${galleryNextIdRef.current++}`; setGalleryTabs((prev) => [...prev, { id, label: `Tab ${galleryNextIdRef.current}`, icon: "shell" as const, color: undefined }]); setGalleryActiveTab(id); }}
+            onAddLabel="Add tab"
+            minTabs={1}
+            dataTestId="gallery-tabstrip"
+          />
+        </div>
       </Section>
 
       <Section title="Breadcrumbs">
