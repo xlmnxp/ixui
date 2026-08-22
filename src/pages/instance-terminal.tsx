@@ -42,9 +42,10 @@ interface SessionProps {
   tabId: string;
   onSwitch: () => void;
   onProcess?: (command: string) => void;
+  onTitle?: (title: string) => void;
 }
 
-function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProcess }: SessionProps) {
+function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProcess, onTitle }: SessionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");
   const termRef = useRef<Terminal | null>(null);
@@ -176,6 +177,11 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
       terminal.loadAddon(fit);
       terminal.open(containerRef.current);
       termRef.current = terminal;
+      // Shells/processes set the window title via OSC 0/2; reflect it in the tab.
+      terminal.onTitleChange((title) => {
+        const trimmed = title.trim();
+        if (trimmed) onTitle?.(trimmed);
+      });
 
       const ws = new WebSocket(toWsUrl(wsPath));
       ws.binaryType = "arraybuffer";
@@ -311,6 +317,7 @@ interface TabDef {
   name?: string;
   color?: string;
   process?: string;
+  title?: string;
 }
 
 const basename = (path: string) => path.split("/").pop() ?? path;
@@ -400,9 +407,9 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const shellLabels = new Map<string, string>();
   for (const tab of tabs) {
     const fallback = tab.kind === "exec"
-      ? `${instanceName} · ${tab.process ? basename(tab.process) : "shell"}`
+      ? `${instanceName} : ${tab.process ? basename(tab.process) : "shell"}`
       : instanceName;
-    shellLabels.set(tab.id, tab.name ?? fallback);
+    shellLabels.set(tab.id, tab.name ?? tab.title ?? fallback);
   }
 
   const saveTabName = () => {
@@ -507,6 +514,9 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
             onSwitch={() => switchKindOf(tab.id)}
             onProcess={(cmd) =>
               setTabs((prev) => prev.map((t) => (t.id === tab.id ? { ...t, process: cmd } : t)))
+            }
+            onTitle={(title) =>
+              setTabs((prev) => prev.map((t) => (t.id === tab.id ? { ...t, title } : t)))
             }
           />
         ))}

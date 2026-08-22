@@ -6,6 +6,7 @@ import { InstanceTerminal } from "./instance-terminal";
 const terminalState = vi.hoisted(() => ({
   lastTerminal: null as unknown as {
     _onData: ((d: string) => void) | null;
+    _onTitleChange: ((title: string) => void) | null;
     write: ReturnType<typeof vi.fn>;
   } | null,
   terminals: [] as unknown[],
@@ -25,12 +26,16 @@ vi.mock("xterm", () => ({
     onData = vi.fn((cb: (d: string) => void) => {
       this._onData = cb;
     });
+    onTitleChange = vi.fn((cb: (title: string) => void) => {
+      this._onTitleChange = cb;
+    });
     onResize = vi.fn();
     write = vi.fn();
     dispose = vi.fn(() => {
       terminalState.disposes++;
     });
     _onData: ((d: string) => void) | null = null;
+    _onTitleChange: ((title: string) => void) | null = null;
     constructor() {
       terminalState.lastTerminal = this;
       terminalState.terminals.push(this);
@@ -280,16 +285,26 @@ describe("InstanceTerminal", () => {
     const user = userEvent.setup();
     render(<InstanceTerminal instanceName="web1" />);
     await screen.findByTestId("term-tab-t0");
-    await waitFor(() => expect(screen.getByTestId("term-tab-t0")).toHaveTextContent("web1 · bash"));
+    await waitFor(() => expect(screen.getByTestId("term-tab-t0")).toHaveTextContent("web1 : bash"));
     await user.click(screen.getByTestId("term-add-tab"));
     const tab1 = await screen.findByTestId("term-tab-t1");
-    await waitFor(() => expect(tab1).toHaveTextContent("web1 · bash"));
+    await waitFor(() => expect(tab1).toHaveTextContent("web1 : bash"));
     // Both shell sessions connect (data + control websockets each).
     await waitFor(() => expect(FakeWebSocket.instances.length).toBeGreaterThanOrEqual(4));
     await user.click(screen.getByTestId("term-close-t1"));
     expect(screen.queryByTestId("term-tab-t1")).not.toBeInTheDocument();
     await user.click(screen.getByTestId("term-tab-t0"));
     expect(screen.getByTestId("term-tab-t0")).toBeInTheDocument();
+  });
+
+  it("updates the tab label from the terminal title", async () => {
+    render(<InstanceTerminal instanceName="web1" />);
+    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
+    const data = FakeWebSocket.instances[0]!;
+    data.readyState = FakeWebSocket.OPEN;
+    act(() => data.onopen?.());
+    act(() => terminalState.lastTerminal!._onTitleChange?.("htop"));
+    expect(await screen.findByText("htop")).toBeInTheDocument();
   });
 
   it("renames a tab and sets its color via double-click", async () => {
