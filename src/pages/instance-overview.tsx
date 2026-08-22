@@ -5,6 +5,7 @@ import { Badge } from "../components/badge";
 import { KeyValueTable } from "../components/key-value-table";
 import { Sparkline } from "../components/sparkline";
 import { instanceStatusTone, instanceIps } from "../lib/instance-status";
+import { InstanceStatusIcon } from "../shell/instance-icon";
 import { formatBytes } from "../lib/format";
 import { useStore } from "../state/store";
 import { metricsStore, startMetricsPolling, stopMetricsPolling } from "../state/metrics";
@@ -46,7 +47,7 @@ export function OverviewTab({ instance }: OverviewTabProps) {
   const ips = instanceIps(state);
 
   const rows = [
-    { key: "Status", value: <Badge tone={instanceStatusTone(instance.status)}>{instance.status}</Badge> },
+    { key: "Status", value: <Badge tone={instanceStatusTone(instance.status)}><span className="inline-flex items-center gap-1"><InstanceStatusIcon status={instance.status} />{instance.status}</span></Badge> },
     { key: "Type", value: instance.type === "container" ? "Container" : "Virtual machine" },
     { key: "Created", value: new Date(instance.created_at).toLocaleString() },
     { key: "Last used", value: instance.last_used_at ? new Date(instance.last_used_at).toLocaleString() : "Never" },
