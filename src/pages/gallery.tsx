@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Bell, Check, FilePlus2, FolderPlus, Maximize2, MoveRight, Play, Plus, ShieldAlert, Square, SquareTerminal, Trash2, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { Bell, Check, FilePlus2, FolderPlus, Maximize2, MoveRight, Play, Plus, ShieldAlert, Square, Trash2, X } from "lucide-react";
 import { Button } from "../components/button";
 import { Badge } from "../components/badge";
 import { StatusDot } from "../components/status-dot";
@@ -26,6 +26,8 @@ import { PageBar } from "../components/page-bar";
 import { KeyValueEditor } from "../components/key-value-editor";
 import { Dropdown } from "../components/dropdown";
 import { ColorPicker } from "../components/color-picker";
+import { TabStrip } from "../components/tab-strip";
+import type { TabStripTab } from "../components/tab-strip";
 import { toast } from "../components/toast";
 import { Window } from "../components/window";
 import { VerticalTabs } from "../components/vertical-tabs";
@@ -60,6 +62,13 @@ export function Gallery() {
   const [explorerHistory, setExplorerHistory] = useState<string[]>(["/srv/www"]);
   const [explorerIndex, setExplorerIndex] = useState(0);
   const [cpColor, setCpColor] = useState("#58a6ff");
+  const galleryNextIdRef = useRef(3);
+  const [galleryTabs, setGalleryTabs] = useState<TabStripTab[]>([
+    { id: "g0", label: "API", icon: "shell", color: "#3fb950" },
+    { id: "g1", label: "Frontend", icon: "shell", color: "#f0883e" },
+    { id: "g2", label: "Console", icon: "console", color: undefined },
+  ]);
+  const [galleryActiveTab, setGalleryActiveTab] = useState("g0");
 
   const [ssEnabled, setSsEnabled] = useState(true);
   const [ssSchedule, setSsSchedule] = useState("");
@@ -308,22 +317,19 @@ export function Gallery() {
         <Tabs tabs={[{ key: "a", label: "Tab A" }, { key: "b", label: "Tab B" }]} active={tab} onChange={setTab} />
       </Section>
 
-      <Section title="Tab chips">
-        <div className="flex flex-wrap items-end gap-1.5 rounded bg-surface-800 px-2 py-1">
-          <div className="flex h-7 items-center gap-1.5 rounded-t-md bg-surface-950 px-3 text-xs text-text-primary">
-            <SquareTerminal size={13} /> Shell 1
-            <button className="ml-0.5 rounded-full p-0.5 text-text-tertiary hover:bg-surface-600 hover:text-text-primary"><X size={12} /></button>
-          </div>
-          <div className="flex h-[calc(2rem-2px)] items-center gap-1.5 self-center rounded-md bg-surface-700/50 px-3 text-xs text-text-secondary">
-            <SquareTerminal size={13} /> Shell 2
-            <button className="ml-0.5 rounded-full p-0.5 text-text-tertiary hover:bg-surface-600 hover:text-text-primary"><X size={12} /></button>
-          </div>
-          <div className="flex h-[calc(2rem-2px)] items-center gap-1.5 self-center rounded-md px-3 text-xs text-white/80" style={{ backgroundColor: "#4a9e6b" }}>
-            <SquareTerminal size={13} /> DB
-            <button className="ml-0.5 rounded-full p-0.5 text-white/80 hover:bg-[rgba(255,255,255,0.15)] hover:text-white"><X size={12} /></button>
-          </div>
-          <button className="flex h-6 w-6 items-center justify-center rounded text-text-tertiary hover:bg-surface-700 hover:text-text-primary"><Plus size={14} /></button>
-        </div>
+      <Section title="TabStrip">
+        <TabStrip
+          tabs={galleryTabs}
+          activeId={galleryActiveTab}
+          onSwitch={setGalleryActiveTab}
+          onClose={(id) => setGalleryTabs((prev) => prev.filter((t) => t.id !== id))}
+          onReorder={(from, to) => setGalleryTabs((prev) => { const next = [...prev]; const fi = next.findIndex(t => t.id === from); const ti = next.findIndex(t => t.id === to); if (fi < 0 || ti < 0) return prev; const [m] = next.splice(fi, 1); next.splice(ti, 0, m!); return next; })}
+          onRename={(id, name, color) => setGalleryTabs((prev) => prev.map((t) => (t.id === id ? { ...t, label: name || t.label, color: color || undefined } : t)))}
+          onAdd={() => { const id = `g${galleryNextIdRef.current++}`; setGalleryTabs((prev) => [...prev, { id, label: `Tab ${galleryNextIdRef.current}`, icon: "shell" as const, color: undefined }]); setGalleryActiveTab(id); }}
+          onAddLabel="Add tab"
+          minTabs={1}
+          dataTestId="gallery-tabstrip"
+        />
       </Section>
 
       <Section title="Breadcrumbs">

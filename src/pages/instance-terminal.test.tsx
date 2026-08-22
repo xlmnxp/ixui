@@ -286,12 +286,12 @@ describe("InstanceTerminal", () => {
     render(<InstanceTerminal instanceName="web1" />);
     await screen.findByTestId("term-tab-t0");
     await waitFor(() => expect(screen.getByTestId("term-tab-t0")).toHaveTextContent("web1 : bash"));
-    await user.click(screen.getByTestId("term-add-tab"));
+    await user.click(screen.getByTestId("term-tab-add"));
     const tab1 = await screen.findByTestId("term-tab-t1");
     await waitFor(() => expect(tab1).toHaveTextContent("web1 : bash"));
     // Both shell sessions connect (data + control websockets each).
     await waitFor(() => expect(FakeWebSocket.instances.length).toBeGreaterThanOrEqual(4));
-    await user.click(screen.getByTestId("term-close-t1"));
+    await user.click(screen.getByTestId("term-tab-close-t1"));
     expect(screen.queryByTestId("term-tab-t1")).not.toBeInTheDocument();
     await user.click(screen.getByTestId("term-tab-t0"));
     expect(screen.getByTestId("term-tab-t0")).toBeInTheDocument();
@@ -312,11 +312,11 @@ describe("InstanceTerminal", () => {
     render(<InstanceTerminal instanceName="web1" />);
     const tab = await screen.findByTestId("term-tab-t0");
     await user.dblClick(tab);
-    const nameInput = await screen.findByTestId("tab-name");
+    const nameInput = await screen.findByTestId("term-tab-name");
     await user.clear(nameInput);
     await user.type(nameInput, "prod shell");
-    await user.click(screen.getByTestId("tab-color-#d29922"));
-    await user.click(screen.getByTestId("tab-rename-save"));
+    await user.click(screen.getByTestId("term-tab-color-#d29922"));
+    await user.click(screen.getByTestId("term-tab-rename-save"));
     expect(screen.getByTestId("term-tab-t0")).toHaveTextContent("prod shell");
     expect((screen.getByTestId("term-tab-t0") as HTMLElement).style.backgroundColor).toContain("rgba");
   });

@@ -4,18 +4,16 @@ import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
 import "@fontsource/ubuntu-mono/400.css";
 import "@fontsource/ubuntu-mono/700.css";
-import { Check, Monitor, Plus, RotateCw, SquareTerminal, X } from "lucide-react";
+import { Monitor, RotateCw, SquareTerminal } from "lucide-react";
 import { SpiceMainConn, handle_resize } from "../../lib/spice/src/main.js";
 import { instancesApi } from "../api";
 import { registerInstanceProject } from "../api/client";
 import { createSubprotocolShim } from "../lib/ws-shim";
 import type { AsyncResponse } from "../api/types";
 import { Button } from "../components/button";
-import { ColorPicker } from "../components/color-picker";
-import { Dialog } from "../components/dialog";
 import { EmptyState } from "../components/empty-state";
-import { Input } from "../components/input";
 import { Spinner } from "../components/spinner";
+import { TabStrip } from "../components/tab-strip";
 import { toast } from "../components/toast";
 
 export interface InstanceTerminalProps {
@@ -323,13 +321,6 @@ interface TabDef {
 
 const basename = (path: string) => path.split("/").pop() ?? path;
 
-function tint(hex: string, alpha: number): string {
-  const h = hex.replace("#", "");
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
   const project = new URLSearchParams(window.location.search).get("project") ?? undefined;
@@ -342,34 +333,20 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
     new URLSearchParams(window.location.search).get("mode") === "vga" ? "console" : "exec";
   const [tabs, setTabs] = useState<TabDef[]>([{ id: "t0", kind: initialKind }]);
   const [activeId, setActiveId] = useState("t0");
-  const [renameTab, setRenameTab] = useState<{ id: string; name: string; color: string } | null>(null);
-  const [overflow, setOverflow] = useState({ left: false, right: false });
   const nextIdRef = useRef(1);
-  const stripRef = useRef<HTMLDivElement>(null);
-  const dragFromRef = useRef<string | null>(null);
-  const dragOverRef = useRef<string | null>(null);
 
-  const updateOverflow = () => {
-    const el = stripRef.current;
-    if (!el) return;
-    setOverflow({
-      left: el.scrollLeft > 0,
-      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 1,
+  const reorderTabs = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    setTabs((prev) => {
+      const fromIdx = prev.findIndex((t) => t.id === fromId);
+      const toIdx = prev.findIndex((t) => t.id === toId);
+      if (fromIdx < 0 || toIdx < 0) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved!);
+      return next;
     });
   };
-
-  // Keep the newest tab in view when the strip overflows.
-  useEffect(() => {
-    const el = stripRef.current;
-    if (el) el.scrollLeft = el.scrollWidth;
-    updateOverflow();
-  }, [tabs.length]);
-
-  useEffect(() => {
-    updateOverflow();
-    window.addEventListener("resize", updateOverflow);
-    return () => window.removeEventListener("resize", updateOverflow);
-  }, []);
 
   const addShellTab = () => {
     const id = `t${nextIdRef.current++}`;
@@ -392,137 +369,40 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
     );
   };
 
-  const reorderTab = (fromId: string, toId: string) => {
-    if (fromId === toId) return;
-    setTabs((prev) => {
-      const fromIdx = prev.findIndex((t) => t.id === fromId);
-      const toIdx = prev.findIndex((t) => t.id === toId);
-      if (fromIdx < 0 || toIdx < 0) return prev;
-      const next = [...prev];
-      const [moved] = next.splice(fromIdx, 1);
-      next.splice(toIdx, 0, moved!);
-      return next;
-    });
-  };
-
-  const shellLabels = new Map<string, string>();
-  for (const tab of tabs) {
+  const stripTabs = tabs.map((tab) => {
     const fallback = tab.kind === "exec"
       ? `${instanceName} : ${tab.process ? basename(tab.process) : "shell"}`
       : instanceName;
-    shellLabels.set(tab.id, tab.name ?? tab.title ?? fallback);
-  }
+    return {
+      id: tab.id,
+      label: tab.name ?? tab.title ?? fallback,
+      icon: (tab.kind === "console" ? "console" : "shell") as "console" | "shell",
+      color: tab.color,
+    };
+  });
 
-  const saveTabName = () => {
-    if (!renameTab) return;
-    const { id, name, color } = renameTab;
+  const handleRename = (id: string, name: string, color: string) => {
     setTabs((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, name: name.trim() || undefined, color: color || undefined } : t))
+      prev.map((t) =>
+        t.id === id ? { ...t, name: name || undefined, color: color || undefined } : t
+      )
     );
-    setRenameTab(null);
   };
 
   return (
     <div className="flex h-screen flex-col" data-testid="instance-terminal">
-      <div className="flex h-9 shrink-0 items-end bg-surface-800 pl-2 pr-1.5 pt-1">
-        <div className="relative flex h-full min-w-0 flex-1 items-end">
-        <div
-          ref={stripRef}
-          data-testid="term-tab-strip"
-          onWheel={(e) => {
-            const el = e.currentTarget;
-            if (el.scrollWidth > el.clientWidth) {
-              el.scrollLeft += e.deltaY;
-            }
-          }}
-          onScroll={updateOverflow}
-          className="flex h-full min-w-0 flex-1 items-end gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {tabs.map((tab) => {
-            const label = shellLabels.get(tab.id) ?? "";
-            const active = tab.id === activeId;
-            return (
-              <div
-                key={tab.id}
-                data-testid={`term-tab-${tab.id}`}
-                role="button"
-                tabIndex={0}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData("text/plain", tab.id);
-                  e.dataTransfer.effectAllowed = "move";
-                  dragFromRef.current = tab.id;
-                  dragOverRef.current = null;
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  const fromId = dragFromRef.current;
-                  if (fromId && fromId !== tab.id && dragOverRef.current !== tab.id) {
-                    dragOverRef.current = tab.id;
-                    reorderTab(fromId, tab.id);
-                  }
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const fromId = e.dataTransfer.getData("text/plain");
-                  if (fromId) reorderTab(fromId, tab.id);
-                  dragFromRef.current = null;
-                  dragOverRef.current = null;
-                }}
-                onDragEnd={() => {
-                  dragFromRef.current = null;
-                  dragOverRef.current = null;
-                }}
-                aria-label={`Switch to ${label}`}
-                onClick={() => setActiveId(tab.id)}
-                onDoubleClick={() => setRenameTab({ id: tab.id, name: label, color: tab.color ?? "" })}
-                className={`group flex max-w-52 shrink-0 cursor-pointer select-none items-center gap-1.5 px-3 text-xs ${
-                  active
-                    ? "h-full rounded-t-md text-text-primary"
-                    : "my-1 h-[calc(100%-0.5rem)] self-center rounded-md text-text-secondary hover:text-text-primary"
-                }`}
-                style={{
-                  backgroundColor: tab.color
-                    ? tint(tab.color, active ? 0.45 : 0.2)
-                    : active
-                      ? "#191817"
-                      : undefined,
-                  ...(tab.color ? ({ "--tab-color": tint(tab.color, 0.85) } as Record<string, string>) : {}),
-                }}
-              >
-                {tab.kind === "console" ? <Monitor size={13} /> : <SquareTerminal size={13} />}
-                <span className="min-w-0 truncate">{label}</span>
-                {tabs.length > 1 && (
-                  <button
-                    type="button"
-                    data-testid={`term-close-${tab.id}`}
-                    aria-label={`Close ${label}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      closeTab(tab.id);
-                    }}
-                    className={`ml-0.5 shrink-0 rounded-full p-0.5 transition-colors ${tab.color ? "text-white/80 hover:bg-[var(--tab-color)] hover:text-white" : "text-text-tertiary hover:bg-surface-600 hover:text-text-primary"}`}
-                  >
-                    <X size={12} />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-          <button
-            type="button"
-            data-testid="term-add-tab"
-            aria-label="Add shell tab"
-            onClick={addShellTab}
-            className="mb-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
-          >
-            <Plus size={14} />
-          </button>
-        </div>
-        <div className={`pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-surface-800 to-transparent transition-opacity ${overflow.left ? "opacity-100" : "opacity-0"}`} />
-        <div className={`pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-surface-800 to-transparent transition-opacity ${overflow.right ? "opacity-100" : "opacity-0"}`} />
-        </div>
-      </div>
+      <TabStrip
+        tabs={stripTabs}
+        activeId={activeId}
+        onSwitch={setActiveId}
+        onClose={closeTab}
+        onReorder={reorderTabs}
+        onRename={handleRename}
+        onAdd={addShellTab}
+        onAddLabel="Add shell tab"
+        minTabs={1}
+        dataTestId="term-tab"
+      />
       <div className="flex min-h-0 flex-1 flex-col">
         {tabs.map((tab) => (
           <TerminalSession
@@ -541,35 +421,6 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
           />
         ))}
       </div>
-
-      <Dialog open={renameTab !== null} onClose={() => setRenameTab(null)} title="Rename tab" footer={
-        <>
-          <Button variant="secondary" onClick={() => setRenameTab(null)}><X size={14} /> Cancel</Button>
-          <Button onClick={saveTabName} data-testid="tab-rename-save"><Check size={14} /> Save</Button>
-        </>
-      }>
-        {renameTab && (
-          <div className="space-y-3">
-            <Input
-              label="Name"
-              name="tab-name"
-              data-testid="tab-name"
-              value={renameTab.name}
-              onChange={(e) => setRenameTab({ ...renameTab, name: e.target.value })}
-            />
-            <div>
-              <span className="text-xs font-medium text-text-secondary">Color</span>
-              <div className="mt-1.5">
-                <ColorPicker
-                  value={renameTab.color}
-                  onChange={(c) => setRenameTab({ ...renameTab, color: c })}
-                  dataTestId="tab-color"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-      </Dialog>
     </div>
   );
 }
