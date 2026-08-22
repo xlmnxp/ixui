@@ -66,7 +66,9 @@ export function Gallery() {
   const [galleryTabs, setGalleryTabs] = useState<TabStripTab[]>([
     { id: "g0", label: "API", icon: "shell", color: "#3fb950" },
     { id: "g1", label: "Frontend", icon: "shell", color: "#f0883e" },
-    { id: "g2", label: "Console", icon: "console", color: undefined },
+    { id: "g2", label: "Database", icon: "shell", color: "#d29922" },
+    { id: "g3", label: "Console", icon: "console", color: undefined },
+    { id: "g4", label: "Logs", icon: "shell", color: "#bc8cff" },
   ]);
   const [galleryActiveTab, setGalleryActiveTab] = useState("g0");
 
