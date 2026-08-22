@@ -51,15 +51,17 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
       id: `member-${m.server_name}`,
       action: createAction(`tree-create-${m.server_name}`, m.server_name),
       label: (
-        <span className="relative flex items-center gap-2">
-          <Server size={14} className={m.status !== "Online" && m.status !== "Evacuated" ? "text-text-tertiary/50" : "text-text-secondary"} />
+        <span className="flex items-center gap-2">
+          <span className="relative inline-flex">
+            <Server size={14} className={m.status !== "Online" && m.status !== "Evacuated" ? "text-text-tertiary/50" : "text-text-secondary"} />
+            {m.status === "Online" && (
+              <Check size={9} className="absolute -right-1 bottom-0 text-success" />
+            )}
+            {m.status === "Evacuated" && (
+              <TriangleAlert size={9} className="absolute -right-1 bottom-0 text-warning" />
+            )}
+          </span>
           <Link to={`/members/${m.server_name}`}>{m.server_name}</Link>
-          {m.status === "Online" && (
-            <Check size={9} className="absolute -right-1 bottom-0 text-success" />
-          )}
-          {m.status === "Evacuated" && (
-            <TriangleAlert size={9} className="absolute -right-1 bottom-0 text-warning" />
-          )}
         </span>
       ),
       children: (instancesByMember[m.server_name] ?? [])
