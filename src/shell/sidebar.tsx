@@ -73,12 +73,12 @@ export function Sidebar() {
         <span className="truncate text-sm font-semibold text-text-primary" data-testid="sidebar-title">{uiTitle}</span>
       </div>
       <ProjectDropdown />
-      <div className="flex items-center justify-end gap-1 px-2">
+      <div className="flex flex-nowrap items-center justify-end gap-1 overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <button
           type="button"
           data-testid="tree-new-instance"
           onClick={() => { setWizardTarget(undefined); setWizardOpen(true); }}
-          className="mr-auto flex items-center gap-1 rounded border border-border bg-surface-600 px-1.5 py-0.5 text-[11px] text-text-primary hover:bg-surface-700"
+          className="mr-auto flex shrink-0 items-center gap-1 whitespace-nowrap rounded border border-border bg-surface-600 px-1.5 py-0.5 text-[11px] text-text-primary hover:bg-surface-700"
         >
           <Plus size={12} /> New instance
         </button>
@@ -86,7 +86,7 @@ export function Sidebar() {
           type="button"
           data-testid="tree-expand-all"
           onClick={() => { setTreeExpanded(true); setTreeEpoch((e) => e + 1); }}
-          className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
+          className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
         >
           <ChevronsUpDown size={12} /> Expand all
         </button>
@@ -94,7 +94,7 @@ export function Sidebar() {
           type="button"
           data-testid="tree-collapse-all"
           onClick={() => { setTreeExpanded(false); setTreeEpoch((e) => e + 1); }}
-          className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
+          className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
         >
           <ChevronsDownUp size={12} /> Collapse all
         </button>
