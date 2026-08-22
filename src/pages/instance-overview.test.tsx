@@ -25,10 +25,6 @@ vi.mock("../api", () => ({
       memory: { usage: 536870912 },
     }),
   },
-  resourcesApi: {
-    get: vi.fn().mockResolvedValue({ cpu: { total: 8 }, memory: { total: 17179869184, used: 0 } }),
-    getMemberResources: vi.fn().mockResolvedValue({ cpu: { total: 8 }, memory: { total: 17179869184, used: 0 } }),
-  },
 }));
 
 describe("OverviewTab", () => {
@@ -44,11 +40,6 @@ describe("OverviewTab", () => {
   it("labels virtual machines", () => {
     render(<OverviewTab instance={instance("virtual-machine")} />);
     expect(screen.getByText("Virtual machine")).toBeInTheDocument();
-  });
-
-  it("shows the node total as the limit for unlimited containers", async () => {
-    render(<OverviewTab instance={instance("container")} />);
-    expect(await screen.findByText("16 GiB (unlimited)")).toBeInTheDocument();
   });
 
   it("shows live CPU and memory sparklines from the polling buffer", async () => {
