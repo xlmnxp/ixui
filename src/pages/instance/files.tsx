@@ -154,14 +154,14 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
       navigateTo(path);
       return;
     }
-    try {
-      const result = await filesApi.read(instanceName, path, project);
-      if (Array.isArray(result)) {
-        navigateTo(path);
-        return;
-      }
-      if (type === "symlink") {
-        // The read returned the link target as text; follow it to the real path.
+    if (type === "symlink") {
+      // Follow the link: navigate to directories, download files.
+      try {
+        const result = await filesApi.read(instanceName, path, project);
+        if (Array.isArray(result)) {
+          navigateTo(path);
+          return;
+        }
         const target = resolveLinkTarget(path, result);
         const targetResult = await filesApi.read(instanceName, target, project);
         if (Array.isArray(targetResult)) {
@@ -170,8 +170,20 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
           setEditPath(target);
           setEditContent(targetResult);
         }
-        return;
+      } catch {
+        toast("danger", `Cannot read ${name}`);
       }
+      return;
+    }
+    // Regular files download by default; use the row Edit button to edit in place.
+    void download(name);
+  };
+
+  const openEditor = async (name: string) => {
+    const path = joinPath(cwd, name);
+    try {
+      const result = await filesApi.read(instanceName, path, project);
+      if (Array.isArray(result)) return; // directory — ignore
       setEditPath(path);
       setEditContent(result);
     } catch {
@@ -329,7 +341,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
           <div className="flex justify-end gap-1">
             {!isDir && (
               <>
-                <Button size="sm" variant="ghost" data-testid={`file-edit-${name}`} onClick={() => void openEntry(name)}><Pencil size={14} /> Edit</Button>
+                <Button size="sm" variant="ghost" data-testid={`file-edit-${name}`} onClick={() => void openEditor(name)}><Pencil size={14} /> Edit</Button>
                 <Button size="sm" variant="ghost" data-testid={`file-download-${name}`} onClick={() => void download(name)}><Download size={14} /> Download</Button>
               </>
             )}

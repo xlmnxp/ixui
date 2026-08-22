@@ -360,7 +360,7 @@ describe("FilesTab", () => {
       Promise.resolve(path === "/" ? ["motd"] : "hello")
     );
     renderTab();
-    await user.click(await screen.findByTestId("file-row-motd"));
+    await user.click(await screen.findByTestId("file-edit-motd"));
     await user.clear(await screen.findByTestId("file-content"));
     await user.type(screen.getByTestId("file-content"), "goodbye");
     await user.click(screen.getByTestId("file-save"));
@@ -416,6 +416,21 @@ describe("FilesTab", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/1.0/instances/web1/files?path=%2Fmotd", { credentials: "include" }));
     expect(clickSpy).toHaveBeenCalled();
     expect(createObjectUrl).toHaveBeenCalledWith(expect.any(Blob));
+    clickSpy.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it("clicking a file row downloads it by default", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, blob: vi.fn().mockResolvedValue(new Blob(["data"])) });
+    vi.stubGlobal("fetch", fetchMock);
+    const createObjectUrl = vi.fn().mockReturnValue("blob:mock");
+    URL.createObjectURL = createObjectUrl;
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    renderTab();
+    await user.click(await screen.findByTestId("file-row-motd"));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/1.0/instances/web1/files?path=%2Fmotd", { credentials: "include" }));
+    expect(clickSpy).toHaveBeenCalled();
     clickSpy.mockRestore();
     vi.unstubAllGlobals();
   });
