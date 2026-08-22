@@ -27,10 +27,10 @@ describe("buildTree member status icons", () => {
     );
     expect(screen.getByText("incus-1")).toBeInTheDocument();
     expect(screen.getByText("incus-2")).toBeInTheDocument();
-    // Online member row should contain a green Check icon.
-    expect(screen.getByText("incus-1").closest("span")?.querySelector(".text-success")).toBeInTheDocument();
-    // Evacuated member row should contain a warning TriangleAlert icon.
-    expect(screen.getByText("incus-2").closest("span")?.querySelector(".text-warning")).toBeInTheDocument();
+    // Online member row should contain a green status dot with a check.
+    expect(screen.getByText("incus-1").closest("span")?.querySelector(".bg-success")).toBeInTheDocument();
+    // Evacuated member row should contain a warning status dot.
+    expect(screen.getByText("incus-2").closest("span")?.querySelector(".bg-warning")).toBeInTheDocument();
   });
 
   it("dims the server icon for offline members without a status indicator", () => {

@@ -55,10 +55,14 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
           <span className="relative inline-flex">
             <Server size={15} className={m.status !== "Online" && m.status !== "Evacuated" ? "text-text-tertiary/50" : "text-text-secondary"} />
             {m.status === "Online" && (
-              <Check size={9} className="absolute -right-1 bottom-0 text-success" fill="currentColor" />
+              <span className="absolute -right-1 bottom-0 flex h-3 w-3 items-center justify-center rounded-full bg-success ring-1 ring-sidebar">
+                <Check size={8} className="text-white" fill="currentColor" />
+              </span>
             )}
             {m.status === "Evacuated" && (
-              <TriangleAlert size={9} className="absolute -right-1 bottom-0 text-warning" fill="currentColor" />
+              <span className="absolute -right-1 bottom-0 flex h-3 w-3 items-center justify-center rounded-full bg-warning ring-1 ring-sidebar">
+                <TriangleAlert size={8} className="text-white" fill="currentColor" />
+              </span>
             )}
           </span>
           <Link to={`/members/${m.server_name}`}>{m.server_name}</Link>
