@@ -151,10 +151,12 @@ export function TabStrip({
                       }}
                       className={`ml-0.5 shrink-0 rounded-full p-0.5 transition-colors ${
                         tab.color
-                          ? "bg-[var(--tab-color)] text-white/80 hover:brightness-110 hover:text-white"
+                          ? active
+                            ? "bg-[var(--tab-color)] text-white/80 hover:brightness-110 hover:text-white"
+                            : "text-text-tertiary/40 hover:bg-[var(--tab-color)] hover:text-white"
                           : active
                             ? "bg-surface-600/60 text-text-tertiary hover:bg-surface-600 hover:text-text-primary"
-                            : "text-text-tertiary hover:bg-surface-600 hover:text-text-primary"
+                            : "text-text-tertiary/40 hover:bg-surface-600 hover:text-text-primary"
                       }`}
                     >
                       <X size={12} />
