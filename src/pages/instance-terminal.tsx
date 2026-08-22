@@ -460,7 +460,11 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                 aria-label={`Switch to ${label}`}
                 onClick={() => setActiveId(tab.id)}
                 onDoubleClick={() => setRenameTab({ id: tab.id, name: label, color: tab.color ?? "" })}
-                className={`group flex h-full max-w-52 shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-t-md px-3 text-xs ${active ? "text-text-primary" : "text-text-secondary hover:text-text-primary"}`}
+                className={`group flex max-w-52 shrink-0 cursor-pointer select-none items-center gap-1.5 px-3 text-xs ${
+                  active
+                    ? "h-full rounded-t-md text-text-primary"
+                    : "my-1 h-[calc(100%-0.5rem)] self-center rounded-md text-text-secondary hover:text-text-primary"
+                }`}
                 style={{
                   backgroundColor: tab.color
                     ? tint(tab.color, active ? 0.45 : 0.2)
