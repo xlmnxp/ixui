@@ -154,10 +154,11 @@ export interface MoveInstanceDialogProps {
   onClose: () => void;
   name: string;
   sourceProject?: string;
+  currentMember?: string;
   onMoved?: (project: string) => void;
 }
 
-export function MoveInstanceDialog({ open, onClose, name, sourceProject, onMoved }: MoveInstanceDialogProps) {
+export function MoveInstanceDialog({ open, onClose, name, sourceProject, currentMember, onMoved }: MoveInstanceDialogProps) {
   const [project, setProject] = useState("");
   const [member, setMember] = useState("");
   const [live, setLive] = useState(false);
@@ -218,7 +219,7 @@ export function MoveInstanceDialog({ open, onClose, name, sourceProject, onMoved
         </Select>
         <Select label="Target member" name="move-member" data-testid="move-member" value={member} onChange={(e) => setMember(e.target.value)}>
           <option value="">— any member —</option>
-          {members.map((m) => (
+          {members.filter((m) => m.server_name !== currentMember).map((m) => (
             <option key={m.server_name} value={m.server_name}>{m.server_name}</option>
           ))}
         </Select>

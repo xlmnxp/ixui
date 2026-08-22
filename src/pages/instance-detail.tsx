@@ -327,6 +327,7 @@ export function InstanceDetailPage() {
         onClose={() => setMoveOpen(false)}
         name={name}
         sourceProject={instance.project}
+        currentMember={instance.location}
         onMoved={(project) => {
           void loadInstances(currentProjectStore.getState()).catch(() => {});
           if (project && project !== instance.project) navigate("/instances");
