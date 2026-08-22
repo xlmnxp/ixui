@@ -34,7 +34,7 @@ export function SplitPane({ left, right, initial = 40, min = 15, vertical = fals
       <div className="min-h-0 min-w-0 overflow-auto" style={vertical ? { height: `${percent}%` } : { width: `${percent}%` }}>{left}</div>
       <div
         data-testid="split-handle"
-        className={`relative shrink-0 ${vertical ? "h-px w-full" : "h-full w-px"}`}
+        className={`relative shrink-0 bg-surface-600 ${vertical ? "h-px w-full" : "h-full w-px"}`}
       >
         <div
           data-testid="split-handle-hit"
