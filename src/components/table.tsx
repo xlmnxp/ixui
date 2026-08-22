@@ -20,6 +20,8 @@ export interface TableProps<T> {
   selectedKeys?: string[];
   onSelectionChange?: (keys: string[]) => void;
   emptyMessage?: string;
+  /** Custom node rendered in the empty state (e.g. a loading indicator). */
+  emptyNode?: ReactNode;
   dataTestId?: string;
   /** Keep the header row pinned while the surrounding container scrolls (default true). */
   stickyHeader?: boolean;
@@ -35,6 +37,7 @@ export function Table<T>({
   selectedKeys,
   onSelectionChange,
   emptyMessage = "No data",
+  emptyNode,
   dataTestId = "table",
   stickyHeader = true,
   stickyHeaderOffset = 0,
@@ -105,8 +108,8 @@ export function Table<T>({
         <tbody className="divide-y divide-border bg-surface-800">
           {sorted.length === 0 ? (
             <tr>
-              <td colSpan={columns.length + (onSelectionChange ? 1 : 0)} className="px-2 py-8 text-center text-text-tertiary">
-                {emptyMessage}
+              <td colSpan={columns.length + (onSelectionChange ? 1 : 0)} className="px-2 py-2 text-text-tertiary">
+                {emptyNode ?? emptyMessage}
               </td>
             </tr>
           ) : (

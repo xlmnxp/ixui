@@ -340,7 +340,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
     },
   ];
 
-  if (entries === null || !sweepDone) return <Loading dataTestId="files-tab" label="Loading files…" />;
+  const loading = entries === null || !sweepDone;
 
   return (
     <div data-testid="files-tab">
@@ -365,7 +365,16 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
         }
       />
 
-      {sorted.length === 0 ? (
+      {loading ? (
+        <Table
+          columns={columns}
+          rows={[]}
+          rowKey={(e) => e}
+          dataTestId="files-table"
+          stickyHeaderOffset={navbarHeight}
+          emptyNode={<Loading dataTestId="files-loading" label="Loading files…" />}
+        />
+      ) : sorted.length === 0 ? (
         <div className="px-3 pb-3">
           <EmptyState title="Empty directory" description="No files or folders here." />
         </div>
