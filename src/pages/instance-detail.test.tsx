@@ -187,10 +187,10 @@ describe("InstanceDetailPage", () => {
       </MemoryRouter>
     );
     await screen.findByText("web1");
-    await user.click(screen.getByTestId("detail-terminal"));
+    await user.click(screen.getByTestId("detail-terminal-primary"));
     expect(openSpy).toHaveBeenCalledWith("/ui/terminal/web1?project=default&mode=vga", "console-web1", "width=1000,height=640");
-    await user.click(screen.getByTestId("detail-console-menu"));
-    await user.click(screen.getByTestId("detail-console-shell"));
+    await user.click(screen.getByTestId("detail-terminal-menu"));
+    await user.click(screen.getByText("Terminal (shell)"));
     expect(openSpy).toHaveBeenCalledWith("/ui/terminal/web1?project=default", expect.stringMatching(/^terminal-web1-/), "width=1000,height=640");
     restore();
   });

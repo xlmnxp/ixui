@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Camera, Check, ChevronDown, Copy as CopyIcon, Cpu, Download, FileText, FolderOpen, Gauge, History, Monitor, MoreHorizontal, Plus, MoveRight, Pencil, Play, RotateCw, Settings, Square, SquareTerminal, Trash2, X } from "lucide-react";
+import { Camera, Check, Copy as CopyIcon, Cpu, Download, FileText, FolderOpen, Gauge, History, Monitor, MoreHorizontal, Plus, MoveRight, Pencil, Play, RotateCw, Settings, Square, SquareTerminal, Trash2, X } from "lucide-react";
 import { backupsApi, instancesApi, operationsApi } from "../api";
 import type { Instance } from "../api/types";
 import { instancesStore, loadInstances } from "../state/instances";
@@ -10,6 +10,7 @@ import { ALL_PROJECTS, registerInstanceProject } from "../api/client";
 import { VerticalTabs } from "../components/vertical-tabs";
 import { SplitPane } from "../components/split-pane";
 import { Button } from "../components/button";
+import { SplitButton } from "../components/split-button";
 import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import { ConfirmDialog } from "../components/confirm-dialog";
@@ -41,7 +42,6 @@ export function InstanceDetailPage() {
   const [deviceActions, setDeviceActions] = useState<DeviceActions | null>(null);
   const [snapshotsActions, setSnapshotsActions] = useState<SnapshotsActions | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [consoleMenuOpen, setConsoleMenuOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
@@ -170,7 +170,6 @@ export function InstanceDetailPage() {
       mode === "vga" ? `console-${instance.name}` : `terminal-${instance.name}-${Date.now()}`,
       "width=1000,height=640"
     );
-    setConsoleMenuOpen(false);
   };
 
   if (notFound) {
@@ -277,32 +276,17 @@ export function InstanceDetailPage() {
                 </Button>,
               ]
             : []),
-          <div key="console" className="relative flex items-center">
-            <Button
-              size="sm"
-              variant="secondary"
-              data-testid="detail-terminal"
-              onClick={() => openConsole("vga")}
-            >
-              <Monitor size={14} /> Console
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              data-testid="detail-console-menu"
-              aria-label="Console options"
-              className="!px-1.5"
-              onClick={() => setConsoleMenuOpen((o) => !o)}
-            >
-              <ChevronDown size={12} />
-            </Button>
-            {consoleMenuOpen && (
-              <div data-testid="detail-console-items" className="absolute right-0 top-full z-40 mt-1 w-44 overflow-hidden rounded border border-border bg-surface-800 py-1 shadow-xl">
-                <button type="button" data-testid="detail-console-vga" onClick={() => openConsole("vga")} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-text-primary hover:bg-surface-700"><Monitor size={14} /> Console (VGA)</button>
-                <button type="button" data-testid="detail-console-shell" onClick={() => openConsole("exec")} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-text-primary hover:bg-surface-700"><SquareTerminal size={14} /> Terminal (shell)</button>
-              </div>
-            )}
-          </div>,
+          <SplitButton
+            key="console"
+            label="Console"
+            icon={<Monitor size={14} />}
+            dataTestId="detail-terminal"
+            onPrimary={() => openConsole("vga")}
+            options={[
+              { label: "Console (VGA)", icon: <Monitor size={14} />, onSelect: () => openConsole("vga") },
+              { label: "Terminal (shell)", icon: <SquareTerminal size={14} />, onSelect: () => openConsole("exec") },
+            ]}
+          />,
         ]}
       />
 

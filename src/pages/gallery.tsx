@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Bell, Check, FilePlus2, FolderPlus, Maximize2, MoveRight, Play, Plus, ShieldAlert, Square, Trash2, X } from "lucide-react";
+import { Bell, Check, FilePlus2, FolderPlus, Maximize2, Monitor, MoveRight, Play, Plus, ShieldAlert, Square, SquareTerminal, Trash2, X } from "lucide-react";
 import { Button } from "../components/button";
 import { Badge } from "../components/badge";
 import { StatusDot } from "../components/status-dot";
@@ -26,6 +26,7 @@ import { PageBar } from "../components/page-bar";
 import { KeyValueEditor } from "../components/key-value-editor";
 import { Dropdown } from "../components/dropdown";
 import { ColorPicker } from "../components/color-picker";
+import { SplitButton } from "../components/split-button";
 import { TabStrip } from "../components/tab-strip";
 import type { TabStripTab } from "../components/tab-strip";
 import { toast } from "../components/toast";
@@ -153,6 +154,19 @@ export function Gallery() {
 
       <Section title="ColorPicker">
         <ColorPicker value={cpColor} onChange={setCpColor} dataTestId="gallery-colorpicker" />
+      </Section>
+
+      <Section title="SplitButton">
+        <SplitButton
+          label="Console"
+          icon={<Monitor size={14} />}
+          dataTestId="gallery-splitbutton"
+          onPrimary={() => toast("info", "Opened console")}
+          options={[
+            { label: "Console (VGA)", icon: <Monitor size={14} />, onSelect: () => toast("info", "VGA console") },
+            { label: "Terminal (shell)", icon: <SquareTerminal size={14} />, onSelect: () => toast("info", "Shell terminal") },
+          ]}
+        />
       </Section>
 
       <Section title="Dropdown">
