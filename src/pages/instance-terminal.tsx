@@ -352,7 +352,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
 
   return (
     <div className="flex h-screen flex-col" data-testid="instance-terminal">
-      <div className="flex h-9 shrink-0 items-end gap-1 border-b border-border bg-surface-900 px-2">
+      <div className="flex h-9 shrink-0 items-end gap-1.5 bg-surface-800 px-2 pt-1">
         {tabs.map((tab) => {
           const label = shellLabels.get(tab.id) ?? "";
           const active = tab.id === activeId;
@@ -360,19 +360,24 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
             <div
               key={tab.id}
               data-testid={`term-tab-${tab.id}`}
-              className={`flex items-center gap-1.5 rounded-t border border-b-0 px-2.5 py-1 text-xs ${active ? "border-border bg-surface-950 text-text-primary" : "border-transparent text-text-secondary hover:text-text-primary"}`}
+              role="button"
+              tabIndex={0}
+              aria-label={`Switch to ${label}`}
+              onClick={() => setActiveId(tab.id)}
+              className={`group flex h-full cursor-pointer select-none items-center gap-1.5 rounded-t-md px-3 text-xs ${active ? "bg-surface-950 text-text-primary" : "bg-surface-700/50 text-text-secondary hover:bg-surface-700 hover:text-text-primary"}`}
             >
-              <button type="button" onClick={() => setActiveId(tab.id)} className="flex items-center gap-1.5">
-                {tab.kind === "console" ? <Monitor size={13} /> : <SquareTerminal size={13} />}
-                {label}
-              </button>
+              {tab.kind === "console" ? <Monitor size={13} /> : <SquareTerminal size={13} />}
+              <span className="whitespace-nowrap">{label}</span>
               {tabs.length > 1 && (
                 <button
                   type="button"
                   data-testid={`term-close-${tab.id}`}
                   aria-label={`Close ${label}`}
-                  onClick={() => closeTab(tab.id)}
-                  className="text-text-tertiary hover:text-text-primary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeTab(tab.id);
+                  }}
+                  className="ml-0.5 rounded-full p-0.5 text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-600 hover:text-text-primary"
                 >
                   <X size={12} />
                 </button>
@@ -385,7 +390,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
           data-testid="term-add-tab"
           aria-label="Add shell tab"
           onClick={addShellTab}
-          className="mb-1 ml-1 text-text-tertiary hover:text-text-primary"
+          className="mb-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
         >
           <Plus size={14} />
         </button>
