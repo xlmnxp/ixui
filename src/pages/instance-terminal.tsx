@@ -454,11 +454,14 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                 onClick={() => setActiveId(tab.id)}
                 onDoubleClick={() => setRenameTab({ id: tab.id, name: label, color: tab.color ?? "" })}
                 className={`group flex h-full max-w-52 shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-t-md px-3 text-xs ${active ? "text-text-primary" : "text-text-secondary hover:text-text-primary"}`}
-                style={
-                  tab.color
-                    ? { backgroundColor: tint(tab.color, active ? 0.45 : 0.2) }
-                    : { backgroundColor: active ? "#191817" : undefined }
-                }
+                style={{
+                  backgroundColor: tab.color
+                    ? tint(tab.color, active ? 0.45 : 0.2)
+                    : active
+                      ? "#191817"
+                      : undefined,
+                  ...(tab.color ? ({ "--tab-color": tint(tab.color, 0.85) } as Record<string, string>) : {}),
+                }}
               >
                 {tab.kind === "console" ? <Monitor size={13} /> : <SquareTerminal size={13} />}
                 <span className="min-w-0 truncate">{label}</span>
@@ -471,7 +474,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
                       e.stopPropagation();
                       closeTab(tab.id);
                     }}
-                    className="ml-0.5 shrink-0 rounded-full p-0.5 text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-600 hover:text-text-primary"
+                    className={`ml-0.5 shrink-0 rounded-full p-0.5 text-text-tertiary transition-colors ${tab.color ? "hover:bg-[var(--tab-color)] hover:text-white" : "hover:bg-surface-600 hover:text-text-primary"}`}
                   >
                     <X size={12} />
                   </button>
