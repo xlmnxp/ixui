@@ -25,6 +25,7 @@ import { SplitPane } from "../components/split-pane";
 import { PageBar } from "../components/page-bar";
 import { KeyValueEditor } from "../components/key-value-editor";
 import { Dropdown } from "../components/dropdown";
+import { ColorPicker } from "../components/color-picker";
 import { toast } from "../components/toast";
 import { Window } from "../components/window";
 import { VerticalTabs } from "../components/vertical-tabs";
@@ -58,6 +59,8 @@ export function Gallery() {
   const [explorerCwd, setExplorerCwd] = useState("/srv/www");
   const [explorerHistory, setExplorerHistory] = useState<string[]>(["/srv/www"]);
   const [explorerIndex, setExplorerIndex] = useState(0);
+  const [cpColor, setCpColor] = useState("#58a6ff");
+
   const [ssEnabled, setSsEnabled] = useState(true);
   const [ssSchedule, setSsSchedule] = useState("");
   const [ssExpiry, setSsExpiry] = useState("");
@@ -135,6 +138,10 @@ export function Gallery() {
         <Textarea label="Notes" placeholder="Optional" />
         <Checkbox label="Ephemeral" />
         <Switch checked onChange={() => {}} label="Auto start" />
+      </Section>
+
+      <Section title="ColorPicker">
+        <ColorPicker value={cpColor} onChange={setCpColor} dataTestId="gallery-colorpicker" />
       </Section>
 
       <Section title="Dropdown">

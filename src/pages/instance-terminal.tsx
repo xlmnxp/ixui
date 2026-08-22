@@ -11,6 +11,7 @@ import { registerInstanceProject } from "../api/client";
 import { createSubprotocolShim } from "../lib/ws-shim";
 import type { AsyncResponse } from "../api/types";
 import { Button } from "../components/button";
+import { ColorPicker } from "../components/color-picker";
 import { Dialog } from "../components/dialog";
 import { EmptyState } from "../components/empty-state";
 import { Input } from "../components/input";
@@ -322,8 +323,6 @@ interface TabDef {
 
 const basename = (path: string) => path.split("/").pop() ?? path;
 
-const TAB_COLORS = ["#3fb950", "#58a6ff", "#d29922", "#f85149", "#bc8cff", "#39c5cf", "#f0883e", "#e3b341"];
-
 function tint(hex: string, alpha: number): string {
   const h = hex.replace("#", "");
   const r = parseInt(h.slice(0, 2), 16);
@@ -560,26 +559,12 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
             />
             <div>
               <span className="text-xs font-medium text-text-secondary">Color</span>
-              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                {TAB_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    data-testid={`tab-color-${c}`}
-                    aria-label={`Color ${c}`}
-                    onClick={() => setRenameTab({ ...renameTab, color: renameTab.color === c ? "" : c })}
-                    className={`h-5 w-5 rounded-full border ${renameTab.color === c ? "border-white" : "border-transparent"}`}
-                    style={{ background: c }}
-                  />
-                ))}
-                <button
-                  type="button"
-                  data-testid="tab-color-none"
-                  onClick={() => setRenameTab({ ...renameTab, color: "" })}
-                  className="ml-1 text-[11px] text-text-tertiary hover:text-text-primary"
-                >
-                  None
-                </button>
+              <div className="mt-1.5">
+                <ColorPicker
+                  value={renameTab.color}
+                  onChange={(c) => setRenameTab({ ...renameTab, color: c })}
+                  dataTestId="tab-color"
+                />
               </div>
             </div>
           </div>
