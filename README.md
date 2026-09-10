@@ -1,3 +1,5 @@
+
+
 # ixui — Incus Web UI
 
 > [!WARNING]
@@ -79,8 +81,8 @@ npm run dev
 ```
 
 Open http://localhost:5173/ui/. The Vite plugin proxies `/1.0`, `/1.0/events`,
-and `/oidc` to incusd using your client cert. Override with `INCUS_CERT_DIR`
-and `INCUS_TARGET` env vars.
+`/oidc`, and `/documentation` to incusd using your client cert. Override with
+`INCUS_CERT_DIR` and `INCUS_TARGET` env vars.
 
 `lucide-react` is the only icon dependency (component system rule: no other UI
 libraries).
