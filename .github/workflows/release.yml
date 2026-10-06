@@ -1,0 +1,54 @@
+name: Release
+
+# Every push to a release branch (see .releaserc.json) is analysed. Conventional
+# commit types decide the version: fix -> patch, feat -> minor, "!" or a
+# BREAKING CHANGE footer -> major. Other commits (docs, chore, ...) don't release.
+on:
+  push:
+    branches: [main, feat/ixui-ui]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only report the next version; don't tag or publish"
+        type: boolean
+        default: true
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # The release commit itself carries [skip ci]; this guards manual re-runs too.
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+
+      # The build runs inside semantic-release (prepare step) so the bundle is
+      # compiled with the new version number.
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: npx semantic-release ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '--dry-run' || '' }}

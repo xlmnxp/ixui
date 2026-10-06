@@ -155,3 +155,12 @@ Bug reports are very welcome.
 Copyright 2026 Salem Alsaiari
 
 ixui is licensed under the [Apache License 2.0](LICENSE).
+
+## Releases
+
+Releases are fully automatic. Commit messages follow
+[Conventional Commits](https://www.conventionalcommits.org/) and decide the next
+version; the release job tags it, updates `CHANGELOG.md`, and attaches
+`ixui-<version>.zip` (the contents of `dist/`) and its checksum to a GitHub
+release. The running app shows its version at the bottom of the sidebar. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the rules.
