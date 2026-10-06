@@ -52,4 +52,18 @@ describe("buildTree", () => {
     const tree = buildTree({ project: "default", members: [], instancesByMember: {}, unassigned: [instance("z1"), instance("a1")] });
     expect(tree[1]?.children?.map((n) => n.id)).toEqual(["instance-a1", "instance-z1"]);
   });
+
+  it("groups cluster/project-wide configuration under System and runtime logs under Monitoring", () => {
+    const tree = buildTree({ project: "default", members: [], instancesByMember: {}, unassigned: [] });
+    const system = tree.find((n) => n.id === "system");
+    const monitoring = tree.find((n) => n.id === "administration");
+    expect(system?.children?.map((c) => c.id)).toEqual([
+      "system-projects",
+      "admin-settings",
+      "admin-cluster-groups",
+      "admin-certificates",
+      "admin-identities",
+    ]);
+    expect(monitoring?.children?.map((c) => c.id)).toEqual(["admin-operations", "admin-activity", "admin-warnings"]);
+  });
 });

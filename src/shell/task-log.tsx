@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Trash2, X } from "lucide-react";
+import { operationsApi } from "../api";
+import { toast } from "../components/toast";
 import { operationsStore, dismissOperation } from "../state/operations";
 import { useStore } from "../state/store";
 import { Badge } from "../components/badge";
@@ -10,6 +12,14 @@ const statusTone = { Running: "info", Success: "success", Failure: "danger", Can
 export interface TaskLogProps {
   collapsed: boolean;
   onToggle: (collapsed: boolean) => void;
+}
+
+async function cancelOperation(id: string, description: string): Promise<void> {
+  try {
+    await operationsApi.cancel(id);
+  } catch (err) {
+    toast("danger", `Could not cancel ${description || id}: ${err instanceof Error ? err.message : "failed"}`);
+  }
 }
 
 export function TaskLog({ collapsed, onToggle }: TaskLogProps) {
@@ -68,6 +78,9 @@ export function TaskLog({ collapsed, onToggle }: TaskLogProps) {
                 <Badge tone={statusTone[op.status]}>{op.status}</Badge>
                 <span className="flex-1 truncate text-xs text-text-primary">{op.description}</span>
                 {op.status === "Running" && <div className="w-32"><Progress value={undefined} /></div>}
+                {op.status === "Running" && op.may_cancel && (
+                  <button data-testid={`tasklog-cancel-${op.id}`} onClick={() => void cancelOperation(op.id, op.description)} className="text-xs text-text-tertiary hover:text-red-300" aria-label={`Cancel ${op.description || op.id}`}>Cancel</button>
+                )}
                 {op.status !== "Running" && op.err && <span className="max-w-48 truncate text-xs text-red-300">{op.err}</span>}
                 {op.status !== "Running" && (
                   <button data-testid={`tasklog-dismiss-${op.id}`} onClick={() => dismissOperation(op.id)} className="text-text-tertiary hover:text-text-primary" aria-label="Dismiss"><X size={12} /></button>

@@ -28,6 +28,7 @@ const WarningsPage = lazyPage(() => import("./pages/warnings"), "WarningsPage");
 const SettingsPage = lazyPage(() => import("./pages/settings"), "SettingsPage");
 const ClusterGroupsPage = lazyPage(() => import("./pages/cluster-groups"), "ClusterGroupsPage");
 const AclsPage = lazyPage(() => import("./pages/acls"), "AclsPage");
+const IdentitiesPage = lazyPage(() => import("./pages/identities"), "IdentitiesPage");
 const MemberView = lazyPage(() => import("./pages/member-view"), "MemberView");
 
 function Terminal() {
@@ -88,6 +89,8 @@ export function App() {
               <Route path="settings" element={<SettingsPage />} />
               <Route path="cluster-groups" element={<ClusterGroupsPage />} />
               <Route path="network-acls" element={<AclsPage />} />
+              <Route path="network-zones" element={<Navigate to="/?tab=zones" replace />} />
+              <Route path="identities" element={<IdentitiesPage />} />
               <Route path="certificates" element={<CertificatesPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>

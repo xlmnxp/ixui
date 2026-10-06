@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Tree } from "../components/tree";
-import { ChevronsDownUp, ChevronsUpDown, Plus } from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown, Monitor, Moon, Plus, Search, Sun } from "lucide-react";
 import { ProjectDropdown } from "../components/project-dropdown";
 import { buildTree } from "./tree-model";
 import { useTreeData } from "./use-tree-data";
 import { currentProjectStore } from "../state/projects";
 import { uiTitleStore } from "../state/ui-title";
 import { useStore } from "../state/store";
+import { cycleTheme, themeStore } from "../state/theme";
+import { createInstanceRequestStore, setPaletteOpen } from "../state/ui-actions";
 import { CreateInstanceWizard } from "../components/create-instance-wizard";
 import { InstanceContextMenu } from "./instance-context-menu";
 import type { Instance } from "../api/types";
@@ -34,9 +36,16 @@ export function Sidebar() {
   const navigate = useNavigate();
   const project = useStore(currentProjectStore);
   const uiTitle = useStore(uiTitleStore);
+  const theme = useStore(themeStore);
   const { members, instancesByMember, unassigned } = useTreeData();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardTarget, setWizardTarget] = useState<string | undefined>(undefined);
+  const createRequest = useStore(createInstanceRequestStore);
+  useEffect(() => {
+    if (createRequest === 0) return;
+    setWizardTarget(undefined);
+    setWizardOpen(true);
+  }, [createRequest]);
   const [treeEpoch, setTreeEpoch] = useState(0);
   // Subtrees start collapsed with only root nodes open; Expand all opens
   // everything, Collapse all closes everything including root nodes.
@@ -62,9 +71,11 @@ export function Sidebar() {
   else if (p === "/operations") selectedId = "admin-operations";
   else if (p === "/activity") selectedId = "admin-activity";
   else if (p === "/warnings") selectedId = "admin-warnings";
+  else if (p === "/projects") selectedId = "system-projects";
   else if (p === "/settings") selectedId = "admin-settings";
   else if (p === "/cluster-groups") selectedId = "admin-cluster-groups";
   else if (p === "/certificates") selectedId = "admin-certificates";
+  else if (p === "/identities") selectedId = "admin-identities";
   else if (p === "/network-acls") selectedId = "network-acls";
 
   const routeFor = (id: string): string => {
@@ -73,9 +84,11 @@ export function Sidebar() {
     if (id === "admin-operations") return "/operations";
     if (id === "admin-activity") return "/activity";
     if (id === "admin-warnings") return "/warnings";
+    if (id === "system-projects") return "/projects";
     if (id === "admin-settings") return "/settings";
     if (id === "admin-cluster-groups") return "/cluster-groups";
     if (id === "admin-certificates") return "/certificates";
+    if (id === "admin-identities") return "/identities";
     if (id === "network-acls") return "/network-acls";
     if (id.startsWith("project-")) return "/";
     if (id.startsWith("member-")) return `/members/${id.slice(7)}`;
@@ -88,6 +101,26 @@ export function Sidebar() {
       <div className="flex h-10 items-center gap-2 border-b border-border px-3">
         <span className="h-3 w-3 rounded-sm bg-accent-600" data-testid="sidebar-mark" />
         <span className="truncate text-sm font-semibold text-text-primary" data-testid="sidebar-title">{uiTitle}</span>
+        <button
+          type="button"
+          data-testid="open-palette"
+          aria-label="Search (Ctrl+K)"
+          title="Search (Ctrl+K)"
+          onClick={() => setPaletteOpen(true)}
+          className="ml-auto rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+        >
+          <Search size={14} />
+        </button>
+        <button
+          type="button"
+          data-testid="theme-toggle"
+          aria-label={`Theme: ${theme} (click to change)`}
+          title={`Theme: ${theme}`}
+          onClick={cycleTheme}
+          className="rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+        >
+          {theme === "system" ? <Monitor size={14} /> : theme === "dark" ? <Moon size={14} /> : <Sun size={14} />}
+        </button>
       </div>
       <ProjectDropdown />
       <div className="flex flex-nowrap items-center justify-end gap-1 overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
