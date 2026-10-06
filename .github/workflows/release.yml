@@ -1,8 +1,10 @@
 name: Release
 
-# Every push to a release branch (see .releaserc.json) is analysed. Conventional
-# commit types decide the version: fix -> patch, feat -> minor, "!" or a
-# BREAKING CHANGE footer -> major. Other commits (docs, chore, ...) don't release.
+# Version numbers are year-month based: YY.M.N (e.g. 26.10.0, then 26.10.1; the
+# counter restarts each month). Every push to a release branch is analysed with
+# scripts/release.mjs. Conventional commits of type feat, fix or perf (or any
+# breaking change) trigger a release; docs/chore/test/etc. don't.
+# main publishes stable releases; other listed branches publish -beta.N pre-releases.
 on:
   push:
     branches: [main, feat/ixui-ui]
@@ -19,19 +21,16 @@ concurrency:
 
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    # The release commit itself carries [skip ci]; this guards manual re-runs too.
+    # The release commit itself carries [skip ci]; this also guards manual re-runs.
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          persist-credentials: false
+          fetch-depth: 0 # full history and tags are needed to find the last release
 
       - uses: actions/setup-node@v4
         with:
@@ -42,13 +41,14 @@ jobs:
       - run: npm run lint
       - run: npm test
 
-      # The build runs inside semantic-release (prepare step) so the bundle is
-      # compiled with the new version number.
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # Bumps package.json, then builds (so the version is baked into the bundle),
+      # zips dist/, commits, tags and publishes the GitHub release.
       - name: Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GIT_AUTHOR_NAME: github-actions[bot]
-          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
-          GIT_COMMITTER_NAME: github-actions[bot]
-          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
-        run: npx semantic-release ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '--dry-run' || '' }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/release.mjs ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '--dry-run' || '' }}
