@@ -39,6 +39,8 @@ export function Button({
         "disabled:cursor-not-allowed disabled:opacity-50",
         variantClasses[variant],
         sizeClasses[size],
+        // While loading the spinner stands in for the button's leading icon instead of sitting beside it.
+        loading ? "[&>svg:first-of-type]:hidden" : "",
         className,
       ].join(" ")}
       disabled={disabled || loading}

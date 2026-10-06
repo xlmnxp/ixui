@@ -81,3 +81,34 @@ describe("SplitPane", () => {
     expect(screen.getByTestId("split-handle")).toBeInTheDocument();
   });
 });
+
+describe("Tree keyboard navigation", () => {
+  const nodes = [
+    { id: "a", label: "A", children: [{ id: "a1", label: "A1" }] },
+    { id: "b", label: "B" },
+  ];
+  const rows = () => document.querySelectorAll<HTMLElement>("[data-tree-row]");
+
+  it("moves with arrows and selects with Enter", async () => {
+    const onSelect = vi.fn();
+    render(<Tree nodes={nodes} onSelect={onSelect} />);
+    rows()[0]!.focus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(document.activeElement).toBe(rows()[1]);
+    await userEvent.keyboard("{Enter}");
+    expect(onSelect).toHaveBeenCalledWith("a1");
+  });
+
+  it("collapses and expands with left/right", async () => {
+    render(<Tree nodes={nodes} />);
+    rows()[0]!.focus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(rows()).toHaveLength(2);
+    await userEvent.keyboard("{ArrowRight}");
+    expect(rows()).toHaveLength(3);
+    await userEvent.keyboard("{ArrowRight}");
+    expect(document.activeElement).toBe(rows()[1]);
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(document.activeElement).toBe(rows()[0]);
+  });
+});

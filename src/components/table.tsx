@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { usePersistedState } from "../lib/persist";
 import type { ReactNode } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Checkbox } from "./checkbox";
@@ -27,7 +27,17 @@ export interface TableProps<T> {
   stickyHeader?: boolean;
   /** Distance in px from the scroll container's top for the pinned header (default 0). */
   stickyHeaderOffset?: number;
+  /** When set, the sort column and direction are remembered across sessions. */
+  persistKey?: string;
 }
+
+interface SortState {
+  col: string | null;
+  dir: "asc" | "desc";
+}
+
+const isSortState = (v: unknown): v is SortState =>
+  typeof v === "object" && v !== null && "col" in v && "dir" in v && ((v as SortState).dir === "asc" || (v as SortState).dir === "desc");
 
 export function Table<T>({
   columns,
@@ -41,9 +51,10 @@ export function Table<T>({
   dataTestId = "table",
   stickyHeader = true,
   stickyHeaderOffset = 0,
+  persistKey,
 }: TableProps<T>) {
-  const [sortCol, setSortCol] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sort, setSort] = usePersistedState<SortState>(persistKey && `sort.${persistKey}`, { col: null, dir: "asc" }, isSortState);
+  const { col: sortCol, dir: sortDir } = sort;
 
   const sorted = [...rows];
   if (sortCol) {
@@ -72,11 +83,8 @@ export function Table<T>({
   };
   const headerClick = (col: Column<T>) => {
     if (!col.sortValue) return;
-    if (sortCol === col.key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else {
-      setSortCol(col.key);
-      setSortDir("asc");
-    }
+    if (sortCol === col.key) setSort({ col: col.key, dir: sortDir === "asc" ? "desc" : "asc" });
+    else setSort({ col: col.key, dir: "asc" });
   };
 
   return (

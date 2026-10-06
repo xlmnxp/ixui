@@ -142,17 +142,12 @@ export function TabStrip({
                   onDoubleClick={() => setRenameTab({ id: tab.id, name: tab.label, color: tab.color ?? "" })}
                   className={`group flex max-w-52 shrink-0 cursor-pointer select-none items-center gap-1.5 px-3 text-xs ${
                     active
-                      ? "h-full rounded-t-md text-text-primary"
+                      ? `h-full rounded-t-md text-text-primary ${tab.color ? "" : "bg-surface-950"}`
                       : "my-1 h-[calc(100%-0.5rem)] self-center rounded-md text-text-secondary hover:text-text-primary"
                   }`}
-                  style={{
-                    backgroundColor: tab.color
-                      ? tint(tab.color, active ? 0.45 : 0.2)
-                      : active
-                        ? "#191817"
-                        : undefined,
-                    ...(tab.color ? ({ "--tab-color": tint(tab.color, 0.85) } as Record<string, string>) : {}),
-                  }}
+                  // Custom colours are translucent tints over the strip background, so the
+                  // theme tokens (text and strip colours) stay legible in light and dark.
+                  style={tab.color ? { backgroundColor: tint(tab.color, active ? 0.45 : 0.2) } : undefined}
                 >
                   {tab.icon === "console" ? <Monitor size={13} /> : <SquareTerminal size={13} />}
                   <span className="min-w-0 truncate">{tab.label}</span>
@@ -165,10 +160,8 @@ export function TabStrip({
                         e.stopPropagation();
                         onClose(tab.id);
                       }}
-                      className={`ml-0.5 shrink-0 rounded-full p-0.5 transition-colors ${
-                        tab.color
-                          ? "text-white/30 hover:bg-[var(--tab-color)] hover:text-white"
-                          : "text-text-tertiary/40 hover:bg-surface-600 hover:text-text-primary"
+                      className={`ml-0.5 shrink-0 rounded-full p-0.5 transition-colors hover:bg-surface-600 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-accent-400 ${
+                        active ? "text-text-secondary" : "text-text-tertiary"
                       }`}
                     >
                       <X size={12} />

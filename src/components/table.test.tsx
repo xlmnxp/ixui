@@ -100,3 +100,21 @@ it("hides the checkbox column without selection", () => {
     expect(screen.getByTestId("table").closest(".overflow-x-auto")).toBeNull();
   });
 });
+
+describe("Table persistKey", () => {
+  it("restores the saved sort", () => {
+    window.localStorage.setItem("ixui.ui.sort.t", JSON.stringify({ col: "n", dir: "desc" }));
+    const rows = [{ n: "a" }, { n: "b" }];
+    render(
+      <Table
+        persistKey="t"
+        columns={[{ key: "n", header: "N", sortValue: (r) => r.n, render: (r) => r.n }]}
+        rows={rows}
+        rowKey={(r) => r.n}
+      />,
+    );
+    const cells = screen.getAllByRole("cell").map((c) => c.textContent);
+    expect(cells).toEqual(["b", "a"]);
+    window.localStorage.clear();
+  });
+});

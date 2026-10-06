@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 export interface TreeNode {
@@ -19,9 +19,27 @@ export interface TreeProps {
   initialExpanded?: boolean | "roots";
 }
 
+/** Visible rows in DOM order, for arrow-key movement. */
+function treeRows(tree: HTMLElement): HTMLElement[] {
+  return [...tree.querySelectorAll<HTMLElement>("[data-tree-row]")];
+}
+
+function onTreeKeyDown(e: ReactKeyboardEvent<HTMLElement>): void {
+  const target = e.target;
+  if (!(target instanceof HTMLElement) || !target.hasAttribute("data-tree-row")) return;
+  const rows = treeRows(e.currentTarget);
+  const idx = rows.indexOf(target);
+  if (e.key === "ArrowDown") rows[idx + 1]?.focus();
+  else if (e.key === "ArrowUp") rows[idx - 1]?.focus();
+  else if (e.key === "Home") rows[0]?.focus();
+  else if (e.key === "End") rows[rows.length - 1]?.focus();
+  else return;
+  e.preventDefault();
+}
+
 export function Tree({ nodes, selectedId, onSelect, initialExpanded = "roots" }: TreeProps) {
   return (
-    <ul role="tree" data-testid="tree" className="space-y-0.5">
+    <ul role="tree" data-testid="tree" className="space-y-0.5" onKeyDown={onTreeKeyDown}>
       {nodes.map((node) => (
         <TreeNodeItem key={node.id} node={node} selectedId={selectedId} onSelect={onSelect} depth={0} initialExpanded={initialExpanded} />
       ))}
@@ -51,12 +69,31 @@ function TreeNodeItem({
     if (hasChildren) setExpanded(true);
   };
 
+  const handleKeyDown = (e: ReactKeyboardEvent<HTMLElement>) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleClick();
+    } else if (e.key === "ArrowRight" && hasChildren) {
+      e.preventDefault();
+      if (!expanded) setExpanded(true);
+      else (e.currentTarget.parentElement?.querySelector(":scope > ul [data-tree-row]") as HTMLElement | null)?.focus();
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      if (hasChildren && expanded) setExpanded(false);
+      else (e.currentTarget.parentElement?.parentElement?.closest("li")?.querySelector("[data-tree-row]") as HTMLElement | null)?.focus();
+    }
+  };
+
   return (
     <li role="treeitem" aria-expanded={hasChildren ? expanded : undefined} aria-selected={selectedId === node.id}>
       <div
+        data-tree-row
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
         onClick={handleClick}
         onContextMenu={node.onContextMenu}
-        className={`group flex cursor-pointer items-center gap-1.5 px-2 py-0.5 ${selectedId === node.id ? "bg-accent-600/15 text-accent-300" : "text-text-secondary hover:bg-surface-700/60 hover:text-text-primary"}`}
+        className={`group flex cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent-500 items-center gap-1.5 px-2 py-0.5 ${selectedId === node.id ? "bg-accent-600/15 text-accent-300" : "text-text-secondary hover:bg-surface-700/60 hover:text-text-primary"}`}
         style={{ paddingLeft: `${depth * 14 + 8}px` }}
       >
         {hasChildren ? (
