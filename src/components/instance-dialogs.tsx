@@ -4,6 +4,9 @@ import { Button } from "./button";
 import { Input } from "./input";
 import { Select } from "./select";
 import { Checkbox } from "./checkbox";
+import { ReviewList, StepDialog } from "./step-dialog";
+import type { Step } from "./step-dialog";
+import { Copy as CopyIcon, MoveRight } from "lucide-react";
 import { toast } from "./toast";
 import { instancesApi, infraApi, clusterApi, operationsApi } from "../api";
 import { validateInstanceName } from "../lib/instance-name";
@@ -123,29 +126,57 @@ export function CopyInstanceDialog({ open, onClose, name, project, defaultPool }
     }
   };
 
+  const steps: Step[] = [
+    {
+      key: "name",
+      title: "New name",
+      invalid: valid ? null : target ? error : "Enter a name for the copy",
+      content: (
+        <Input label="New name" name="copy-name" data-testid="copy-name" value={target} onChange={(e) => setTarget(e.target.value)} error={target && error ? error : undefined} />
+      ),
+    },
+    {
+      key: "options",
+      title: "Options",
+      content: (
+        <div className="space-y-4">
+          <Checkbox label="Live (preserve running state)" data-testid="copy-live" checked={live} onChange={(e) => setLive(e.target.checked)} />
+          <Select label="Storage pool" name="copy-pool" data-testid="copy-pool" value={pool} onChange={(e) => setPool(e.target.value)}>
+            <option value="">— default —</option>
+            {pools.map((p) => (
+              <option key={p.name} value={p.name}>{p.name}</option>
+            ))}
+          </Select>
+        </div>
+      ),
+    },
+    {
+      key: "review",
+      title: "Review",
+      content: (
+        <ReviewList
+          rows={[
+            { label: "Source", value: name },
+            { label: "Copy name", value: target.trim() || "—" },
+            { label: "Storage pool", value: pool || "Default" },
+            { label: "Live", value: live ? "Yes" : "No" },
+          ]}
+        />
+      ),
+    },
+  ];
+
   return (
-    <Dialog
+    <StepDialog
       open={open}
       onClose={onClose}
       title={`Copy ${name}`}
-      footer={
-        <>
-          <Button size="sm" variant="ghost" onClick={onClose} data-testid="copy-cancel">Cancel</Button>
-          <Button size="sm" onClick={submit} disabled={!valid} loading={busy} data-testid="copy-confirm">Copy</Button>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        <Input label="New name" name="copy-name" data-testid="copy-name" value={target} onChange={(e) => setTarget(e.target.value)} error={target && error ? error : undefined} />
-        <Checkbox label="Live (preserve running state)" data-testid="copy-live" checked={live} onChange={(e) => setLive(e.target.checked)} />
-        <Select label="Storage pool" name="copy-pool" data-testid="copy-pool" value={pool} onChange={(e) => setPool(e.target.value)}>
-          <option value="">— default —</option>
-          {pools.map((p) => (
-            <option key={p.name} value={p.name}>{p.name}</option>
-          ))}
-        </Select>
-      </div>
-    </Dialog>
+      steps={steps}
+      busy={busy}
+      submitLabel="Copy"
+      submitIcon={<CopyIcon size={14} />}
+      onSubmit={submit}
+    />
   );
 }
 
@@ -198,33 +229,54 @@ export function MoveInstanceDialog({ open, onClose, name, sourceProject, current
     }
   };
 
+  const steps: Step[] = [
+    {
+      key: "destination",
+      title: "Destination",
+      content: (
+        <div className="space-y-4">
+          <Select label="Project" name="move-project" data-testid="move-project" value={project} onChange={(e) => setProject(e.target.value)}>
+            <option value="">— current project —</option>
+            {projects.map((p) => (
+              <option key={p.name} value={p.name}>{p.name}</option>
+            ))}
+          </Select>
+          <Select label="Target member" name="move-member" data-testid="move-member" value={member} onChange={(e) => setMember(e.target.value)}>
+            <option value="">— any member —</option>
+            {members.filter((m) => m.server_name !== currentMember).map((m) => (
+              <option key={m.server_name} value={m.server_name}>{m.server_name}</option>
+            ))}
+          </Select>
+          <Checkbox label="Live migration" data-testid="move-live" checked={live} onChange={(e) => setLive(e.target.checked)} />
+        </div>
+      ),
+    },
+    {
+      key: "review",
+      title: "Review",
+      content: (
+        <ReviewList
+          rows={[
+            { label: "Instance", value: name },
+            { label: "Project", value: project || sourceProject || "Current" },
+            { label: "Member", value: member || "Any" },
+            { label: "Live", value: live ? "Yes" : "No" },
+          ]}
+        />
+      ),
+    },
+  ];
+
   return (
-    <Dialog
+    <StepDialog
       open={open}
       onClose={onClose}
       title={`Move ${name}`}
-      footer={
-        <>
-          <Button size="sm" variant="ghost" onClick={onClose} data-testid="move-cancel">Cancel</Button>
-          <Button size="sm" onClick={submit} loading={busy} data-testid="move-confirm">Move</Button>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        <Select label="Project" name="move-project" data-testid="move-project" value={project} onChange={(e) => setProject(e.target.value)}>
-          <option value="">— current project —</option>
-          {projects.map((p) => (
-            <option key={p.name} value={p.name}>{p.name}</option>
-          ))}
-        </Select>
-        <Select label="Target member" name="move-member" data-testid="move-member" value={member} onChange={(e) => setMember(e.target.value)}>
-          <option value="">— any member —</option>
-          {members.filter((m) => m.server_name !== currentMember).map((m) => (
-            <option key={m.server_name} value={m.server_name}>{m.server_name}</option>
-          ))}
-        </Select>
-        <Checkbox label="Live migration" data-testid="move-live" checked={live} onChange={(e) => setLive(e.target.checked)} />
-      </div>
-    </Dialog>
+      steps={steps}
+      busy={busy}
+      submitLabel="Move"
+      submitIcon={<MoveRight size={14} />}
+      onSubmit={submit}
+    />
   );
 }
