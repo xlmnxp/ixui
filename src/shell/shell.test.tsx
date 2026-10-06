@@ -177,6 +177,20 @@ describe("Shell", () => {
     await act(async () => {});
   });
 
+  it("shows the app version in the sidebar footer", async () => {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(screen.getByTestId("app-version")).toHaveTextContent(/^v\d+\.\d+\.\d+/);
+    await act(async () => {});
+  });
+
   it("clears finished operations", async () => {
     operationsStore.setState([
       { id: "op1", class: "task", description: "done", status: "Success", status_code: 200, created_at: "t", updated_at: "t", may_cancel: false },

@@ -8,6 +8,7 @@ import { useTreeData } from "./use-tree-data";
 import { currentProjectStore } from "../state/projects";
 import { uiTitleStore } from "../state/ui-title";
 import { useStore } from "../state/store";
+import { versionLabel, versionTitle } from "../lib/version";
 import { cycleTheme, themeStore } from "../state/theme";
 import { createInstanceRequestStore, setPaletteOpen } from "../state/ui-actions";
 import { CreateInstanceWizard } from "../components/create-instance-wizard";
@@ -151,6 +152,9 @@ export function Sidebar() {
       </div>
       <div className="flex-1 overflow-y-auto py-2">
         <Tree key={treeEpoch} nodes={nodes} selectedId={selectedId} onSelect={(id) => navigate(routeFor(id))} initialExpanded={treeExpanded} />
+      </div>
+      <div className="shrink-0 border-t border-border px-3 py-1 text-[10px] text-text-tertiary" data-testid="app-version" title={versionTitle()}>
+        {versionLabel()}
       </div>
       <CreateInstanceWizard open={wizardOpen} onClose={() => setWizardOpen(false)} targetMember={wizardTarget} />
       {ctxMenu && (
