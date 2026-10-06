@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { usePersistedState } from "../lib/persist";
 import type { ReactNode } from "react";
 
 export interface SplitPaneProps {
@@ -7,10 +8,14 @@ export interface SplitPaneProps {
   initial?: number;
   min?: number;
   vertical?: boolean;
+  /** When set, the divider position is remembered across sessions. */
+  storageKey?: string;
 }
 
-export function SplitPane({ left, right, initial = 40, min = 15, vertical = false }: SplitPaneProps) {
-  const [percent, setPercent] = useState(initial);
+const isPercent = (v: unknown): v is number => typeof v === "number" && v >= 0 && v <= 100;
+
+export function SplitPane({ left, right, initial = 40, min = 15, vertical = false, storageKey }: SplitPaneProps) {
+  const [percent, setPercent] = usePersistedState(storageKey && `split.${storageKey}`, initial, isPercent);
   const [dragging, setDragging] = useState(false);
   const [hovered, setHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

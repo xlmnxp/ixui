@@ -41,14 +41,14 @@ const CATALOG: SimplestreamsCatalog = {
 async function goToStage2(user: ReturnType<typeof userEvent.setup>) {
   await screen.findByTestId("wizard-name");
   await user.type(screen.getByTestId("wizard-name"), "web1");
-  await user.click(screen.getByTestId("wizard-next"));
+  await user.click(screen.getByTestId("step-next"));
 }
 
 async function goToStage4(user: ReturnType<typeof userEvent.setup>) {
   await goToStage2(user);
   await user.click(await screen.findByTestId("picker-row-ubuntu/24.04/cloud/amd64"));
-  await user.click(screen.getByTestId("wizard-next"));
-  await user.click(screen.getByTestId("wizard-next"));
+  await user.click(screen.getByTestId("step-next"));
+  await user.click(screen.getByTestId("step-next"));
 }
 
 describe("CreateInstanceWizard", () => {
@@ -63,11 +63,11 @@ describe("CreateInstanceWizard", () => {
     const user = userEvent.setup();
     render(<CreateInstanceWizard open onClose={() => {}} />);
     await user.type(screen.getByTestId("wizard-name"), "bad name!");
-    expect(screen.getByText("Name must contain only letters, numbers, and hyphens")).toBeInTheDocument();
-    expect(screen.getByTestId("wizard-next")).toBeDisabled();
+    expect(screen.getAllByText("Name must contain only letters, numbers, and hyphens").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("step-next")).toBeDisabled();
     await user.clear(screen.getByTestId("wizard-name"));
     await user.type(screen.getByTestId("wizard-name"), "web1");
-    expect(screen.getByTestId("wizard-next")).toBeEnabled();
+    expect(screen.getByTestId("step-next")).toBeEnabled();
   });
 
   it("creates from a remote image alias without pre-pulling", async () => {
@@ -76,10 +76,10 @@ describe("CreateInstanceWizard", () => {
     const { instancesApi, operationsApi } = await import("../api");
     render(<CreateInstanceWizard open onClose={onClose} />);
     await goToStage4(user);
-    expect(screen.getByTestId("wizard-summary")).toHaveTextContent("Project: default");
+    expect(screen.getByTestId("wizard-summary")).toHaveTextContent("Projectdefault");
     expect(screen.getByTestId("wizard-summary")).toHaveTextContent("web1");
     expect(screen.getByTestId("wizard-summary")).toHaveTextContent("ubuntu/24.04/cloud/amd64");
-    await user.click(screen.getByTestId("wizard-create"));
+    await user.click(screen.getByTestId("step-submit"));
     await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({
       name: "web1",
       type: "container",
@@ -99,9 +99,9 @@ describe("CreateInstanceWizard", () => {
     await goToStage2(user);
     await user.click(await screen.findByTestId("picker-row-ubuntu/24.04/default/amd64"));
     expect(screen.getByTestId("picker-cached-ubuntu/24.04/default/amd64")).toBeInTheDocument();
-    await user.click(screen.getByTestId("wizard-next"));
-    await user.click(screen.getByTestId("wizard-next"));
-    await user.click(screen.getByTestId("wizard-create"));
+    await user.click(screen.getByTestId("step-next"));
+    await user.click(screen.getByTestId("step-next"));
+    await user.click(screen.getByTestId("step-submit"));
     await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({
       source: { type: "image", fingerprint: "f1" },
     }), undefined, "default"));
@@ -118,8 +118,8 @@ describe("CreateInstanceWizard", () => {
     render(<CreateInstanceWizard open onClose={() => {}} />);
     await user.selectOptions(screen.getByTestId("wizard-project"), "prod");
     await goToStage4(user);
-    expect(screen.getByTestId("wizard-summary")).toHaveTextContent("Project: prod");
-    await user.click(screen.getByTestId("wizard-create"));
+    expect(screen.getByTestId("wizard-summary")).toHaveTextContent("Projectprod");
+    await user.click(screen.getByTestId("step-submit"));
     await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: "web1" }), undefined, "prod"));
     expect(infraApi.listProfiles).toHaveBeenCalledWith("prod");
   });
@@ -129,8 +129,8 @@ describe("CreateInstanceWizard", () => {
     const { instancesApi } = await import("../api");
     render(<CreateInstanceWizard open onClose={() => {}} targetMember="incus-1" />);
     await goToStage4(user);
-    expect(screen.getByText("Target member:")).toBeInTheDocument();
-    await user.click(screen.getByTestId("wizard-create"));
+    expect(screen.getByText("Target member")).toBeInTheDocument();
+    await user.click(screen.getByTestId("step-submit"));
     await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: "web1" }), "incus-1", "default"));
   });
 
@@ -145,7 +145,7 @@ describe("CreateInstanceWizard", () => {
     vi.mocked(operationsApi.wait).mockResolvedValueOnce(failedOp);
     render(<CreateInstanceWizard open onClose={onClose} />);
     await goToStage4(user);
-    await user.click(screen.getByTestId("wizard-create"));
+    await user.click(screen.getByTestId("step-submit"));
     await waitFor(() => expect(instancesApi.create).toHaveBeenCalled());
     await waitFor(() => {
       const toasts = toastStore.getState();
@@ -163,7 +163,7 @@ describe("CreateInstanceWizard", () => {
     expect(screen.queryByTestId("wizard-name")).not.toBeInTheDocument();
     rerender(<CreateInstanceWizard open onClose={() => {}} />);
     expect(screen.getByTestId("wizard-name")).toHaveValue("");
-    expect(screen.getByText("Stage 1 of 4")).toBeInTheDocument();
+    expect(screen.getByTestId("step-content-basics")).toBeInTheDocument();
     await act(async () => {});
   });
 
@@ -172,8 +172,8 @@ describe("CreateInstanceWizard", () => {
     render(<CreateInstanceWizard open onClose={() => {}} />);
     await screen.findByTestId("wizard-name");
     await user.type(screen.getByTestId("wizard-name"), "web1");
-    await user.click(screen.getByTestId("wizard-next"));
-    await user.click(screen.getByTestId("wizard-back"));
+    await user.click(screen.getByTestId("step-next"));
+    await user.click(screen.getByTestId("step-back"));
     expect(screen.getByTestId("wizard-name")).toHaveValue("web1");
   });
 });

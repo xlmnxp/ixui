@@ -213,6 +213,14 @@ export class InstancesApi {
     return this.client.post(`/instances/${name}/backups${projectQueryFor(name, project)}`, { name: backupName });
   }
 
+  /** Create an instance from an exported backup archive (raw tarball body). */
+  importBackup(file: Blob, options: { name?: string; pool?: string } = {}, project?: string): Promise<AsyncResponse | SyncResponse | null> {
+    const headers: Record<string, string> = { "Content-Type": "application/octet-stream" };
+    if (options.name) headers["X-Incus-name"] = options.name;
+    if (options.pool) headers["X-Incus-pool"] = options.pool;
+    return this.client.postRaw(`/instances${project !== undefined ? `?project=${encodeURIComponent(project)}` : projectQuery()}`, file, headers);
+  }
+
   deleteBackup(name: string, backupName: string, project?: string): Promise<void> {
     return this.client.delete(`/instances/${name}/backups/${backupName}${projectQueryFor(name, project)}`);
   }

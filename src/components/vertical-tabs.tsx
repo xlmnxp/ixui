@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { onTablistKeyDown } from "../lib/roving";
 
 export interface VerticalTabItem {
   key: string;
@@ -14,12 +15,13 @@ export interface VerticalTabsProps {
 
 export function VerticalTabs({ tabs, active, onChange }: VerticalTabsProps) {
   return (
-    <div role="tablist" aria-orientation="vertical" data-testid="vertical-tabs" className="flex h-full flex-col overflow-y-auto border-r border-border bg-surface-900">
+    <div onKeyDown={(e) => onTablistKeyDown(e, "vertical")} role="tablist" aria-orientation="vertical" data-testid="vertical-tabs" className="flex h-full flex-col overflow-y-auto border-r border-border bg-surface-900">
       {tabs.map((t) => (
         <button
           key={t.key}
           role="tab"
           aria-selected={active === t.key}
+          tabIndex={active === t.key || (!tabs.some((x) => x.key === active) && t === tabs[0]) ? 0 : -1}
           data-testid={`vtab-${t.key}`}
           onClick={() => onChange(t.key)}
           className={`flex items-center gap-2 border-l-2 px-2.5 py-1.5 text-left text-[13px] ${active === t.key ? "border-accent-600 bg-accent-600/10 text-text-primary" : "border-transparent text-text-secondary hover:bg-surface-700 hover:text-text-primary"}`}

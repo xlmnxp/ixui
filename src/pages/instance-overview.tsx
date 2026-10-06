@@ -88,6 +88,43 @@ export function OverviewTab({ instance }: OverviewTabProps) {
           ),
         }]
       : []),
+    ...(live && live.netRx.length > 0
+      ? [{
+          id: "network-usage",
+          key: "Network",
+          value: (
+            <span className="flex flex-wrap items-center gap-3">
+              <span className="flex items-center gap-2">
+                <Sparkline points={live.netRx.map((p) => p.value)} color="#d29922" width={100} />
+                <span className="text-xs text-text-secondary">↓ {formatBytes(live.netRx[live.netRx.length - 1]!.value)}/s</span>
+              </span>
+              <span className="flex items-center gap-2">
+                <Sparkline points={live.netTx.map((p) => p.value)} color="#bc8cff" width={100} />
+                <span className="text-xs text-text-secondary">↑ {formatBytes(live.netTx[live.netTx.length - 1]!.value)}/s</span>
+              </span>
+            </span>
+          ),
+        }]
+      : []),
+    ...(live?.disk
+      ? [{
+          id: "disk-usage",
+          key: "Disk usage",
+          value: (
+            <span className="flex items-center gap-2">
+              {live.disk.total !== undefined && (
+                <span className="h-1.5 w-32 overflow-hidden rounded bg-surface-600">
+                  <span className="block h-full bg-accent-500" style={{ width: `${Math.min(100, (live.disk.usage / live.disk.total) * 100)}%` }} />
+                </span>
+              )}
+              <span className="text-xs text-text-secondary">
+                {formatBytes(live.disk.usage)}
+                {live.disk.total !== undefined ? ` / ${formatBytes(live.disk.total)}` : " used"}
+              </span>
+            </span>
+          ),
+        }]
+      : []),
   ];
 
   return (

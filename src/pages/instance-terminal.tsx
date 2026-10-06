@@ -15,6 +15,9 @@ import { EmptyState } from "../components/empty-state";
 import { Spinner } from "../components/spinner";
 import { TabStrip } from "../components/tab-strip";
 import { toast } from "../components/toast";
+import { terminalTheme } from "../lib/terminal-theme";
+import { resolvedThemeStore } from "../state/theme";
+import { useStore } from "../state/store";
 
 export interface InstanceTerminalProps {
   instanceName: string;
@@ -56,6 +59,12 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
   const connectTimerRef = useRef<number | null>(null);
   const fitResizeRef = useRef<(() => void) | null>(null);
   const canvasObserverRef = useRef<{ stop: () => void } | null>(null);
+  const themeMode = useStore(resolvedThemeStore);
+
+  // Re-colour an open terminal when the app theme changes.
+  useEffect(() => {
+    if (termRef.current) termRef.current.options.theme = terminalTheme(themeMode);
+  }, [themeMode]);
 
   // Fit the SPICE display to the actual container size. Reads the container
   // Scale the guest framebuffer down (CSS zoom) so the whole screen fits
@@ -207,7 +216,7 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
         cursorBlink: true,
         fontSize: 13,
         fontFamily: '"Ubuntu Mono", monospace',
-        theme: { background: "#191817" },
+        theme: terminalTheme(resolvedThemeStore.getState()),
       });
       const fit = new FitAddon();
       terminal.loadAddon(fit);

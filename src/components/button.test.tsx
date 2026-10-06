@@ -26,4 +26,13 @@ describe("Button", () => {
     render(<Button variant="danger">Delete</Button>);
     expect(screen.getByRole("button")).toHaveClass("bg-danger");
   });
+
+  it("swaps the leading icon for the spinner while loading", () => {
+    const { rerender } = render(<Button><svg data-testid="lead" />Save</Button>);
+    expect(screen.getByTestId("button").className).not.toContain("svg:first-of-type");
+    rerender(<Button loading><svg data-testid="lead" />Save</Button>);
+    // The spinner is rendered first; CSS hides the icon so only one glyph shows.
+    expect(screen.getByTestId("button").className).toContain("[&>svg:first-of-type]:hidden");
+    expect(screen.getByTestId("button").firstElementChild).toBe(screen.getByTestId("spinner"));
+  });
 });

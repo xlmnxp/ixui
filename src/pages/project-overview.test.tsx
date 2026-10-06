@@ -17,6 +17,10 @@ vi.mock("../api", () => ({
     listPools: vi.fn().mockResolvedValue([]),
     listPoolVolumes: vi.fn().mockResolvedValue([]),
   },
+  networkExtrasApi: {
+    listZones: vi.fn().mockResolvedValue([]),
+    listAddressSets: vi.fn().mockResolvedValue([]),
+  },
   api: { get: vi.fn() },
   eventStream: { connect: vi.fn(), onEvent: vi.fn() },
 }));
@@ -50,6 +54,22 @@ describe("ProjectOverview", () => {
     expect(screen.getByTestId("instances-page")).toBeInTheDocument();
   });
 
+  it("shows network zones and address sets as side tabs next to networks", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/?tab=zones"]}>
+        <Routes>
+          <Route path="/" element={<ProjectOverview />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(await screen.findByTestId("zones-page")).toBeInTheDocument();
+    await user.click(screen.getByTestId("vtab-address-sets"));
+    expect(await screen.findByTestId("sets-page")).toBeInTheDocument();
+    const keys = screen.getAllByRole("tab").map((t) => t.getAttribute("data-testid"));
+    expect(keys.indexOf("vtab-zones")).toBe(keys.indexOf("vtab-networks") + 1);
+  });
+
   it("opens the create wizard from the header", async () => {
     const user = userEvent.setup();
     render(
@@ -60,7 +80,7 @@ describe("ProjectOverview", () => {
       </MemoryRouter>
     );
     await user.click(await screen.findByTestId("action-create"));
-    expect(screen.getByTestId("window")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Create instance" })).toBeInTheDocument();
   });
 
   it("renders the images actions in the project bar", async () => {

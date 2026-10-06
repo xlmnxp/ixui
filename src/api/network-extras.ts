@@ -14,6 +14,35 @@ export interface Forward {
   description: string;
 }
 
+export interface LoadBalancerBackend {
+  name: string;
+  description?: string;
+  target_address: string;
+  target_port?: string;
+}
+
+export interface LoadBalancerPort {
+  description?: string;
+  protocol: "tcp" | "udp";
+  listen_port: string;
+  target_backend: string[];
+}
+
+export interface LoadBalancer {
+  listen_address: string;
+  description: string;
+  backends: LoadBalancerBackend[];
+  ports: LoadBalancerPort[];
+}
+
+export interface NetworkPeer {
+  name: string;
+  description: string;
+  target_project?: string;
+  target_network?: string;
+  status?: string;
+}
+
 export interface Lease {
   address: string;
   hostname: string;
@@ -25,6 +54,7 @@ export interface Lease {
 export interface Zone {
   name: string;
   description: string;
+  config?: Record<string, string>;
   used_by: string[];
 }
 
@@ -72,6 +102,30 @@ export class NetworkExtrasApi {
     return this.client.delete(`/networks/${network}/forwards/${name}${projectQuery()}`);
   }
 
+  listLoadBalancers(network: string): Promise<LoadBalancer[]> {
+    return this.client.list<LoadBalancer>(`/networks/${network}/load-balancers`, projectListParam());
+  }
+
+  createLoadBalancer(network: string, body: LoadBalancer): Promise<OpResponse> {
+    return this.client.post(`/networks/${network}/load-balancers${projectQuery()}`, body);
+  }
+
+  deleteLoadBalancer(network: string, listenAddress: string): Promise<void> {
+    return this.client.delete(`/networks/${network}/load-balancers/${encodeURIComponent(listenAddress)}${projectQuery()}`);
+  }
+
+  listPeers(network: string): Promise<NetworkPeer[]> {
+    return this.client.list<NetworkPeer>(`/networks/${network}/peers`, projectListParam());
+  }
+
+  createPeer(network: string, body: { name: string; description?: string; target_project: string; target_network: string }): Promise<OpResponse> {
+    return this.client.post(`/networks/${network}/peers${projectQuery()}`, body);
+  }
+
+  deletePeer(network: string, name: string): Promise<void> {
+    return this.client.delete(`/networks/${network}/peers/${name}${projectQuery()}`);
+  }
+
   listLeases(network: string): Promise<Lease[]> {
     return this.client.list<Lease>(`/networks/${network}/leases`, projectListParam());
   }
@@ -80,7 +134,11 @@ export class NetworkExtrasApi {
     return this.client.list<Zone>("/network-zones", projectListParam());
   }
 
-  createZone(body: unknown): Promise<OpResponse> {
+  updateZone(name: string, body: { description?: string; config?: Record<string, string> }): Promise<OpResponse> {
+    return this.client.patch(`/network-zones/${name}${projectQuery()}`, body);
+  }
+
+  createZone(body: { name: string; description?: string; config?: Record<string, string> }): Promise<OpResponse> {
     return this.client.post(`/network-zones${projectQuery()}`, body);
   }
 
@@ -92,8 +150,12 @@ export class NetworkExtrasApi {
     return this.client.list<AddressSet>("/network-address-sets", projectListParam());
   }
 
-  createAddressSet(body: { name: string; addresses?: string[] }): Promise<OpResponse> {
+  createAddressSet(body: { name: string; description?: string; addresses?: string[] }): Promise<OpResponse> {
     return this.client.post(`/network-address-sets${projectQuery()}`, body);
+  }
+
+  updateAddressSet(name: string, body: { description?: string; addresses?: string[] }): Promise<OpResponse> {
+    return this.client.patch(`/network-address-sets/${name}${projectQuery()}`, body);
   }
 
   deleteAddressSet(name: string): Promise<void> {

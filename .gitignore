@@ -4,3 +4,9 @@ dist/
 .DS_Store
 .worktrees/
 .playwright-mcp/
+coverage/
+
+# Release artifacts produced by scripts/release.mjs
+ixui-*.zip
+ixui-*.sha256
+release-notes.md

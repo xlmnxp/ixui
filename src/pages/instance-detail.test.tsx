@@ -240,9 +240,11 @@ describe("InstanceDetailPage", () => {
     await user.click(screen.getByTestId("detail-more"));
     await user.click(screen.getByTestId("detail-more-copy"));
     await user.type(screen.getByTestId("copy-name"), "web2");
+    await user.click(screen.getByTestId("step-next"));
     await user.click(screen.getByTestId("copy-live"));
     await user.selectOptions(screen.getByTestId("copy-pool"), "default");
-    await user.click(screen.getByTestId("copy-confirm"));
+    await user.click(screen.getByTestId("step-next"));
+    await user.click(screen.getByTestId("step-submit"));
     await waitFor(() => expect(instancesApi.copy).toHaveBeenCalledWith("web1", "web2", { live: true, pool: "default", sourceProject: "default", targetProject: "default" }));
   });
 
@@ -256,7 +258,8 @@ describe("InstanceDetailPage", () => {
     await user.selectOptions(screen.getByTestId("move-project"), "prod");
     await user.selectOptions(screen.getByTestId("move-member"), "incus-1");
     await user.click(screen.getByTestId("move-live"));
-    await user.click(screen.getByTestId("move-confirm"));
+    await user.click(screen.getByTestId("step-next"));
+    await user.click(screen.getByTestId("step-submit"));
     await waitFor(() => expect(instancesApi.move).toHaveBeenCalledWith("web1", { project: "prod", target: "incus-1", live: true }, "default"));
   });
 
@@ -267,7 +270,8 @@ describe("InstanceDetailPage", () => {
     await user.click(screen.getByTestId("detail-more"));
     await user.click(screen.getByTestId("detail-more-move"));
     await user.selectOptions(screen.getByTestId("move-project"), "prod");
-    await user.click(screen.getByTestId("move-confirm"));
+    await user.click(screen.getByTestId("step-next"));
+    await user.click(screen.getByTestId("step-submit"));
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/instances"));
   });
 

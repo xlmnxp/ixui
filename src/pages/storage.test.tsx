@@ -34,7 +34,7 @@ vi.mock("../api", () => ({
     get: vi.fn().mockResolvedValue({ name: "vm1", type: "virtual-machine", status: "Running", description: "", created_at: "", last_used_at: "", config: {}, devices: { nic0: { type: "nic" } }, profiles: [], project: "default", ephemeral: false }),
     update: vi.fn().mockResolvedValue(null),
     mergeUpdate: vi.fn().mockImplementation(async (name: string, changes: { devices?: Record<string, Record<string, string>>; config?: Record<string, string>; description?: string; profiles?: string[]; ephemeral?: boolean }, project?: string) => {
-      const get = (await import("../api")).instancesApi.get as ReturnType<typeof vi.fn>;
+      const get = vi.mocked((await import("../api")).instancesApi.get);
       const current = await get(name, project);
       await (await import("../api")).instancesApi.update(name, {
         config: changes.config ?? current.config,

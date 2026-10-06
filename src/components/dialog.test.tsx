@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Dialog } from "./dialog";
@@ -47,5 +48,32 @@ describe("Tooltip", () => {
   it("renders tooltip role", () => {
     render(<Tooltip label="help text"><button>?</button></Tooltip>);
     expect(screen.getByRole("tooltip")).toHaveTextContent("help text");
+  });
+});
+
+describe("Dialog focus handling", () => {
+  it("traps Tab and restores focus on close", async () => {
+    const user = userEvent.setup();
+    function Host() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>opener</button>
+          <Dialog open={open} onClose={() => setOpen(false)} title="T" footer={<button>ok</button>}>
+            <input aria-label="field" />
+          </Dialog>
+        </>
+      );
+    }
+    render(<Host />);
+    const opener = screen.getByText("opener");
+    await user.click(opener);
+    expect(screen.getByLabelText("field")).toHaveFocus();
+    await user.tab();
+    expect(screen.getByText("ok")).toHaveFocus();
+    await user.tab();
+    expect(screen.getByLabelText("field")).toHaveFocus();
+    await user.keyboard("{Escape}");
+    expect(opener).toHaveFocus();
   });
 });

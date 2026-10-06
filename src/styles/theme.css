@@ -31,6 +31,39 @@
   --color-danger: #f85149;
 }
 
+/* Light theme: same tokens, overridden. Accent-300 is used for text, so it darkens. */
+:root[data-theme="light"] {
+  --color-accent-300: #b03910;
+  --color-accent-400: #c4410f;
+
+  --color-surface-950: #f6f5f4;
+  --color-surface-900: #ffffff;
+  --color-surface-800: #ffffff;
+  --color-surface-700: #efedeb;
+  --color-surface-600: #e4e1de;
+  --color-surface-500: #ebe8e5;
+  --color-sidebar: #efedeb;
+
+  --color-text-primary: #1f1e1d;
+  --color-text-secondary: #4a4742;
+  --color-text-tertiary: #6b675f;
+  --color-border: #d4d0cb;
+
+  --color-success: #1a7f37;
+  --color-warning: #9a6700;
+  --color-danger: #cf222e;
+
+  /* Pastel status text colors are unreadable on light surfaces; darken them. */
+  --color-red-300: #b42318;
+  --color-red-400: #b42318;
+  --color-amber-300: #8a5a00;
+  --color-green-300: #1a7f37;
+  --color-green-400: #1a7f37;
+  --color-blue-300: #0b5cad;
+  --color-blue-400: #0b5cad;
+  --color-sky-300: #0b5cad;
+}
+
 /* Tailwind v4 resets buttons to cursor: default; interactive buttons should
    show a pointer, disabled ones keep the default arrow. */
 @layer base {

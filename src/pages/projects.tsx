@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Pencil, Plus, Star, Trash2, X } from "lucide-react";
 import { infraApi, instancesApi } from "../api";
+import { ALL_PROJECTS } from "../api/client";
 import type { Project } from "../api/types";
 import { projectsStore, projectsLoadingStore, currentProjectStore, setCurrentProject, loadProjects } from "../state/projects";
 import { useStore } from "../state/store";
@@ -8,13 +9,21 @@ import { Table } from "../components/table";
 import type { Column } from "../components/table";
 import { Button } from "../components/button";
 import { Dialog } from "../components/dialog";
-import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
 import { Loading } from "../components/loading";
 import { Badge } from "../components/badge";
 import { PageBar } from "../components/page-bar";
 import { ProjectEditor } from "../components/project-editor";
+import { Progress } from "../components/progress";
 import { toast } from "../components/toast";
+import { parseProjectState, tightestResource } from "../lib/project-usage";
+import type { ProjectUsage } from "../lib/project-usage";
+
+/** Resources in the project, ignoring the default profile Incus creates with every project. */
+export function projectResources(p: Project): string[] {
+  return (p.used_by ?? []).filter((u) => !u.startsWith("/1.0/profiles/default"));
+}
+const resourceCount = (p: Project): number => projectResources(p).length;
 
 export function ProjectsPage() {
   const projects = useStore(projectsStore);
@@ -24,14 +33,33 @@ export function ProjectsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [editing, setEditing] = useState<Project | null>(null);
   const [usage, setUsage] = useState<Record<string, number>>({});
-  const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [states, setStates] = useState<Record<string, ProjectUsage>>({});
+  const [confirmName, setConfirmName] = useState("");
 
   const refresh = useCallback(() => {
     void loadProjects().catch(() => {});
   }, []);
 
   useEffect(refresh, [refresh]);
+
+  // Per-project limits and usage for the table summary and the editor.
+  const projectKey = projects.map((p) => p.name).join(",");
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all(
+      projects.map(async (p) => {
+        try {
+          return [p.name, parseProjectState(await infraApi.projectState(p.name))] as const;
+        } catch {
+          return null;
+        }
+      })
+    ).then((entries) => {
+      if (cancelled) return;
+      setStates(Object.fromEntries(entries.filter((e): e is [string, ProjectUsage] => e !== null)));
+    });
+    return () => { cancelled = true; };
+  }, [projectKey]);
 
   const openEdit = async (project: Project) => {
     setEditing(project);
@@ -62,27 +90,14 @@ export function ProjectsPage() {
     setUsage(next);
   };
 
-  const create = async () => {
-    setBusy(true);
-    try {
-      await infraApi.createProject({ name: name.trim() });
-      toast("success", `Project ${name} created`);
-      setCreateOpen(false);
-      setName("");
-      refresh();
-    } catch (err) {
-      toast("danger", err instanceof Error ? err.message : "Create failed");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const remove = async () => {
     if (!deleteTarget) return;
     try {
       await infraApi.deleteProject(deleteTarget.name);
       toast("success", `Project ${deleteTarget.name} deleted`);
+      if (currentProject === deleteTarget.name) setCurrentProject(ALL_PROJECTS);
       setDeleteTarget(null);
+      setConfirmName("");
       refresh();
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Delete failed");
@@ -100,6 +115,23 @@ export function ProjectsPage() {
       ),
     },
     { key: "description", header: "Description", render: (p) => p.description || "—" },
+    {
+      key: "resources", header: "Resources", sortValue: (p) => resourceCount(p),
+      render: (p) => <span className="text-text-secondary" data-testid={`project-resources-${p.name}`}>{resourceCount(p)}</span>,
+    },
+    {
+      key: "usage", header: "Tightest limit",
+      render: (p) => {
+        const t = states[p.name] ? tightestResource(states[p.name]!) : null;
+        if (!t) return <span className="text-text-tertiary">—</span>;
+        return (
+          <span className="flex w-44 items-center gap-2" data-testid={`project-usage-${p.name}`}>
+            <Progress value={t.percent} tone={t.percent >= 100 ? "danger" : "accent"} />
+            <span className="shrink-0 text-xs text-text-secondary">{t.key.replace("limits.", "")} {t.percent}%</span>
+          </span>
+        );
+      },
+    },
     {
       key: "actions", header: "", align: "right",
       render: (p) => (
@@ -129,31 +161,46 @@ export function ProjectsPage() {
         <Table columns={columns} rows={projects} rowKey={(p) => p.name} emptyMessage="No projects" stickyHeaderOffset={40} />
       )}
 
-      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create project" footer={
-        <>
-          <Button variant="secondary" onClick={() => setCreateOpen(false)}><X size={14} /> Cancel</Button>
-          <Button onClick={create} loading={busy} data-testid="project-create-submit"><Plus size={14} /> Create</Button>
-        </>
-      }>
-        <Input label="Name" name="project-name" data-testid="project-name" value={name} onChange={(e) => setName(e.target.value)} />
+      <Dialog
+        open={deleteTarget !== null}
+        onClose={() => { setDeleteTarget(null); setConfirmName(""); }}
+        title="Delete project"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => { setDeleteTarget(null); setConfirmName(""); }}><X size={14} /> Cancel</Button>
+            <Button variant="danger" data-testid="project-delete-confirm" disabled={!deleteTarget || confirmName !== deleteTarget.name || resourceCount(deleteTarget) > 0 || deleteTarget.name === "default"} onClick={remove}><Trash2 size={14} /> Delete</Button>
+          </>
+        }
+      >
+        {deleteTarget && (
+          <div className="space-y-3">
+            {deleteTarget.name === "default" ? (
+              <p>The <strong>default</strong> project can't be deleted.</p>
+            ) : resourceCount(deleteTarget) > 0 ? (
+              <>
+                <p>Project <strong>{deleteTarget.name}</strong> still contains {resourceCount(deleteTarget)} resource{resourceCount(deleteTarget) === 1 ? "" : "s"}. Delete or move them first:</p>
+                <ul className="max-h-40 overflow-auto rounded border border-border bg-surface-900 p-2 font-mono text-xs" data-testid="project-delete-resources">
+                  {projectResources(deleteTarget).map((u) => <li key={u}>{u.replace(/^\/1\.0\//, "").replace(/\?project=.*/, "")}</li>)}
+                </ul>
+              </>
+            ) : (
+              <>
+                <p>This permanently deletes project <strong>{deleteTarget.name}</strong>. Type its name to confirm.</p>
+                <Input label="Project name" name="project-delete-name" data-testid="project-delete-name" value={confirmName} onChange={(e) => setConfirmName(e.target.value)} />
+              </>
+            )}
+          </div>
+        )}
       </Dialog>
 
-      <ConfirmDialog
-        open={deleteTarget !== null}
-        title="Delete project"
-        body={`Delete project ${deleteTarget?.name}? All of its resources must be empty.`}
-        confirmLabel="Delete"
-        tone="danger"
-        onConfirm={remove}
-        onCancel={() => setDeleteTarget(null)}
-      />
-
-      {editing && (
+      {(editing || createOpen) && (
         <ProjectEditor
+          key={editing?.name ?? "new"}
           project={editing}
           usage={usage}
-          onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); refresh(); }}
+          state={editing ? states[editing.name] : undefined}
+          onClose={() => { setEditing(null); setCreateOpen(false); }}
+          onSaved={() => { setEditing(null); setCreateOpen(false); refresh(); }}
         />
       )}
     </div>

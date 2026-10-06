@@ -62,7 +62,7 @@ export class InfraApi {
     return this.client.get<Network>(`/networks/${name}${projectQuery()}`);
   }
 
-  createNetwork(body: { name: string; type: string; description?: string }): Promise<OpResponse> {
+  createNetwork(body: { name: string; type: string; description?: string; config?: Record<string, string> }): Promise<OpResponse> {
     return this.client.post(`/networks${projectQuery()}`, body);
   }
 
@@ -106,12 +106,16 @@ export class InfraApi {
     return this.client.get<Project>(`/projects/${name}`);
   }
 
-  createProject(body: { name: string; description?: string }): Promise<OpResponse> {
+  createProject(body: { name: string; description?: string; config?: Record<string, string> }): Promise<OpResponse> {
     return this.client.post(`/projects`, body);
   }
 
   deleteProject(name: string): Promise<void> {
     return this.client.delete(`/projects/${name}`);
+  }
+
+  projectState(name: string): Promise<unknown> {
+    return this.client.get<unknown>(`/projects/${name}/state`);
   }
 
   updateProject(name: string, body: { description?: string; config?: Record<string, string> }): Promise<OpResponse> {

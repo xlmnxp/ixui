@@ -1,0 +1,54 @@
+name: Release
+
+# Version numbers are year-month based: YY.M.N (e.g. 26.10.0, then 26.10.1; the
+# counter restarts each month). Every push to a release branch is analysed with
+# scripts/release.mjs. Conventional commits of type feat, fix or perf (or any
+# breaking change) trigger a release; docs/chore/test/etc. don't.
+# main publishes stable releases; other listed branches publish -beta.N pre-releases.
+on:
+  push:
+    branches: [main, feat/ixui-ui]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only report the next version; don't tag or publish"
+        type: boolean
+        default: true
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # The release commit itself carries [skip ci]; this also guards manual re-runs.
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history and tags are needed to find the last release
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # Bumps package.json, then builds (so the version is baked into the bundle),
+      # zips dist/, commits, tags and publishes the GitHub release.
+      - name: Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/release.mjs ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '--dry-run' || '' }}

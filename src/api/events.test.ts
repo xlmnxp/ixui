@@ -114,3 +114,42 @@ describe("EventStream", () => {
     stream.close();
   });
 });
+
+describe("EventStream connection status", () => {
+  beforeEach(() => {
+    FakeWebSocket.instances = [];
+    vi.stubGlobal("WebSocket", FakeWebSocket);
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it("reports connected, disconnected, and reconnect", () => {
+    const stream = new EventStream("ws://x");
+    const fn = vi.fn();
+    stream.onStatus(fn);
+    stream.connect();
+    FakeWebSocket.instances[0]!.onopen?.();
+    expect(fn).toHaveBeenLastCalledWith("connected", false);
+    FakeWebSocket.instances[0]!.onclose?.();
+    expect(fn).toHaveBeenLastCalledWith("disconnected", false);
+    vi.advanceTimersByTime(2_000);
+    FakeWebSocket.instances[1]!.onopen?.();
+    expect(fn).toHaveBeenLastCalledWith("connected", true);
+    stream.close();
+  });
+
+  it("does not report a keepalive recycle as an outage", () => {
+    const stream = new EventStream("ws://x");
+    const fn = vi.fn();
+    stream.connect();
+    FakeWebSocket.instances[0]!.onopen?.();
+    stream.onStatus(fn);
+    vi.advanceTimersByTime(50_000);
+    FakeWebSocket.instances[0]!.onclose?.();
+    expect(fn).not.toHaveBeenCalledWith("disconnected", expect.anything());
+    stream.close();
+  });
+});

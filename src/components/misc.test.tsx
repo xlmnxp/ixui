@@ -31,7 +31,7 @@ describe("Breadcrumbs", () => {
 describe("Progress", () => {
   it("renders determinate width", () => {
     render(<Progress value={42} />);
-    expect(screen.getByRole("progressbar")).toHaveStyle({ width: undefined });
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "42");
     expect(screen.getByTestId("progress").querySelector("div")).toHaveStyle({ width: "42%" });
   });
 

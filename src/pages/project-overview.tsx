@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Boxes, Database, Image as ImageIcon, Network, UserCog } from "lucide-react";
+import { Boxes, Database, Globe, Image as ImageIcon, ListTree, Network, UserCog } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { VerticalTabs } from "../components/vertical-tabs";
 import type { VerticalTabItem } from "../components/vertical-tabs";
@@ -15,8 +15,9 @@ import { ImagesPage } from "./images";
 import { ProfilesPage } from "./profiles";
 import { NetworksPage } from "./networks";
 import { StoragePage } from "./storage";
+import { AddressSetsPage, NetworkZonesPage } from "./network-zones";
 
-const TAB_KEYS = ["instances", "images", "profiles", "networks", "storage"] as const;
+const TAB_KEYS = ["instances", "images", "profiles", "networks", "zones", "address-sets", "storage"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 const TABS: VerticalTabItem[] = [
@@ -24,6 +25,8 @@ const TABS: VerticalTabItem[] = [
   { key: "images", label: "Images", icon: <ImageIcon size={14} /> },
   { key: "profiles", label: "Profiles", icon: <UserCog size={14} /> },
   { key: "networks", label: "Networks", icon: <Network size={14} /> },
+  { key: "zones", label: "Network zones", icon: <Globe size={14} /> },
+  { key: "address-sets", label: "Address sets", icon: <ListTree size={14} /> },
   { key: "storage", label: "Storage pools", icon: <Database size={14} /> },
 ];
 
@@ -55,6 +58,8 @@ export function ProjectOverview() {
               {tab === "images" && <ImagesPage registerBar={setTabBar} />}
               {tab === "profiles" && <ProfilesPage registerBar={setTabBar} />}
               {tab === "networks" && <NetworksPage registerBar={setTabBar} />}
+              {tab === "zones" && <NetworkZonesPage registerBar={setTabBar} />}
+              {tab === "address-sets" && <AddressSetsPage registerBar={setTabBar} />}
               {tab === "storage" && <StoragePage registerBar={setTabBar} />}
             </div>
           }

@@ -30,6 +30,8 @@ export interface ImagePickerProps {
   type: "container" | "virtual-machine";
   cloudInitEnabled: boolean;
   onSelect: (image: PickedImage | null) => void;
+  /** Show the inline "pull a custom image" form (default true). Hidden where the host dialog does the pulling. */
+  allowPull?: boolean;
 }
 
 interface PickerRow {
@@ -123,7 +125,7 @@ const DISPLAY_NAMES: Record<string, string> = {
   nixos: "NixOS",
 };
 
-export function ImagePicker({ type, cloudInitEnabled, onSelect }: ImagePickerProps) {
+export function ImagePicker({ type, cloudInitEnabled, onSelect, allowPull = true }: ImagePickerProps) {
   const [tab, setTab] = useState<"distro" | "oci">("distro");
   const [search, setSearch] = useState("");
   const [catalog, setCatalog] = useState<SimplestreamsCatalog | null>(null);
@@ -392,15 +394,19 @@ export function ImagePicker({ type, cloudInitEnabled, onSelect }: ImagePickerPro
         </div>
       )}
 
-      <Button size="sm" variant="ghost" onClick={() => setPullOpen((o) => !o)} data-testid="wizard-pull-toggle">
-        <RefreshCw size={13} /> Pull from remote
-      </Button>
-      {pullOpen && (
-        <div className="space-y-2 rounded border border-border bg-surface-900 p-3">
-          <Input label="Alias" name="pull-alias" data-testid="wizard-pull-alias" value={pullAlias} onChange={(e) => setPullAlias(e.target.value)} placeholder="ubuntu/24.04" />
-          <Input label="Server" name="pull-server" data-testid="wizard-pull-server" value={pullServer} onChange={(e) => setPullServer(e.target.value)} />
-          <Button size="sm" onClick={pull} loading={busy} data-testid="wizard-pull-submit"><Download size={13} /> Pull</Button>
-        </div>
+      {allowPull && (
+        <>
+        <Button size="sm" variant="ghost" onClick={() => setPullOpen((o) => !o)} data-testid="wizard-pull-toggle">
+          <RefreshCw size={13} /> Pull from remote
+        </Button>
+        {pullOpen && (
+          <div className="space-y-2 rounded border border-border bg-surface-900 p-3">
+            <Input label="Alias" name="pull-alias" data-testid="wizard-pull-alias" value={pullAlias} onChange={(e) => setPullAlias(e.target.value)} placeholder="ubuntu/24.04" />
+            <Input label="Server" name="pull-server" data-testid="wizard-pull-server" value={pullServer} onChange={(e) => setPullServer(e.target.value)} />
+            <Button size="sm" onClick={pull} loading={busy} data-testid="wizard-pull-submit"><Download size={13} /> Pull</Button>
+          </div>
+        )}
+        </>
       )}
 
       <Dialog open={manageOpen} onClose={() => setManageOpen(false)} title="Custom remotes" footer={

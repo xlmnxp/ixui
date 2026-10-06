@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
+import { useFocusTrap } from "../lib/use-focus-trap";
 
 export interface WindowProps {
   open: boolean;
@@ -27,6 +28,7 @@ export function Window({ open, onClose, title, subtitle, children, footer, width
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const dragRef = useRef<DragState | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(panelRef, open);
 
   useEffect(() => {
     if (!open) return;
@@ -68,11 +70,12 @@ export function Window({ open, onClose, title, subtitle, children, footer, width
     <div className="fixed inset-0 z-50 flex items-center justify-center" data-testid="window-backdrop" onClick={onClose}>
       <div
         ref={panelRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         data-testid="window"
-        className="overflow-hidden rounded-lg border border-border bg-surface-800 shadow-2xl"
+        className="overflow-hidden rounded-lg border border-border bg-surface-800 shadow-2xl outline-none"
         style={{ width: `${width}px`, transform: `translate(${pos.x}px, ${pos.y}px)` }}
         onClick={(e) => e.stopPropagation()}
       >

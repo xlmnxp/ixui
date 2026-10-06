@@ -72,7 +72,7 @@ describe("Shell", () => {
     );
     await screen.findByTestId("sidebar");
     await user.click(screen.getByTestId("tree-new-instance"));
-    expect(await screen.findByTestId("wizard-next")).toBeInTheDocument();
+    expect(await screen.findByTestId("step-next")).toBeInTheDocument();
   });
 
   it("shows the configured UI title in the sidebar header", async () => {
@@ -128,6 +128,66 @@ describe("Shell", () => {
     );
     fireEvent.click(screen.getByTestId("tasklog-toggle"));
     expect(screen.getByText("Starting web1")).toBeInTheDocument();
+    await act(async () => {});
+  });
+
+  it("cancels a running operation that allows it", async () => {
+    const { operationsApi } = await import("../api");
+    operationsStore.setState([
+      { id: "op1", class: "task", description: "slow", status: "Running", status_code: 100, created_at: "t", updated_at: "t", may_cancel: true },
+      { id: "op2", class: "task", description: "fixed", status: "Running", status_code: 100, created_at: "t", updated_at: "t", may_cancel: false },
+    ]);
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByTestId("tasklog-toggle"));
+    expect(screen.queryByTestId("tasklog-cancel-op2")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("tasklog-cancel-op1"));
+    expect(operationsApi.cancel).toHaveBeenCalledWith("op1");
+    await act(async () => {});
+  });
+
+  it("uses a navigation drawer on narrow screens", async () => {
+    vi.stubGlobal("matchMedia", (q: string) => ({
+      matches: q.includes("max-width"),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(screen.queryByTestId("sidebar")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("drawer-open"));
+    expect(screen.getByTestId("sidebar")).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("sidebar")).not.toBeInTheDocument();
+    vi.unstubAllGlobals();
+    await act(async () => {});
+  });
+
+  it("shows the app version in the sidebar footer", async () => {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(screen.getByTestId("app-version")).toHaveTextContent(/^v\d+\.\d+\.\d+/);
     await act(async () => {});
   });
 

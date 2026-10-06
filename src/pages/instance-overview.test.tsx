@@ -46,17 +46,30 @@ describe("OverviewTab", () => {
     expect(screen.getByText("Virtual machine")).toBeInTheDocument();
   });
 
+  it("shows disk usage as plain text when no total is known", async () => {
+    metricsStore.setState({
+      "default/web1": { cpu: [], memory: [], netRx: [], netTx: [], disk: { usage: 1073741824 } },
+    });
+    render(<OverviewTab instance={instance("container")} />);
+    expect(await screen.findByText("1 GiB used")).toBeInTheDocument();
+  });
+
   it("shows live CPU and memory sparklines from the polling buffer", async () => {
     metricsStore.setState({
       "default/web1": {
         cpu: [{ t: 1, value: 20.5 }, { t: 2, value: 40 }],
         memory: [{ t: 1, value: 536870912 }],
+        netRx: [{ t: 1, value: 2048 }, { t: 2, value: 4096 }],
+        netTx: [{ t: 1, value: 1024 }, { t: 2, value: 1024 }],
+        disk: { usage: 1073741824, total: 4294967296 },
       },
     });
     render(<OverviewTab instance={instance("container")} />);
     expect(await screen.findByText("CPU usage")).toBeInTheDocument();
     expect(await screen.findByText("Memory usage")).toBeInTheDocument();
-    expect(screen.getAllByTestId("sparkline")).toHaveLength(2);
+    expect(screen.getAllByTestId("sparkline")).toHaveLength(4);
+    expect(screen.getByText("↓ 4 KiB/s")).toBeInTheDocument();
+    expect(screen.getByText("1 GiB / 4 GiB")).toBeInTheDocument();
     expect(screen.getByText("40.0%")).toBeInTheDocument();
     expect(screen.getByText("512 MiB / 16 GiB")).toBeInTheDocument();
   });

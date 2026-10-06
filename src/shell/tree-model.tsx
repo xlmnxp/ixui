@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Boxes, Bug, Check, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, FolderCog, History, Settings, ShieldCheck, TriangleAlert } from "lucide-react";
+import { Activity, BookOpen, Boxes, Bug, Check, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, History, Settings, SlidersHorizontal, ShieldCheck, TriangleAlert, Users } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import type { TreeNode } from "../components/tree";
 import { ALL_PROJECTS } from "../api/client";
@@ -130,11 +130,67 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
       ),
     },
     {
+      id: "system",
+      label: (
+        <span className="flex items-center gap-2">
+          <SlidersHorizontal size={14} className="text-text-secondary" />
+          <span>System</span>
+        </span>
+      ),
+      children: [
+        {
+          id: "system-projects",
+          label: (
+            <span className="flex items-center gap-2">
+              <Folder size={14} className="text-text-secondary" />
+              <Link to="/projects">Projects</Link>
+            </span>
+          ),
+        },
+        {
+          id: "admin-settings",
+          label: (
+            <span className="flex items-center gap-2">
+              <Settings size={14} className="text-text-secondary" />
+              <Link to="/settings">Server settings</Link>
+            </span>
+          ),
+        },
+        {
+          id: "admin-cluster-groups",
+          label: (
+            <span className="flex items-center gap-2">
+              <Boxes size={14} className="text-text-secondary" />
+              <Link to="/cluster-groups">Cluster groups</Link>
+            </span>
+          ),
+        },
+        {
+          id: "admin-certificates",
+          label: (
+            <span className="flex items-center gap-2">
+              <KeyRound size={14} className="text-text-secondary" />
+              <Link to="/certificates">Certificates</Link>
+            </span>
+          ),
+        },
+        {
+          id: "admin-identities",
+          label: (
+            <span className="flex items-center gap-2">
+              <Users size={14} className="text-text-secondary" />
+              <Link to="/identities">Identities & groups</Link>
+            </span>
+          ),
+        },
+      ],
+    },
+    {
       id: "administration",
       label: (
         <span className="flex items-center gap-2">
-          <FolderCog size={14} className="text-text-secondary" />
-          <span>Administration</span>
+          <Activity size={14} className="text-text-secondary" />
+          <span>Monitoring</span>
         </span>
       ),
       children: [
@@ -162,33 +218,6 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
             <span className="flex items-center gap-2">
               <TriangleAlert size={14} className="text-text-secondary" />
               <Link to="/warnings">Warnings</Link>
-            </span>
-          ),
-        },
-        {
-          id: "admin-settings",
-          label: (
-            <span className="flex items-center gap-2">
-              <Settings size={14} className="text-text-secondary" />
-              <Link to="/settings">Settings</Link>
-            </span>
-          ),
-        },
-        {
-          id: "admin-cluster-groups",
-          label: (
-            <span className="flex items-center gap-2">
-              <Boxes size={14} className="text-text-secondary" />
-              <Link to="/cluster-groups">Cluster Groups</Link>
-            </span>
-          ),
-        },
-        {
-          id: "admin-certificates",
-          label: (
-            <span className="flex items-center gap-2">
-              <KeyRound size={14} className="text-text-secondary" />
-              <Link to="/certificates">Certificates</Link>
             </span>
           ),
         },

@@ -20,6 +20,7 @@ vi.mock("../api", () => ({
     setState: vi.fn().mockResolvedValue(null),
     delete: vi.fn().mockResolvedValue(undefined),
     copy: vi.fn().mockResolvedValue(null),
+    createSnapshot: vi.fn().mockResolvedValue(null),
   },
   infraApi: { listImages: vi.fn().mockResolvedValue([]), listProfiles: vi.fn().mockResolvedValue([]), listNetworks: vi.fn().mockResolvedValue([]), listPools: vi.fn().mockResolvedValue([]) },
   api: { get: vi.fn() },
@@ -101,6 +102,44 @@ describe("InstancesPage", () => {
     await waitFor(() => expect(instancesApi.setState).toHaveBeenCalledWith("web1", "stop", false, "default"));
   });
 
+  it("bulk snapshot creates a snapshot per selected instance", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../api");
+    render(
+      <MemoryRouter>
+        <InstancesPage />
+      </MemoryRouter>
+    );
+    await screen.findByText("web1");
+    await user.click(screen.getAllByTestId("row-select")[0]!);
+    await user.click(screen.getAllByTestId("row-select")[1]!);
+    await user.click(screen.getByTestId("action-snapshot"));
+    await waitFor(() => expect(instancesApi.createSnapshot).toHaveBeenCalledTimes(2));
+    expect(instancesApi.createSnapshot).toHaveBeenCalledWith("web1", expect.stringMatching(/^snap-/), false, "default");
+  });
+
+  it("keeps going and names the failures when one instance fails", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../api");
+    const { toastStore } = await import("../components/toast");
+    toastStore.setState([]);
+    vi.mocked(instancesApi.setState).mockImplementation((name: string) =>
+      name === "web1" ? Promise.reject(new Error("boom")) : Promise.resolve(null as never),
+    );
+    render(
+      <MemoryRouter>
+        <InstancesPage />
+      </MemoryRouter>
+    );
+    await screen.findByText("web1");
+    await user.click(screen.getAllByTestId("row-select")[0]!);
+    await user.click(screen.getAllByTestId("row-select")[1]!);
+    await user.click(screen.getByTestId("action-restart"));
+    await waitFor(() => expect(instancesApi.setState).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(toastStore.getState()[0]?.message).toContain("1 of 2 — web1: boom"));
+    vi.mocked(instancesApi.setState).mockResolvedValue(null as never);
+  });
+
   it("deletes with confirmation", async () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../api");
@@ -156,7 +195,9 @@ describe("InstancesPage", () => {
     await screen.findByText("web1");
     await user.click(screen.getByTestId("row-copy-web1"));
     await user.type(screen.getByTestId("copy-name"), "web2");
-    await user.click(screen.getByTestId("copy-confirm"));
+    await user.click(screen.getByTestId("step-next"));
+    await user.click(screen.getByTestId("step-next"));
+    await user.click(screen.getByTestId("step-submit"));
     await waitFor(() => expect(instancesApi.copy).toHaveBeenCalledWith("web1", "web2", { live: false, sourceProject: "default", targetProject: "default" }));
   });
 });

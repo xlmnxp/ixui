@@ -6,11 +6,14 @@ export interface Backup {
   created_at: string;
   optimized_storage: boolean;
   compression: string;
+  expires_at?: string;
+  instance_only?: boolean;
 }
 
 export interface CreateBackupOptions {
   compression_algorithm?: string;
   optimized_storage?: boolean;
+  instance_only?: boolean;
 }
 
 export class BackupsApi {

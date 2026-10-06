@@ -11,6 +11,7 @@ vi.mock("../api", () => ({
   clusterApi: {
     listMembers: vi.fn(),
     setMemberState: vi.fn().mockResolvedValue(null),
+    updateMember: vi.fn().mockResolvedValue(null),
     listGroups: vi.fn().mockResolvedValue([{ name: "g1", description: "web", members: [] }]),
     createJoinToken: vi.fn().mockResolvedValue({ token: "TOK123" }),
   },
@@ -139,6 +140,38 @@ describe("MemberView", () => {
     expect(await within(dialog).findByTestId("token-value")).toHaveTextContent("TOK123");
     await user.click(within(dialog).getByTestId("token-copy"));
     expect(writeText).toHaveBeenCalledWith("TOK123");
+  });
+
+  it("edits roles, groups and failure domain while preserving managed roles", async () => {
+    const user = userEvent.setup();
+    vi.mocked(clusterApi.listMembers).mockResolvedValue([
+      { ...onlineMember, description: "rack 1", failure_domain: "default", groups: ["default"], roles: ["database", "event-hub"], config: { "scheduler.instance": "all" } },
+    ]);
+    render(
+      <MemoryRouter initialEntries={["/members/incus-1"]}>
+        <Routes>
+          <Route path="/members/:name" element={<MemberView />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByTestId("member-header");
+    expect(within(screen.getByTestId("member-capacity")).getByText("database, event-hub")).toBeInTheDocument();
+    await user.click(screen.getByTestId("member-edit"));
+    const dialog = screen.getByTestId("dialog");
+    const domain = within(dialog).getByTestId("member-domain");
+    await user.clear(domain);
+    await user.type(domain, "rack-2");
+    await user.click(within(dialog).getByTestId("member-role-event-hub"));
+    await user.click(within(dialog).getByTestId("member-role-ovn-chassis"));
+    await user.click(await within(dialog).findByTestId("member-group-g1"));
+    await user.click(within(dialog).getByTestId("member-edit-save"));
+    expect(clusterApi.updateMember).toHaveBeenCalledWith("incus-1", {
+      description: "rack 1",
+      failure_domain: "rack-2",
+      groups: ["default", "g1"],
+      roles: ["database", "ovn-chassis"],
+      config: { "scheduler.instance": "all" },
+    });
   });
 
   it("renders member capacity from resources", async () => {

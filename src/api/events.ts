@@ -11,6 +11,8 @@ const BASE_RECONNECT_DELAY_MS = 1_000;
 // (and re-authenticated) session.
 const KEEPALIVE_MS = 50_000;
 
+export type ConnectionStatus = "connecting" | "connected" | "disconnected";
+
 export class EventStream {
   private ws: WebSocket | null = null;
   private listeners = new Set<(e: StreamEvent) => void>();
@@ -18,8 +20,15 @@ export class EventStream {
   private reconnectTimer: number | null = null;
   private keepAliveTimer: number | null = null;
   private reconnectAttempts = 0;
+  private recycling = false;
+  private hasConnected = false;
+  private statusListeners = new Set<(s: ConnectionStatus, isReconnect: boolean) => void>();
 
   constructor(private url: string) {}
+
+  private emitStatus(status: ConnectionStatus, isReconnect = false): void {
+    this.statusListeners.forEach((fn) => fn(status, isReconnect));
+  }
 
   private scheduleReconnect(): void {
     if (this.closed) return;
@@ -45,9 +54,12 @@ export class EventStream {
     this.ws = ws;
     ws.onopen = () => {
       this.reconnectAttempts = 0;
+      this.emitStatus("connected", this.hasConnected);
+      this.hasConnected = true;
       // Recycle before an idle proxy drops the connection silently.
       this.keepAliveTimer = window.setTimeout(() => {
         this.keepAliveTimer = null;
+        this.recycling = true;
         ws.close();
       }, KEEPALIVE_MS);
     };
@@ -69,6 +81,9 @@ export class EventStream {
       }
       if (this.closed) return;
       this.ws = null;
+      // A planned keepalive recycle reconnects almost immediately; don't report it as an outage.
+      if (this.recycling) this.recycling = false;
+      else this.emitStatus("disconnected");
       this.scheduleReconnect();
     };
     ws.onerror = () => ws.close();
@@ -77,6 +92,12 @@ export class EventStream {
   onEvent(fn: (e: StreamEvent) => void): () => void {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
+  }
+
+  /** Subscribe to connection changes; `isReconnect` is true when "connected" follows an earlier connection. */
+  onStatus(fn: (s: ConnectionStatus, isReconnect: boolean) => void): () => void {
+    this.statusListeners.add(fn);
+    return () => this.statusListeners.delete(fn);
   }
 
   close(): void {

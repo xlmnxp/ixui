@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowLeftRight, ArrowUp, Check, Laptop, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowLeftRight, ArrowUp, Laptop, Pencil, Plus, Share2, Trash2, X } from "lucide-react";
 import { infraApi, networkExtrasApi } from "../api";
 import type { Network } from "../api/types";
 import type { Forward, Lease } from "../api/network-extras";
+import { NetworkLinksDialog } from "../components/network-links";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
 import { Button } from "../components/button";
 import { Dialog } from "../components/dialog";
+import { ReviewList, StepDialog } from "../components/step-dialog";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
 import { Select } from "../components/select";
@@ -34,6 +36,7 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
   const [leasesNetwork, setLeasesNetwork] = useState<Network | null>(null);
   const [leases, setLeases] = useState<Lease[]>([]);
   const [leasesBusy, setLeasesBusy] = useState(false);
+  const [linksNetwork, setLinksNetwork] = useState<Network | null>(null);
   const [forwardsNetwork, setForwardsNetwork] = useState<Network | null>(null);
   const [forwards, setForwards] = useState<Forward[]>([]);
   const [forwardOpen, setForwardOpen] = useState(false);
@@ -49,13 +52,23 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
 
   useEffect(refresh, [refresh]);
 
+  const openCreate = useCallback(() => {
+    setName("");
+    setType("bridge");
+    setDescription("");
+    setConfig({});
+    setCreateOpen(true);
+  }, []);
+
   const create = async () => {
     setBusy(true);
     try {
-      await infraApi.createNetwork({ name: name.trim(), type, description: description.trim() });
-      toast("success", `Network ${name} created`);
+      await infraApi.createNetwork({ name: name.trim(), type, description: description.trim(), config });
+      toast("success", `Network ${name.trim()} created`);
       setCreateOpen(false);
       setName("");
+      setDescription("");
+      setConfig({});
       refresh();
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Create failed");
@@ -198,6 +211,7 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
               <Button size="sm" variant="ghost" data-testid={`network-down-${n.name}`} onClick={() => void setNetworkUpDown(n, "down")}><ArrowDown size={14} /> Down</Button>
               <Button size="sm" variant="ghost" data-testid={`network-leases-${n.name}`} onClick={() => openLeases(n)}><Laptop size={14} /> Leases</Button>
               <Button size="sm" variant="ghost" data-testid={`network-forwards-${n.name}`} onClick={() => openForwards(n)}><ArrowLeftRight size={14} /> Forwards</Button>
+              <Button size="sm" variant="ghost" data-testid={`network-links-${n.name}`} onClick={() => setLinksNetwork(n)}><Share2 size={14} /> LBs{n.type === "ovn" ? " & peers" : ""}</Button>
             </>
           )}
           <Button size="sm" variant="ghost" data-testid={`network-edit-${n.name}`} onClick={() => openEdit(n)}><Pencil size={14} /> Edit</Button>
@@ -229,9 +243,9 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
   const barActions = useMemo(
     () => [
       <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
-      <Button key="create" size="sm" data-testid="network-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create network</Button>,
+      <Button key="create" size="sm" data-testid="network-create-open" onClick={openCreate}><Plus size={14} /> Create network</Button>,
     ],
-    [selectedKeys, setDeleteManyOpen, setCreateOpen]
+    [selectedKeys, setDeleteManyOpen, openCreate]
   );
 
   useEffect(() => {
@@ -248,45 +262,110 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
       ) : networks.length === 0 ? (
         <EmptyState title="No networks" />
       ) : (
-        <Table columns={columns} rows={networks} rowKey={(n) => n.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
+        <Table persistKey="networks" columns={columns} rows={networks} rowKey={(n) => n.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
       )}
 
-      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create network" footer={
-        <>
-          <Button variant="secondary" onClick={() => setCreateOpen(false)}><X size={14} /> Cancel</Button>
-          <Button onClick={create} loading={busy} data-testid="network-create-submit"><Plus size={14} /> Create</Button>
-        </>
-      }>
-        <div className="space-y-3">
-          <Input label="Name" name="network-name" data-testid="network-name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Select label="Type" name="network-type" data-testid="network-type" value={type} onChange={(e) => setType(e.target.value)}>
-            <option value="bridge">bridge</option>
-            <option value="ovn">ovn</option>
-            <option value="physical">physical</option>
-            <option value="macvlan">macvlan</option>
-          </Select>
-          <Input label="Description" name="network-desc" data-testid="network-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
-        </div>
-      </Dialog>
+      <StepDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="Create network"
+        submitLabel="Create"
+        submitIcon={<Plus size={14} />}
+        busy={busy}
+        wide
+        onSubmit={create}
+        steps={[
+          {
+            key: "basics",
+            title: "Basics",
+            invalid: name.trim() ? null : "Enter a network name",
+            content: (
+              <div className="space-y-3">
+                <Input label="Name" name="network-name" data-testid="network-name" value={name} onChange={(e) => setName(e.target.value)} />
+                <Select label="Type" name="network-type" data-testid="network-type" value={type} onChange={(e) => setType(e.target.value)}>
+                  <option value="bridge">bridge</option>
+                  <option value="ovn">ovn</option>
+                  <option value="physical">physical</option>
+                  <option value="macvlan">macvlan</option>
+                </Select>
+                <Input label="Description" name="network-desc" data-testid="network-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+              </div>
+            ),
+          },
+          {
+            key: "config",
+            title: "Configuration",
+            content: (
+              <div className="space-y-2">
+                <p className="text-xs text-text-tertiary">
+                  Optional. Leave empty for defaults{type === "bridge" ? " (Incus picks an IPv4/IPv6 subnet automatically)" : ""}.
+                </p>
+                <KeyValueEditor values={config} onChange={setConfig} dataTestId="network-config-editor" stickyHeader />
+              </div>
+            ),
+          },
+          {
+            key: "review",
+            title: "Review",
+            content: (
+              <ReviewList
+                rows={[
+                  { label: "Name", value: name || "—" },
+                  { label: "Type", value: type },
+                  { label: "Description", value: description || "—" },
+                  { label: "Config keys", value: Object.keys(config).length === 0 ? "Defaults" : Object.entries(config).map(([k, v]) => `${k}=${v}`).join(", ") },
+                ]}
+              />
+            ),
+          },
+        ]}
+      />
 
-      <Dialog open={editing !== null} onClose={() => setEditing(null)} title={`Edit network ${editing?.name ?? ""}`} footer={
-        <>
-          <Button variant="secondary" onClick={() => setEditing(null)}><X size={14} /> Cancel</Button>
-          <Button onClick={save} loading={busy} data-testid="network-save"><Check size={14} /> Save</Button>
-        </>
-      }>
-        <div className="space-y-3">
-          <Input label="Description" name="network-edit-desc" data-testid="network-edit-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">Config</h3>
-            {configLoading ? (
+      <StepDialog
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        title={`Edit network ${editing?.name ?? ""}`}
+        submitLabel="Save"
+        busy={busy}
+        wide
+        freeNavigation
+        onSubmit={save}
+        steps={[
+          {
+            key: "basics",
+            title: "Basics",
+            content: (
+              <div className="space-y-3">
+                <Input label="Name" name="network-edit-name" value={editing?.name ?? ""} disabled />
+                <Input label="Type" name="network-edit-type" value={editing?.type ?? ""} disabled />
+                <Input label="Description" name="network-edit-desc" data-testid="network-edit-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+              </div>
+            ),
+          },
+          {
+            key: "config",
+            title: "Configuration",
+            content: configLoading ? (
               <Loading dataTestId="network-config-loading" label="Loading config…" />
             ) : (
               <KeyValueEditor values={config} onChange={setConfig} dataTestId="network-config-editor" stickyHeader />
-            )}
-          </div>
-        </div>
-      </Dialog>
+            ),
+          },
+          {
+            key: "review",
+            title: "Review",
+            content: (
+              <ReviewList
+                rows={[
+                  { label: "Network", value: editing?.name ?? "—" },
+                  { label: "Description", value: description || "—" },
+                  { label: "Config keys", value: Object.keys(config).length === 0 ? "None" : Object.entries(config).map(([k, v]) => `${k}=${v}`).join(", ") },
+                ]}
+              />
+            ),
+          },
+        ]}
+      />
 
       <Dialog open={leasesNetwork !== null} onClose={() => setLeasesNetwork(null)} title={`Leases for ${leasesNetwork?.name ?? ""}`} footer={
         <Button variant="secondary" onClick={() => setLeasesNetwork(null)}><X size={14} /> Close</Button>
@@ -318,6 +397,8 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
           <Input label="Description" name="forward-description" data-testid="forward-description" value={forwardDescription} onChange={(e) => setForwardDescription(e.target.value)} />
         </div>
       </Dialog>
+
+      <NetworkLinksDialog network={linksNetwork} onClose={() => setLinksNetwork(null)} />
 
       <ConfirmDialog
         open={deleteTarget !== null}

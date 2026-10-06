@@ -8,7 +8,7 @@ import { Button } from "../components/button";
 import { Dialog } from "../components/dialog";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
-import { Select } from "../components/select";
+import { PullImageDialog } from "../components/pull-image-dialog";
 import { EmptyState } from "../components/empty-state";
 import { Loading } from "../components/loading";
 import { Window } from "../components/window";
@@ -21,9 +21,6 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
   const [images, setImages] = useState<Image[]>([]);
   const [pullOpen, setPullOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Image | null>(null);
-  const [alias, setAlias] = useState("");
-  const [server, setServer] = useState("https://images.linuxcontainers.org");
-  const [busy, setBusy] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [deleteManyOpen, setDeleteManyOpen] = useState(false);
   const [deletingMany, setDeletingMany] = useState(false);
@@ -51,21 +48,6 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
   useEffect(() => {
     if (aliasesOpen) refreshAliases();
   }, [aliasesOpen, refreshAliases]);
-
-  const pull = async () => {
-    setBusy(true);
-    try {
-      await infraApi.pullImage({ alias: alias.trim(), server: server.trim() });
-      toast("success", `Pulling ${alias.trim()}`);
-      setPullOpen(false);
-      setAlias("");
-      refresh();
-    } catch (err) {
-      toast("danger", err instanceof Error ? err.message : "Pull failed");
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const remove = async () => {
     if (!deleteTarget) return;
@@ -176,7 +158,7 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
       ) : images.length === 0 ? (
         <EmptyState title="No images" description="Pull an image from a remote to get started." />
       ) : (
-        <Table columns={columns} rows={images} rowKey={(i) => i.fingerprint} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
+        <Table persistKey="images" columns={columns} rows={images} rowKey={(i) => i.fingerprint} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
       )}
 
       <Window
@@ -202,21 +184,7 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
         </div>
       </Window>
 
-      <Dialog open={pullOpen} onClose={() => setPullOpen(false)} title="Pull image" footer={
-        <>
-          <Button variant="secondary" onClick={() => setPullOpen(false)}><X size={14} /> Cancel</Button>
-          <Button onClick={pull} loading={busy} data-testid="pull-submit"><Download size={14} /> Pull</Button>
-        </>
-      }>
-        <div className="space-y-3">
-          <Input label="Alias" name="pull-alias" data-testid="pull-alias" value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="ubuntu/24.04" />
-          <Input label="Server" name="pull-server" data-testid="pull-server" value={server} onChange={(e) => setServer(e.target.value)} />
-          <Select label="Type" name="pull-type" defaultValue="container">
-            <option value="container">Container</option>
-            <option value="virtual-machine">Virtual machine</option>
-          </Select>
-        </div>
-      </Dialog>
+      <PullImageDialog open={pullOpen} onClose={() => setPullOpen(false)} onPulled={refresh} />
 
       <Dialog open={aliasCreateOpen} onClose={() => setAliasCreateOpen(false)} title="Create alias" footer={
         <>
