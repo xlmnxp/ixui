@@ -145,7 +145,7 @@ describe("InstanceDetailPage", () => {
   it("shows a screenshot thumbnail in the action bar for VMs", async () => {
     const { instancesApi } = await import("../api");
     vi.mocked(instancesApi.get).mockResolvedValueOnce({ ...instance(), type: "virtual-machine" });
-    const fetchMock = vi.fn().mockResolvedValue(new Response(new Blob(["png"], { type: "image/png" }), { status: 200 }));
+    const fetchMock = vi.fn().mockResolvedValue(new Response("png", { status: 200, headers: { "Content-Type": "image/png" } }));
     vi.stubGlobal("fetch", fetchMock);
     URL.createObjectURL = vi.fn().mockReturnValue("blob:vm");
     URL.revokeObjectURL = vi.fn();
@@ -162,7 +162,7 @@ describe("InstanceDetailPage", () => {
     const user = userEvent.setup();
     const { instancesApi } = await import("../api");
     vi.mocked(instancesApi.get).mockResolvedValueOnce({ ...instance(), type: "virtual-machine" });
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(new Blob(["png"], { type: "image/png" }), { status: 200 })));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("png", { status: 200, headers: { "Content-Type": "image/png" } })));
     const openSpy = vi.fn();
     vi.stubGlobal("open", openSpy);
     URL.createObjectURL = vi.fn().mockReturnValue("blob:vm");
