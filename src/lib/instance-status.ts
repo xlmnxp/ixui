@@ -23,8 +23,14 @@ import type { InstanceStateInfo } from "../api/types";
 
 export function instanceIps(state: InstanceStateInfo | null): string[] {
   if (!state?.network) return [];
-  return Object.values(state.network)
-    .flatMap((iface) => iface.addresses.filter((a) => a.family === "inet" || a.family === "inet6").map((a) => a.address));
+  // Loopback (the "lo" interface, scope "local") isn't how anyone reaches the instance.
+  return Object.entries(state.network)
+    .filter(([name]) => name !== "lo")
+    .flatMap(([, iface]) =>
+      iface.addresses
+        .filter((a) => (a.family === "inet" || a.family === "inet6") && a.scope !== "local")
+        .map((a) => a.address)
+    );
 }
 
 export function primaryIp(state: InstanceStateInfo | null): string | undefined {

@@ -170,7 +170,7 @@ export interface InstanceStateInfo {
   network?: Record<
     string,
     {
-      addresses: { family: string; address: string; netmask: string }[];
+      addresses: { family: string; address: string; netmask: string; scope?: string }[];
       counters?: { bytes_received?: number; bytes_sent?: number };
     }
   >;
