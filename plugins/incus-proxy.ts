@@ -14,11 +14,15 @@ export function incusProxy(options: IncusProxyOptions = {}): Plugin {
     options.certDir ?? process.env.INCUS_CERT_DIR ?? join(process.env.HOME ?? "", ".config", "incus");
   const target = new URL(options.target ?? process.env.INCUS_TARGET ?? "https://127.0.0.1:8443");
 
-  const agent = new https.Agent({
-    rejectUnauthorized: false,
-    cert: readFileSync(join(certDir, "client.crt")),
-    key: readFileSync(join(certDir, "client.key")),
-  });
+  // Read the client certificate on first use, not when the plugin is created: Vite loads
+  // this config for tests and production builds too, which have no Incus certificate.
+  let agent: https.Agent | undefined;
+  const getAgent = (): https.Agent =>
+    (agent ??= new https.Agent({
+      rejectUnauthorized: false,
+      cert: readFileSync(join(certDir, "client.crt")),
+      key: readFileSync(join(certDir, "client.key")),
+    }));
 
   // Select the first subprotocol the browser requests (e.g. spice-html5's
   // "binary") for the client handshake. It is NOT forwarded upstream: incusd
@@ -38,7 +42,7 @@ export function incusProxy(options: IncusProxyOptions = {}): Plugin {
         }
         const { host: _host, ...headers } = req.headers;
         const upstream = https.request(
-          { host: target.hostname, port: target.port, path: req.url, method: req.method, agent, headers },
+          { host: target.hostname, port: target.port, path: req.url, method: req.method, agent: getAgent(), headers },
           (upstreamRes) => {
             res.writeHead(upstreamRes.statusCode ?? 502, upstreamRes.headers);
             upstreamRes.pipe(res);
@@ -53,7 +57,7 @@ export function incusProxy(options: IncusProxyOptions = {}): Plugin {
 
       server.httpServer?.on("upgrade", (req, socket, head) => {
         if (!req.url?.startsWith("/1.0/")) return;
-        const upstream = new WebSocket(`wss://${target.host}${req.url}`, { agent });
+        const upstream = new WebSocket(`wss://${target.host}${req.url}`, { agent: getAgent() });
         upstream.on("open", () => {
           wss.handleUpgrade(req, socket, head, (client) => {
             client.on("message", (data, isBinary) => upstream.send(data, { binary: isBinary }));
