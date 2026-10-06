@@ -47,25 +47,44 @@ instance views, and a floating create-instance wizard.
 - **Profiles & projects** — full CRUD with config editors.
 - **Cluster** — member overview and capacity, evacuate/restore, join tokens,
   cluster groups.
-- **Server administration** — settings editor, warnings, operations log with a
-  persistent task bar, activity (lifecycle event) log, certificates.
+- **System & Monitoring** — the sidebar's System group holds projects, server
+  settings, cluster groups, certificates, and identities & groups; Monitoring
+  holds the operations log (with a persistent task bar), the activity
+  (lifecycle event) log, and warnings.
 - **Realtime** — the Incus events websocket drives live instance status and
   operation updates.
+- **Command palette** — Ctrl/Cmd+K jumps to any instance, page or project and
+  runs start/stop/restart/terminal/create actions.
+- **Bulk instance actions** — start, stop, restart, freeze, snapshot, and
+  delete across a selection, with per-instance failure reporting.
+- **Backups** — per-instance backup list with create (instance-only /
+  optimized options), download, and delete.
+- **Network zones & address sets** — project-scoped side tabs beside Networks:
+  create, edit, and delete.
+- **Load balancers & peers** — per-network dialog (peers on OVN networks).
+- **Backup import** — create an instance from an uploaded backup archive.
+- **Identities & groups** — assign groups to identities and manage auth
+  groups with permissions (OpenFGA).
+- **Project usage** — real limits and usage (from the project state
+  endpoint) in the projects table and editor.
+- **Cluster member editing** — description, failure domain, groups, and
+  user-assignable roles.
+- **Usage graphs** — live CPU, memory, network throughput, and disk usage on
+  the instance overview.
+- **Themes & layout** — system/dark/light theme, remembered split position and
+  table sort, and a drawer navigation on narrow screens.
+- **Accessibility** — focus-trapped dialogs, keyboard-navigable tree and
+  tabs, and axe checks in the test suite.
 - **Component system** — custom-built primitives (no UI libraries) with a
   browsable gallery.
 
 ## Not yet implemented
 
-- Network zones, peers, address sets, and load balancers (API client
-  groundwork exists, no UI).
 - Storage buckets.
-- Backup management — only one-off export downloads today; no backup
-  list/restore/import.
 - Image upload, export, or property editing.
 - Instance rebuild.
-- Metrics history / usage graphs (only current usage numbers are shown).
-- User, group, and identity management (OpenFGA).
-- Light theme, responsive/mobile layout, and localization.
+- Persistent metrics history (graphs show only the current session's samples).
+- Localization.
 
 ## Development
 
