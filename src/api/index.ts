@@ -12,6 +12,7 @@ import { ResourcesApi } from "./resources";
 import { WarningsApi } from "./warnings";
 import { NetworkExtrasApi } from "./network-extras";
 import { VolumesApi } from "./volumes";
+import { AuthApi } from "./auth";
 
 export const api = new ApiClient("/1.0");
 export const instancesApi = new InstancesApi(api);
@@ -26,6 +27,7 @@ export const resourcesApi = new ResourcesApi(api);
 export const warningsApi = new WarningsApi(api);
 export const networkExtrasApi = new NetworkExtrasApi(api);
 export const volumesApi = new VolumesApi(api);
+export const authApi = new AuthApi(api);
 
 export function eventsUrl(): string {
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";

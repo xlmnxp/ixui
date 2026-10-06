@@ -30,6 +30,14 @@ export class ClusterApi {
     return this.client.post(`/cluster/members/${member}/state`, { action });
   }
 
+  /** PUT replaces the member's editable settings, so callers send every field. */
+  updateMember(
+    member: string,
+    body: { description: string; failure_domain: string; groups: string[]; roles: string[]; config: Record<string, string> },
+  ): Promise<OpResponse> {
+    return this.client.put(`/cluster/members/${member}`, body);
+  }
+
   createJoinToken(name: string, groups: string[] = []): Promise<OpResponse> {
     return this.client.post("/cluster/members", { server_name: name, groups });
   }

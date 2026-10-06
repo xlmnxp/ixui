@@ -46,6 +46,11 @@ export interface ClusterMember {
   status: string;
   message: string;
   architecture: string;
+  description?: string;
+  failure_domain?: string;
+  groups?: string[];
+  roles?: string[];
+  config?: Record<string, string>;
 }
 
 export interface ClusterGroup {
@@ -122,6 +127,8 @@ export interface Project {
   name: string;
   description: string;
   config: Record<string, string>;
+  /** API URLs of resources that live in the project (present on recursion=1 listings). */
+  used_by?: string[];
 }
 
 export type OperationStatus = "Running" | "Success" | "Failure" | "Cancelled" | "Unknown";
@@ -160,5 +167,12 @@ export interface InstanceStateInfo {
   status: InstanceStatus;
   cpu: { usage: number };
   memory: { usage: number };
-  network?: Record<string, { addresses: { family: string; address: string; netmask: string }[] }>;
+  network?: Record<
+    string,
+    {
+      addresses: { family: string; address: string; netmask: string }[];
+      counters?: { bytes_received?: number; bytes_sent?: number };
+    }
+  >;
+  disk?: Record<string, { usage?: number; total?: number }>;
 }
