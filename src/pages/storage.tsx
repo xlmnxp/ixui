@@ -582,7 +582,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
       ) : pools.length === 0 ? (
         <EmptyState title="No storage pools" />
       ) : (
-        <Table columns={columns} rows={pools} rowKey={(p) => p.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
+        <Table persistKey="pools" columns={columns} rows={pools} rowKey={(p) => p.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
       )}
 
       <Window

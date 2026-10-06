@@ -64,9 +64,13 @@ describe("NetworksPage", () => {
     render(<NetworksPage />);
     await screen.findByText("br0");
     await user.click(screen.getByTestId("network-create-open"));
+    expect(screen.getByTestId("step-next")).toBeDisabled();
     await user.type(screen.getByTestId("network-name"), "lan0");
-    await user.click(screen.getByTestId("network-create-submit"));
-    await waitFor(() => expect(infraApi.createNetwork).toHaveBeenCalledWith(expect.objectContaining({ name: "lan0", type: "bridge" })));
+    await user.click(screen.getByTestId("step-next"));
+    await user.click(screen.getByTestId("step-next"));
+    expect(screen.getByTestId("review-list")).toHaveTextContent("lan0");
+    await user.click(screen.getByTestId("step-submit"));
+    await waitFor(() => expect(infraApi.createNetwork).toHaveBeenCalledWith({ name: "lan0", type: "bridge", description: "", config: {} }));
   });
 
   it("bulk deletes selected networks", async () => {
@@ -89,12 +93,14 @@ describe("NetworksPage", () => {
     render(<NetworksPage />);
     await screen.findByText("br0");
     await user.click(screen.getByTestId("network-edit-br0"));
+    await user.click(screen.getByTestId("step-tab-config"));
     expect(await screen.findByTestId("kv-value-ipv4.address")).toHaveTextContent("10.0.0.1/24");
     await user.dblClick(screen.getByTestId("kv-value-ipv4.address"));
     await user.clear(screen.getByTestId("kv-value-edit-ipv4.address"));
     await user.type(screen.getByTestId("kv-value-edit-ipv4.address"), "10.0.0.2/24");
     await user.keyboard("{Enter}");
-    await user.click(screen.getByTestId("network-save"));
+    await user.click(screen.getByTestId("step-tab-review"));
+    await user.click(screen.getByTestId("step-submit"));
     await waitFor(() =>
       expect(infraApi.updateNetworkConfig).toHaveBeenCalledWith("br0", {
         description: "bridge",
@@ -108,6 +114,7 @@ describe("NetworksPage", () => {
     render(<NetworksPage />);
     await screen.findByText("br0");
     await user.click(screen.getByTestId("network-edit-br0"));
+    await user.click(screen.getByTestId("step-tab-config"));
     expect(await screen.findByText("Bridge mode")).toBeInTheDocument();
   });
 

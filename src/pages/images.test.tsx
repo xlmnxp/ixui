@@ -2,6 +2,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ImagesPage } from "./images";
 
+vi.mock("../lib/image-prefill", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../lib/image-prefill")>();
+  return { ...actual, loadCatalog: vi.fn().mockResolvedValue({ products: {} }) };
+});
+
 vi.mock("../api", () => ({
   infraApi: {
     listImages: vi.fn().mockResolvedValue([
@@ -44,10 +49,12 @@ describe("ImagesPage", () => {
     render(<ImagesPage />);
     await screen.findByText("Ubuntu 24.04");
     await user.click(screen.getByTestId("pull-open"));
+    await user.click(screen.getByTestId("pull-mode-manual"));
     await user.type(screen.getByTestId("pull-alias"), "ubuntu/24.04");
     await user.clear(screen.getByTestId("pull-server"));
     await user.type(screen.getByTestId("pull-server"), "https://images.linuxcontainers.org");
-    await user.click(screen.getByTestId("pull-submit"));
+    await user.click(screen.getByTestId("step-next"));
+    await user.click(screen.getByTestId("step-submit"));
     await waitFor(() => expect(infraApi.pullImage).toHaveBeenCalledWith(expect.objectContaining({ alias: "ubuntu/24.04", server: "https://images.linuxcontainers.org" })));
   });
 

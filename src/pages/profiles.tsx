@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { infraApi } from "../api";
 import type { Profile } from "../api/types";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
 import { Button } from "../components/button";
-import { Dialog } from "../components/dialog";
+import { ReviewList, StepDialog } from "../components/step-dialog";
+import type { Step } from "../components/step-dialog";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
 import { KeyValueEditor } from "../components/key-value-editor";
@@ -14,6 +15,55 @@ import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
+
+interface ProfileFormState {
+  name: string;
+  setName: (v: string) => void;
+  description: string;
+  setDescription: (v: string) => void;
+  config: Record<string, string>;
+  setConfig: (v: Record<string, string>) => void;
+  nameEditable: boolean;
+}
+
+function profileSteps(f: ProfileFormState): Step[] {
+  return [
+    {
+      key: "basics",
+      title: "Basics",
+      invalid: f.name.trim() ? null : "Enter a profile name",
+      content: (
+        <div className="space-y-3">
+          <Input label="Name" name="profile-name" data-testid="profile-name" value={f.name} disabled={!f.nameEditable} onChange={(e) => f.setName(e.target.value)} />
+          <Input label="Description" name="profile-description" data-testid="profile-description" value={f.description} onChange={(e) => f.setDescription(e.target.value)} />
+        </div>
+      ),
+    },
+    {
+      key: "config",
+      title: "Configuration",
+      content: (
+        <div className="space-y-2">
+          <p className="text-xs text-text-tertiary">Optional. Instances using this profile inherit these settings.</p>
+          <KeyValueEditor values={f.config} onChange={f.setConfig} dataTestId="profile-editor" stickyHeader />
+        </div>
+      ),
+    },
+    {
+      key: "review",
+      title: "Review",
+      content: (
+        <ReviewList
+          rows={[
+            { label: "Name", value: f.name || "—" },
+            { label: "Description", value: f.description || "—" },
+            { label: "Config keys", value: Object.keys(f.config).length === 0 ? "None" : Object.entries(f.config).map(([k, v]) => `${k}=${v}`).join(", ") },
+          ]}
+        />
+      ),
+    },
+  ];
+}
 
 export function ProfilesPage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -35,13 +85,22 @@ export function ProfilesPage({ registerBar }: { registerBar?: (bar: BarState | n
 
   useEffect(refresh, [refresh]);
 
+  const openCreate = useCallback(() => {
+    setName("");
+    setDescription("");
+    setConfig({});
+    setCreateOpen(true);
+  }, []);
+
   const create = async () => {
     setBusy(true);
     try {
-      await infraApi.createProfile({ name: name.trim() });
-      toast("success", `Profile ${name} created`);
+      await infraApi.createProfile({ name: name.trim(), description: description.trim(), config });
+      toast("success", `Profile ${name.trim()} created`);
       setCreateOpen(false);
       setName("");
+      setDescription("");
+      setConfig({});
       refresh();
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Create failed");
@@ -119,9 +178,9 @@ export function ProfilesPage({ registerBar }: { registerBar?: (bar: BarState | n
   const barActions = useMemo(
     () => [
       <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
-      <Button key="create" size="sm" data-testid="profile-create-open" onClick={() => setCreateOpen(true)}><Plus size={14} /> Create profile</Button>,
+      <Button key="create" size="sm" data-testid="profile-create-open" onClick={openCreate}><Plus size={14} /> Create profile</Button>,
     ],
-    [selectedKeys, setDeleteManyOpen, setCreateOpen]
+    [selectedKeys, setDeleteManyOpen, openCreate]
   );
 
   useEffect(() => {
@@ -138,29 +197,32 @@ export function ProfilesPage({ registerBar }: { registerBar?: (bar: BarState | n
       ) : profiles.length === 0 ? (
         <EmptyState title="No profiles" />
       ) : (
-        <Table columns={columns} rows={profiles} rowKey={(p) => p.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
+        <Table persistKey="profiles" columns={columns} rows={profiles} rowKey={(p) => p.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
       )}
 
-      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Create profile" footer={
-        <>
-          <Button variant="secondary" onClick={() => setCreateOpen(false)}><X size={14} /> Cancel</Button>
-          <Button onClick={create} loading={busy} data-testid="profile-create-submit"><Plus size={14} /> Create</Button>
-        </>
-      }>
-        <Input label="Name" name="profile-name" data-testid="profile-name" value={name} onChange={(e) => setName(e.target.value)} />
-      </Dialog>
+      <StepDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="Create profile"
+        submitLabel="Create"
+        submitIcon={<Plus size={14} />}
+        busy={busy}
+        wide
+        onSubmit={create}
+        steps={profileSteps({ name, setName, description, setDescription, config, setConfig, nameEditable: true })}
+      />
 
-      <Dialog open={editing !== null} onClose={() => setEditing(null)} title={`Edit profile ${editing?.name ?? ""}`} footer={
-        <>
-          <Button variant="secondary" onClick={() => setEditing(null)}><X size={14} /> Cancel</Button>
-          <Button onClick={save} loading={busy} data-testid="profile-save"><Check size={14} /> Save</Button>
-        </>
-      }>
-        <div className="space-y-3">
-          <Input label="Description" name="profile-description" data-testid="profile-description" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <KeyValueEditor values={config} onChange={setConfig} dataTestId="profile-editor" stickyHeader />
-        </div>
-      </Dialog>
+      <StepDialog
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        title={`Edit profile ${editing?.name ?? ""}`}
+        submitLabel="Save"
+        busy={busy}
+        wide
+        freeNavigation
+        onSubmit={save}
+        steps={profileSteps({ name: editing?.name ?? "", setName, description, setDescription, config, setConfig, nameEditable: false })}
+      />
 
       <ConfirmDialog
         open={deleteTarget !== null}

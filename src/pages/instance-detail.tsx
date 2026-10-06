@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Camera, Check, Copy as CopyIcon, Cpu, Download, FileText, FolderOpen, Gauge, History, Monitor, MoreHorizontal, Plus, MoveRight, Pencil, Play, RotateCw, Settings, Square, SquareTerminal, Trash2, X } from "lucide-react";
+import { Archive, Camera, Check, Copy as CopyIcon, Cpu, Download, FileText, FolderOpen, Gauge, History, Monitor, MoreHorizontal, Plus, MoveRight, Pencil, Play, RotateCw, Settings, Square, SquareTerminal, Trash2, X } from "lucide-react";
 import { backupsApi, instancesApi, operationsApi } from "../api";
 import type { Instance } from "../api/types";
 import { instancesStore, loadInstances } from "../state/instances";
@@ -18,6 +18,8 @@ import { RenameInstanceDialog, CopyInstanceDialog, MoveInstanceDialog } from "..
 import { toast } from "../components/toast";
 import { InstanceIcon } from "../shell/instance-icon";
 import { OverviewTab } from "./instance-overview";
+import { BackupsTab } from "./instance/backups";
+import type { BackupsActions } from "./instance/backups";
 import { SnapshotsTab } from "./instance/snapshots";
 import type { SnapshotsActions } from "./instance/snapshots";
 import { DevicesTab } from "./instance/devices";
@@ -40,6 +42,7 @@ export function InstanceDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [configActions, setConfigActions] = useState<ConfigActions | null>(null);
   const [deviceActions, setDeviceActions] = useState<DeviceActions | null>(null);
+  const [backupsActions, setBackupsActions] = useState<BackupsActions | null>(null);
   const [snapshotsActions, setSnapshotsActions] = useState<SnapshotsActions | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
@@ -184,6 +187,7 @@ export function InstanceDetailPage() {
   const tabs = [
     { key: "overview", label: "Overview", icon: <Gauge size={14} /> },
     { key: "snapshots", label: "Snapshots", icon: <Camera size={14} /> },
+    { key: "backups", label: "Backups", icon: <Archive size={14} /> },
     { key: "config", label: "Config", icon: <Settings size={14} /> },
     { key: "devices", label: "Devices", icon: <Cpu size={14} /> },
     { key: "logs", label: "Logs", icon: <FileText size={14} /> },
@@ -214,6 +218,12 @@ export function InstanceDetailPage() {
           ...(activeTab === "snapshots" && snapshotsActions
             ? [
                 <Button key="snap-create" size="sm" variant="secondary" data-testid="snap-create-open" onClick={snapshotsActions.create}><Plus size={14} /> Create snapshot</Button>,
+                <span key="divider" className="mx-1 h-5 w-px bg-border" />,
+              ]
+            : []),
+          ...(activeTab === "backups" && backupsActions
+            ? [
+                <Button key="backup-create" size="sm" variant="secondary" data-testid="backup-create-open" onClick={backupsActions.create}><Plus size={14} /> Create backup</Button>,
                 <span key="divider" className="mx-1 h-5 w-px bg-border" />,
               ]
             : []),
@@ -299,6 +309,7 @@ export function InstanceDetailPage() {
             <div className="h-full overflow-auto">
               {activeTab === "overview" && <OverviewTab instance={instance} />}
               {activeTab === "snapshots" && <SnapshotsTab instanceName={name} project={instance.project} registerActions={setSnapshotsActions} />}
+              {activeTab === "backups" && <BackupsTab instanceName={name} project={instance.project} registerActions={setBackupsActions} />}
               {activeTab === "config" && <ConfigTab instanceName={name} project={instance.project} registerActions={setConfigActions} />}
               {activeTab === "devices" && <DevicesTab instanceName={name} project={instance.project} registerActions={setDeviceActions} />}
               {activeTab === "logs" && <LogsTab instanceName={name} project={instance.project} />}

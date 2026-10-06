@@ -32,9 +32,14 @@ describe("ProfilesPage", () => {
     render(<ProfilesPage />);
     await screen.findByText("default");
     await user.click(screen.getByTestId("profile-create-open"));
+    expect(screen.getByTestId("step-next")).toBeDisabled();
     await user.type(screen.getByTestId("profile-name"), "web");
-    await user.click(screen.getByTestId("profile-create-submit"));
-    await waitFor(() => expect(infraApi.createProfile).toHaveBeenCalledWith(expect.objectContaining({ name: "web" })));
+    await user.type(screen.getByTestId("profile-description"), "web servers");
+    await user.click(screen.getByTestId("step-next"));
+    await user.click(screen.getByTestId("step-next"));
+    expect(screen.getByTestId("review-list")).toHaveTextContent("web servers");
+    await user.click(screen.getByTestId("step-submit"));
+    await waitFor(() => expect(infraApi.createProfile).toHaveBeenCalledWith({ name: "web", description: "web servers", config: {} }));
   });
 
   it("edits config", async () => {
@@ -43,8 +48,11 @@ describe("ProfilesPage", () => {
     render(<ProfilesPage />);
     await screen.findByText("default");
     await user.click(screen.getByTestId("profile-edit-default"));
+    expect(screen.getByTestId("profile-name")).toBeDisabled();
+    await user.click(screen.getByTestId("step-tab-config"));
     expect(await screen.findByTestId("kv-key-limits.cpu")).toHaveTextContent("limits.cpu");
-    await user.click(screen.getByTestId("profile-save"));
+    await user.click(screen.getByTestId("step-tab-review"));
+    await user.click(screen.getByTestId("step-submit"));
     await waitFor(() => expect(infraApi.updateProfile).toHaveBeenCalledWith("default", expect.objectContaining({ config: { "limits.cpu": "2" } })));
   });
 

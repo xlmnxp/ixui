@@ -8,6 +8,7 @@ const terminalState = vi.hoisted(() => ({
     _onData: ((d: string) => void) | null;
     _onTitleChange: ((title: string) => void) | null;
     write: ReturnType<typeof vi.fn>;
+    options: { theme?: { background?: string } };
   } | null,
   terminals: [] as unknown[],
   disposes: 0,
@@ -36,7 +37,9 @@ vi.mock("xterm", () => ({
     });
     _onData: ((d: string) => void) | null = null;
     _onTitleChange: ((title: string) => void) | null = null;
-    constructor() {
+    options: { theme?: { background?: string } };
+    constructor(opts: { theme?: { background?: string } } = {}) {
+      this.options = { ...opts };
       terminalState.lastTerminal = this;
       terminalState.terminals.push(this);
     }
@@ -305,6 +308,17 @@ describe("InstanceTerminal", () => {
     act(() => data.onopen?.());
     act(() => terminalState.lastTerminal!._onTitleChange?.("htop"));
     expect(await screen.findByText("htop")).toBeInTheDocument();
+  });
+
+  it("uses the app theme for the terminal and follows theme changes", async () => {
+    const { setTheme } = await import("../state/theme");
+    setTheme("dark");
+    render(<InstanceTerminal instanceName="web1" />);
+    await waitFor(() => expect(terminalState.lastTerminal).not.toBeNull());
+    expect(terminalState.lastTerminal!.options.theme?.background).toBe("#191817");
+    act(() => setTheme("light"));
+    expect(terminalState.lastTerminal!.options.theme?.background).toBe("#f6f5f4");
+    act(() => setTheme("system"));
   });
 
   it("renames a tab and sets its color via double-click", async () => {

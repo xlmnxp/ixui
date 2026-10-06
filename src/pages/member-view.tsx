@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { Boxes, Check, Copy, Gauge, KeyRound, Power, RotateCcw, Server, TriangleAlert } from "lucide-react";
+import { Boxes, Check, Copy, Gauge, KeyRound, Pencil, Power, RotateCcw, Server, TriangleAlert, X } from "lucide-react";
 import { clusterApi, resourcesApi } from "../api";
 import { ApiError } from "../api/client";
 import type { ClusterMember, ClusterGroup } from "../api/types";
@@ -28,6 +28,9 @@ const tabs: VerticalTabItem[] = [
   { key: "instances", label: "Instances", icon: <Boxes size={14} /> },
 ];
 
+/** Roles an operator may assign; the rest (database, …) are managed by Incus. */
+const EDITABLE_ROLES = ["event-hub", "ovn-chassis"];
+
 export function MemberView() {
   const { name = "" } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -49,6 +52,12 @@ export function MemberView() {
   const [tokenBusy, setTokenBusy] = useState(false);
   const [capacity, setCapacity] = useState<HostResources | null>(null);
   const [denied, setDenied] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editBusy, setEditBusy] = useState(false);
+  const [editDescription, setEditDescription] = useState("");
+  const [editDomain, setEditDomain] = useState("");
+  const [editGroups, setEditGroups] = useState<string[]>([]);
+  const [editRoles, setEditRoles] = useState<string[]>([]);
 
   const refresh = useCallback(() => {
     void clusterApi.listMembers().then((m) => {
@@ -76,6 +85,42 @@ export function MemberView() {
   }, [tokenOpen]);
 
   const member = members.find((m) => m.server_name === name);
+
+  const openEdit = () => {
+    if (!member) return;
+    setEditDescription(member.description ?? "");
+    setEditDomain(member.failure_domain ?? "default");
+    setEditGroups(member.groups ?? []);
+    setEditRoles((member.roles ?? []).filter((r) => EDITABLE_ROLES.includes(r)));
+    setEditOpen(true);
+    void clusterApi.listGroups().then(setGroups).catch(() => {});
+  };
+
+  const saveEdit = async () => {
+    if (!member) return;
+    setEditBusy(true);
+    try {
+      // Roles Incus manages itself (database, database-leader, …) must be sent back unchanged.
+      const managed = (member.roles ?? []).filter((r) => !EDITABLE_ROLES.includes(r));
+      await clusterApi.updateMember(name, {
+        description: editDescription.trim(),
+        failure_domain: editDomain.trim() || "default",
+        groups: editGroups,
+        roles: [...managed, ...editRoles],
+        config: member.config ?? {},
+      });
+      toast("success", `Member ${name} saved`);
+      setEditOpen(false);
+      refresh();
+    } catch (err) {
+      toast("danger", err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setEditBusy(false);
+    }
+  };
+
+  const toggleIn = (list: string[], value: string): string[] =>
+    list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 
   const runStateAction = async () => {
     if (!confirmAction) return;
@@ -182,6 +227,7 @@ export function MemberView() {
             {member.status === "Evacuated" && (
               <Button size="sm" variant="secondary" data-testid="member-restore" onClick={() => setConfirmAction("restore")}><RotateCcw size={14} /> Restore</Button>
             )}
+            <Button size="sm" variant="secondary" data-testid="member-edit" onClick={openEdit}><Pencil size={14} /> Edit</Button>
             <Button size="sm" variant="secondary" data-testid="member-join-token" onClick={openTokenDialog}><KeyRound size={14} /> Join token</Button>
             {tabBar?.actions}
           </div>
@@ -202,6 +248,10 @@ export function MemberView() {
                   { key: "Database", value: member ? (member.database ? "Yes" : "No") : "—" },
                   { key: "URL", value: member?.url ?? "—" },
                   { key: "Message", value: member?.message || "—" },
+                  { key: "Description", value: member?.description || "—" },
+                  { key: "Roles", value: member?.roles && member.roles.length > 0 ? member.roles.join(", ") : "—" },
+                  { key: "Groups", value: member?.groups && member.groups.length > 0 ? member.groups.join(", ") : "—" },
+                  { key: "Failure domain", value: member?.failure_domain || "default" },
                   { key: "CPU", value: capacity ? String(capacity.cpu?.total ?? "—") : "—" },
                   { key: "Memory total", value: capacity?.memory?.total ? formatBytes(capacity.memory.total) : "—" },
                   { key: "Memory used", value: capacity?.memory?.used ? formatBytes(capacity.memory.used) : "—" },
@@ -224,6 +274,35 @@ export function MemberView() {
         onConfirm={runStateAction}
         onCancel={() => setConfirmAction(null)}
       />
+
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} title={`Edit member ${name}`} footer={
+        <>
+          <Button variant="secondary" onClick={() => setEditOpen(false)}><X size={14} /> Cancel</Button>
+          <Button onClick={saveEdit} loading={editBusy} data-testid="member-edit-save"><Check size={14} /> Save</Button>
+        </>
+      }>
+        <div className="space-y-3">
+          <Input label="Description" name="member-desc" data-testid="member-desc" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+          <Input label="Failure domain" name="member-domain" data-testid="member-domain" value={editDomain} onChange={(e) => setEditDomain(e.target.value)} />
+          <div>
+            <span className="text-xs font-medium text-text-secondary">Roles</span>
+            <div className="mt-1 space-y-1">
+              {EDITABLE_ROLES.map((role) => (
+                <Checkbox key={role} data-testid={`member-role-${role}`} label={role} checked={editRoles.includes(role)} onChange={() => setEditRoles((r) => toggleIn(r, role))} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="text-xs font-medium text-text-secondary">Groups</span>
+            <div className="mt-1 space-y-1">
+              {groups.length === 0 && <span className="text-xs text-text-tertiary">No groups</span>}
+              {groups.map((g) => (
+                <Checkbox key={g.name} data-testid={`member-group-${g.name}`} label={g.name} checked={editGroups.includes(g.name)} onChange={() => setEditGroups((x) => toggleIn(x, g.name))} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </Dialog>
 
       <Dialog open={tokenOpen} onClose={() => setTokenOpen(false)} title={`Join token for ${name}`} footer={
         <>
