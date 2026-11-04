@@ -78,6 +78,28 @@
   100% { transform: translateX(400%); }
 }
 
+/* Field validation message slides in under the control. */
+@keyframes field-error-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.field-error-in {
+  animation: field-error-in 140ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field-error-in {
+    animation: none;
+  }
+}
+
 #spice-screen {
   display: flex;
   align-items: center;

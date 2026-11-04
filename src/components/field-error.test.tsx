@@ -17,16 +17,22 @@ describe("field error states", () => {
     expect(input).toHaveAttribute("aria-describedby", "n-error");
   });
 
-  it("renders the message borderless, inset from the sides", () => {
+  it("renders the message attached under the field, borderless and inset", () => {
     render(<Input label="Name" name="n" value="" onChange={() => {}} error="Enter an instance name" />);
+    const input = screen.getByTestId("input");
     const chip = screen.getByTestId("input-error");
     expect(chip).toHaveTextContent("Enter an instance name");
     expect(chip).toHaveAttribute("role", "alert");
+    // Attached: same zero-gap column as the field, no vertical spacing between them.
+    expect(chip.parentElement).toBe(input.parentElement);
+    expect(chip.parentElement?.className).toBe("flex flex-col");
+    // Inset from the sides, tinted, no outline of its own, animated in.
     expect(chip.className).toContain("mx-1");
     expect(chip.className).not.toContain("border");
-    // A tinted chip, but no outline of its own.
     expect(chip.className).toContain("bg-danger/10");
-    expect(chip.className).toContain("rounded");
+    expect(chip.className).toContain("field-error-in");
+    // The border colour eases into red rather than snapping.
+    expect(input.className).toContain("transition-colors");
   });
 
   it("omits the message without an error", () => {

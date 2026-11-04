@@ -10,30 +10,32 @@ export function Select({ label, error, className = "", id, name, children, ...re
   return (
     <label className="flex flex-col gap-1" htmlFor={selectId}>
       {label && <span className="text-xs font-medium text-text-secondary">{label}</span>}
-      <select
-        id={selectId}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${selectId}-error` : undefined}
-        className={[
-          "h-8 rounded border bg-surface-500 px-2.5 text-sm text-text-primary focus:outline-none",
-          error ? "border-danger focus:border-danger" : "border-border focus:border-accent-500",
-          className,
-        ].join(" ")}
-        data-testid="select"
-        {...rest}
-      >
-        {children}
-      </select>
-      {error && (
-        <span
-          id={`${selectId}-error`}
-          role="alert"
-          data-testid="select-error"
-          className="mx-1 rounded bg-danger/10 px-2 py-1 text-xs text-red-300"
+      <div className="flex flex-col">
+        <select
+          id={selectId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${selectId}-error` : undefined}
+          className={[
+            "h-8 rounded border bg-surface-500 px-2.5 text-sm text-text-primary transition-colors duration-150 focus:outline-none",
+            error ? "border-danger focus:border-danger" : "border-border focus:border-accent-500",
+            className,
+          ].join(" ")}
+          data-testid="select"
+          {...rest}
         >
-          {error}
-        </span>
-      )}
+          {children}
+        </select>
+        {error && (
+          <span
+            id={`${selectId}-error`}
+            role="alert"
+            data-testid="select-error"
+            className="field-error-in mx-1 rounded-b bg-danger/10 px-2 py-0.5 text-xs text-red-300"
+          >
+            {error}
+          </span>
+        )}
+      </div>
     </label>
   );
 }
