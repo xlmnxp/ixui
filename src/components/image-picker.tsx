@@ -315,7 +315,29 @@ export function ImagePicker({ type, cloudInitEnabled, value = null, onSelect, al
           </Select>
         </div>
         <Button size="sm" variant="ghost" data-testid="picker-remote-manage" onClick={() => setManageOpen(true)}>Manage</Button>
+        {allowPull && (
+          <Button
+            size="sm"
+            variant={pullOpen ? "secondary" : "ghost"}
+            onClick={() => setPullOpen((o) => !o)}
+            data-testid="wizard-pull-toggle"
+            aria-expanded={pullOpen}
+          >
+            <RefreshCw size={13} /> Pull from remote
+          </Button>
+        )}
       </div>
+
+      {/* Kept above the list so it never requires scrolling to reach. */}
+      {allowPull && pullOpen && (
+        <div className="space-y-2 rounded border border-border bg-surface-900 p-2.5" data-testid="wizard-pull-form">
+          <div className="grid grid-cols-2 gap-2">
+            <Input label="Alias" name="pull-alias" data-testid="wizard-pull-alias" value={pullAlias} onChange={(e) => setPullAlias(e.target.value)} placeholder="ubuntu/24.04" />
+            <Input label="Server" name="pull-server" data-testid="wizard-pull-server" placeholder="https://images.linuxcontainers.org" value={pullServer} onChange={(e) => setPullServer(e.target.value)} />
+          </div>
+          <Button size="sm" onClick={pull} loading={busy} data-testid="wizard-pull-submit"><Download size={13} /> Pull</Button>
+        </div>
+      )}
 
       {selected && (
         <div
@@ -432,21 +454,6 @@ export function ImagePicker({ type, cloudInitEnabled, value = null, onSelect, al
             <p className="text-xs text-text-tertiary">Selected: {selected.alias} from docker.io</p>
           )}
         </div>
-      )}
-
-      {allowPull && (
-        <>
-        <Button size="sm" variant="ghost" onClick={() => setPullOpen((o) => !o)} data-testid="wizard-pull-toggle">
-          <RefreshCw size={13} /> Pull from remote
-        </Button>
-        {pullOpen && (
-          <div className="space-y-2" data-testid="wizard-pull-form">
-            <Input label="Alias" name="pull-alias" data-testid="wizard-pull-alias" value={pullAlias} onChange={(e) => setPullAlias(e.target.value)} placeholder="ubuntu/24.04" />
-            <Input label="Server" name="pull-server" data-testid="wizard-pull-server" placeholder="https://images.linuxcontainers.org" value={pullServer} onChange={(e) => setPullServer(e.target.value)} />
-            <Button size="sm" onClick={pull} loading={busy} data-testid="wizard-pull-submit"><Download size={13} /> Pull</Button>
-          </div>
-        )}
-        </>
       )}
 
       <Dialog open={manageOpen} onClose={() => setManageOpen(false)} title="Custom remotes" footer={

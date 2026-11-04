@@ -164,7 +164,16 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
       key: "image",
       title: "Image",
       invalid: picked ? null : "Pick an image from the list",
-      content: <ImagePicker key={type} type={type} cloudInitEnabled={cloudInitEnabled} value={picked} onSelect={setPicked} />,
+      hideHint: true,
+      content: (
+        <div className="space-y-2">
+          {/* Always visible, so the next action never depends on scrolling. */}
+          <p className="text-xs text-text-tertiary" data-testid="wizard-image-hint">
+            Pick an image from the list
+          </p>
+          <ImagePicker key={type} type={type} cloudInitEnabled={cloudInitEnabled} value={picked} onSelect={setPicked} />
+        </div>
+      ),
     },
     {
       key: "config",

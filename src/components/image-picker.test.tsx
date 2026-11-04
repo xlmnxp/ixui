@@ -44,6 +44,24 @@ function renderPicker(props: Partial<Parameters<typeof ImagePicker>[0]> = {}) {
 }
 
 describe("ImagePicker", () => {
+  it("shows the selected image reported by the caller", () => {
+    const picked: PickedImage = {
+      server: SIMPLE_STREAMS_DEFAULT,
+      alias: "ubuntu/24.04/cloud/amd64",
+      protocol: "simplestreams",
+    };
+    renderPicker({ value: picked });
+    expect(screen.getByTestId("picker-selected")).toHaveTextContent("ubuntu/24.04/cloud/amd64");
+  });
+
+  it("keeps the pull control above the list so it needs no scrolling", () => {
+    renderPicker({ allowPull: true });
+    const toggle = screen.getByTestId("wizard-pull-toggle");
+    const list = screen.getByTestId("picker-list");
+    // precedes the list in document order
+    expect(toggle.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   beforeEach(async () => {
     localStorage.clear();
     toastStore.setState([]);
