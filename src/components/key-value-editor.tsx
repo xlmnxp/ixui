@@ -4,7 +4,15 @@ import { Badge } from "./badge";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
 import { Switch } from "./switch";
-import { metadataStore, metadataTypesStore, metadataLongStore, loadMetadata, configDescription } from "../state/metadata";
+import {
+  metadataStore,
+  metadataTypesStore,
+  metadataLongStore,
+  metadataValueOptionsStore,
+  loadMetadata,
+  configDescription,
+} from "../state/metadata";
+import { serverArchitecturesStore } from "../state/server-env";
 import { useStore } from "../state/store";
 
 const DESCRIPTION_ROW = "__description__";
@@ -34,14 +42,36 @@ export interface KeyValueEditorProps {
 
 /** Known valid values for common Incus keys — used for type-aware completion. */
 const KNOWN_VALUES: Record<string, string[]> = {
+  // Automatic snapshots.
   "snapshots.schedule": ["@hourly", "@daily", "@weekly", "@monthly", "@yearly", "@startup", "@never"],
   "snapshots.expiry": ["1d", "3d", "7d", "2w", "1M", "1y"],
   "snapshots.pattern": ["snap%d", "snap%d-%Y%m%d"],
-  "snapshots.schedule.stopped": ["true", "false"],
+  // Architectures are read from GET /1.0 environment.architectures, so they are
+  // intentionally absent here; image.os has no server-provided enumeration.
+  "image.os": [
+    "ubuntu",
+    "debian",
+    "alpine",
+    "fedora",
+    "centos",
+    "rocky",
+    "almalinux",
+    "archlinux",
+    "opensuse",
+    "kali",
+    "nixos",
+    "amazonlinux",
+    "windows",
+  ],
+  "image.type": ["container", "virtual-machine"],
+  "image.variant": ["default", "cloud", "desktop"],
+  // Devices.
   nictype: ["bridged", "macvlan", "ipvlan", "p2p", "routed", "ovn", "physical", "sriov"],
   type: ["disk", "nic", "proxy", "gpu", "usb", "pci", "tpm", "none"],
+  // ACL rules.
   action: ["allow", "drop", "reject"],
   state: ["enabled", "disabled", "logged"],
+  protocol: ["tcp", "udp", "icmp4", "icmp6", "esp", "gre"],
 };
 
 const lastSegment = (key: string): string => key.split(".").pop() ?? key;
@@ -71,6 +101,8 @@ export function KeyValueEditor({
   const metadataDescriptions = useStore(metadataStore);
   const metadataTypes = useStore(metadataTypesStore);
   const metadataLongs = useStore(metadataLongStore);
+  const metadataValueOptions = useStore(metadataValueOptionsStore);
+  const serverArchitectures = useStore(serverArchitecturesStore);
   const effectiveDescriptions = descriptions ?? metadataDescriptions;
   const effectiveLongs = descriptions === undefined ? metadataLongs : undefined;
   const [suggestionIndex, setSuggestionIndex] = useState(-1);
@@ -109,7 +141,16 @@ export function KeyValueEditor({
     if (type === "bool") return empty;
 
     const segment = lastSegment(key);
-    const known = [...(KNOWN_VALUES[key] ?? []), ...(KNOWN_VALUES[segment] ?? [])];
+    // Values the daemon documents for this key (extracted from its longdesc).
+    const documented = [...(metadataValueOptions[key] ?? []), ...(metadataValueOptions[segment] ?? [])];
+    // Architectures come from the server environment, not the config metadata.
+    const fromServer = segment === "architecture" ? serverArchitectures : [];
+    const known = [
+      ...(KNOWN_VALUES[key] ?? []),
+      ...(KNOWN_VALUES[segment] ?? []),
+      ...documented,
+      ...fromServer,
+    ];
     const provided = [...(valueOptions?.[key] ?? []), ...(valueOptions?.[segment] ?? [])];
     const fromSiblings = Object.entries(displayValues)
       .filter(([otherKey, value]) => value !== "" && otherKey !== key && lastSegment(otherKey) === segment)
@@ -127,7 +168,17 @@ export function KeyValueEditor({
       return aPrefix - bPrefix || a.localeCompare(b);
     });
     return { valueSuggestions: sorted.slice(0, 8), hasKnownValueOptions: known.length > 0 || provided.length > 0 };
-  }, [editing, draftKey, draftValue, valueTouched, metadataTypes, valueOptions, displayValues]);
+  }, [
+    editing,
+    draftKey,
+    draftValue,
+    valueTouched,
+    metadataTypes,
+    metadataValueOptions,
+    serverArchitectures,
+    valueOptions,
+    displayValues,
+  ]);
 
   // Show completions once the user types, or immediately for keys with a known value set.
   const showValueSuggestions =

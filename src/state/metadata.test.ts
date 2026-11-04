@@ -1,4 +1,4 @@
-import { metadataStore, loadMetadata, configDescription } from "./metadata";
+import { metadataStore, loadMetadata, configDescription, extractValueOptions } from "./metadata";
 
 vi.mock("../api", () => ({
   serverApi: {
@@ -7,6 +7,20 @@ vi.mock("../api", () => ({
     }),
   },
 }));
+
+describe("extractValueOptions", () => {
+  it("pulls single-word backticked values and skips placeholders and key names", () => {
+    const options = extractValueOptions(
+      "Use one of `nvme`, `virtio-blk` or `auto`. Set `<minute>` and see `migration.stateful`. Avoid `-flag`.",
+      { "migration.stateful": "long desc" }
+    );
+    expect(options).toEqual(["nvme", "virtio-blk", "auto"]);
+  });
+
+  it("returns no options for prose without enumerations", () => {
+    expect(extractValueOptions("Specify a memory limit in bytes.", {})).toEqual([]);
+  });
+});
 
 describe("metadata store", () => {
   beforeEach(() => metadataStore.setState({}));

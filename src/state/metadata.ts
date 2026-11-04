@@ -10,6 +10,34 @@ export const metadataLongStore = createStore<Record<string, string>>({});
 /** Config-key → value type map ("string", "bool", "integer", …). */
 export const metadataTypesStore = createStore<Record<string, string>>({});
 
+/**
+ * Config-key → accepted values, extracted from the daemon's long descriptions
+ * (which enumerate enums in backticks, e.g. io.bus → nvme, virtio-blk, …).
+ */
+export const metadataValueOptionsStore = createStore<Record<string, string[]>>({});
+
+const BACKTICK = /\`([^\`]{1,40})\`/g;
+
+/**
+ * Pull candidate values out of a long description: backticked tokens that are
+ * single words, not placeholders, and not themselves config keys.
+ */
+export function extractValueOptions(longdesc: string, knownKeys: Record<string, unknown>): string[] {
+  const out = new Set<string>();
+  for (const match of longdesc.matchAll(BACKTICK)) {
+    const token = match[1]?.trim() ?? "";
+    if (!token) continue;
+    if (token.includes("<") || token.includes(">")) continue;
+    if (/\s/.test(token)) continue;
+    if (token.startsWith("-")) continue;
+    // Key names are cross-references, not values.
+    if (token in knownKeys) continue;
+    if (token.endsWith(":")) continue;
+    out.add(token);
+  }
+  return [...out];
+}
+
 /** Client-side fallbacks for keys the daemon does not document (e.g. image.*). */
 const FALLBACK_DESCRIPTIONS: Record<string, string> = {
   "image.architecture": "CPU architecture of the image",
@@ -125,6 +153,12 @@ export function loadMetadata(): void {
         metadataStore.setState({ ...FALLBACK_DESCRIPTIONS, ...map });
         metadataTypesStore.setState(types);
         metadataLongStore.setState(longs);
+        const values: Record<string, string[]> = {};
+        for (const [key, longdesc] of Object.entries(longs)) {
+          const options = extractValueOptions(longdesc, { ...map, ...longs });
+          if (options.length > 0) values[key] = options;
+        }
+        metadataValueOptionsStore.setState(values);
       })
       .catch(() => {
         // Metadata may be unavailable; descriptions just stay empty.

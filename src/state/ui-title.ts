@@ -1,6 +1,7 @@
 import { createStore } from "./store";
 import { serverApi } from "../api";
 import { markForbidden, markProbeAuthenticated } from "../auth/status";
+import { setServerEnvironment } from "./server-env";
 
 export const DEFAULT_UI_TITLE = "Incus";
 
@@ -21,6 +22,7 @@ export async function loadUiTitle(): Promise<void> {
     const title = info.config?.["user.ui.title"];
     if (title && title.trim()) uiTitleStore.setState(title.trim());
     uiSsoOnlyStore.setState(info.config?.["user.ui.sso_only"] === "true");
+    setServerEnvironment(info);
 
     if (info.auth === "trusted") {
       markProbeAuthenticated();

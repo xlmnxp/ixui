@@ -6,6 +6,10 @@ export interface ServerInfo {
     server: string;
     server_version: string;
     project: string;
+    /** Architectures this server can run (e.g. ["x86_64", "i686"]). */
+    architectures?: string[];
+    /** Storage drivers the server supports, when reported. */
+    storage_supported_drivers?: { name: string; versions: string[]; remote: boolean }[];
   };
   config?: Record<string, string>;
 }

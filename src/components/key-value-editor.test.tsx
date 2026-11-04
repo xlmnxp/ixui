@@ -2,6 +2,8 @@ import { useState } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { KeyValueEditor } from "./key-value-editor";
+import { serverArchitecturesStore } from "../state/server-env";
+import { metadataValueOptionsStore } from "../state/metadata";
 
 vi.mock("../api", () => ({
   serverApi: {
@@ -307,6 +309,34 @@ describe("KeyValueEditor", () => {
     // The current value is excluded, the other schedule aliases are offered.
     expect(screen.getByTestId("kv-value-suggest-@hourly")).toBeInTheDocument();
     expect(screen.queryByTestId("kv-value-suggest-@daily")).not.toBeInTheDocument();
+  });
+
+  it("suggests architectures reported by the server", async () => {
+    const user = userEvent.setup();
+    serverArchitecturesStore.setState(["x86_64", "i686"]);
+    try {
+      render(<KeyValueEditor values={{ "image.architecture": "x86_64" }} onChange={() => {}} />);
+      await user.dblClick(screen.getByTestId("kv-value-image.architecture"));
+      // The current value is excluded; the other server architecture is offered.
+      expect(await screen.findByTestId("kv-value-suggest-i686")).toBeInTheDocument();
+      expect(screen.queryByTestId("kv-value-suggest-x86_64")).not.toBeInTheDocument();
+    } finally {
+      serverArchitecturesStore.setState([]);
+    }
+  });
+
+  it("suggests values documented by the daemon metadata", async () => {
+    const user = userEvent.setup();
+    metadataValueOptionsStore.setState({ "io.bus": ["nvme", "virtio-blk", "virtio-scsi", "9p"] });
+    try {
+      render(<KeyValueEditor values={{ "io.bus": "nvme" }} onChange={() => {}} />);
+      await user.dblClick(screen.getByTestId("kv-value-io.bus"));
+      expect(await screen.findByTestId("kv-value-suggest-virtio-blk")).toBeInTheDocument();
+      expect(screen.getByTestId("kv-value-suggest-9p")).toBeInTheDocument();
+      expect(screen.queryByTestId("kv-value-suggest-nvme")).not.toBeInTheDocument();
+    } finally {
+      metadataValueOptionsStore.setState({});
+    }
   });
 
   it("suggests values already used by sibling keys with the same property", async () => {
