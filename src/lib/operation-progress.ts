@@ -1,4 +1,5 @@
 import type { Operation } from "../api/types";
+import { formatBytes } from "./format";
 
 interface ProgressInfo {
   percent?: number;
@@ -7,6 +8,16 @@ interface ProgressInfo {
 }
 
 const clampPercent = (value: number): number => Math.min(100, Math.max(0, Math.round(value)));
+
+/** Byte count from a number or a numeric string (the daemon sends strings). */
+function toBytes(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value.trim());
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+  return undefined;
+}
 
 /** Every "NN%" occurrence in a daemon progress string, as numbers. */
 function percentagesIn(text: string): number[] {
@@ -81,6 +92,18 @@ export function operationProgressInfo(operation: Operation): ProgressInfo {
     if (percent === undefined || lowest < percent) percent = lowest;
     // The string that owns the currently-reported stage is the best label.
     if (lowest <= percent) stageText = label;
+  }
+
+  // Image pulls (POST /1.0/images) publish no progress at all — only the
+  // resolved fingerprint and size — so describe what is being downloaded.
+  if (!stageText && !structuredText) {
+    const size = toBytes(metadata.size);
+    const fingerprint = typeof metadata.fingerprint === "string" ? metadata.fingerprint : undefined;
+    if (size !== undefined) {
+      stageText = `Downloading ${formatBytes(size)}${fingerprint ? ` · ${fingerprint.slice(0, 12)}` : ""}`;
+    } else if (fingerprint) {
+      stageText = fingerprint.slice(0, 12);
+    }
   }
 
   return { percent, text: stageText ?? structuredText };

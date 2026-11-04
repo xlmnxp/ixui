@@ -58,6 +58,26 @@ describe("operationProgress", () => {
   });
 });
 
+describe("image pulls", () => {
+  // Captured from POST /1.0/images: pulls publish no progress, only size+fp.
+  const pulling = { fingerprint: "e5f84c14163ab8966bed4dc089f1c2a63edebd82773c63d2289b0f17fe91f180", size: "141312692" };
+
+  it("describes what is being downloaded", () => {
+    expect(operationProgress(op(pulling))).toBeUndefined();
+    expect(operationProgressText(op(pulling))).toBe("Downloading 134.8 MiB · e5f84c14163a");
+  });
+
+  it("falls back to the fingerprint when the size is unknown", () => {
+    expect(operationProgressText(op({ fingerprint: "e5f84c14163ab8966bed4dc089f1c2a63edebd82773c63d2289b0f17fe91f180" }))).toBe(
+      "e5f84c14163a"
+    );
+  });
+
+  it("shows nothing while the pull has not resolved yet", () => {
+    expect(operationProgressText(op({}))).toBeUndefined();
+  });
+});
+
 describe("operationProgressInfo", () => {
   it("falls back to the humanised stage when no string exists", () => {
     expect(operationProgressInfo(op({ progress: { percent: "10", stage: "create_instance_from_image_unpack" } }))).toEqual({

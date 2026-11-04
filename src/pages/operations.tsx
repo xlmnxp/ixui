@@ -54,6 +54,17 @@ export function OperationsPage({ registerBar }: { registerBar?: (bar: BarState |
 
   useEffect(refresh, [refresh]);
 
+  // Progress lives on the operation, so poll while anything is still running.
+  const runningIds = merged
+    .filter((o) => isOperationRunning(o))
+    .map((o) => o.id)
+    .join(",");
+  useEffect(() => {
+    if (!runningIds) return;
+    const timer = window.setInterval(refresh, 2_000);
+    return () => window.clearInterval(timer);
+  }, [runningIds, refresh]);
+
   const cancel = async (operation: Operation) => {
     try {
       await operationsApi.cancel(operation.id);
@@ -87,16 +98,24 @@ export function OperationsPage({ registerBar }: { registerBar?: (bar: BarState |
         render: (o) => {
           if (!isOperationRunning(o)) return <span className="text-text-tertiary">—</span>;
           const percent = operationProgress(o);
+          const detail = operationProgressText(o);
           return (
             <span
-              className="flex w-32 items-center gap-2"
+              className="flex w-44 flex-col gap-0.5"
               data-testid={`operation-progress-${o.id}`}
-              title={operationProgressText(o)}
+              title={detail}
             >
-              <Progress value={percent} />
-              <span className="w-8 shrink-0 text-right text-xs text-text-secondary">
-                {percent === undefined ? "…" : `${percent}%`}
+              <span className="flex items-center gap-2">
+                <Progress value={percent} />
+                <span className="w-8 shrink-0 text-right text-xs text-text-secondary">
+                  {percent === undefined ? "…" : `${percent}%`}
+                </span>
               </span>
+              {detail && (
+                <span className="truncate text-[11px] text-text-tertiary" data-testid={`operation-detail-${o.id}`}>
+                  {detail}
+                </span>
+              )}
             </span>
           );
         },
