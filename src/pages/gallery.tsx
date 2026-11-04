@@ -173,6 +173,15 @@ export function Gallery() {
             <option value="default">default</option>
           </Select>
         </div>
+        <div className="w-64">
+          <Textarea
+            label="Notes"
+            name="gallery-invalid-notes"
+            defaultValue=""
+            rows={3}
+            error="Notes must be shorter than 500 characters"
+          />
+        </div>
       </Section>
 
       <Section title="ColorPicker">

@@ -73,7 +73,7 @@ export function RenameInstanceDialog({ open, onClose, name, project, onRenamed }
         </>
       }
     >
-      <Input label="New name" name="rename-name" data-testid="rename-name" value={newName} onChange={(e) => setNewName(e.target.value)} error={newName && error ? error : undefined} />
+      <Input label="New name" name="rename-name" placeholder="web1-renamed" data-testid="rename-name" value={newName} onChange={(e) => setNewName(e.target.value)} error={newName && error ? error : undefined} />
     </Dialog>
   );
 }
@@ -132,7 +132,7 @@ export function CopyInstanceDialog({ open, onClose, name, project, defaultPool }
       title: "New name",
       invalid: valid ? null : target ? error : "Enter a name for the copy",
       content: (
-        <Input label="New name" name="copy-name" data-testid="copy-name" value={target} onChange={(e) => setTarget(e.target.value)} error={target && error ? error : undefined} />
+        <Input label="New name" name="copy-name" placeholder="web1-copy" data-testid="copy-name" value={target} onChange={(e) => setTarget(e.target.value)} error={target && error ? error : undefined} />
       ),
     },
     {

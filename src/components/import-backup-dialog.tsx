@@ -86,7 +86,7 @@ export function ImportBackupDialog({ open, onClose }: ImportBackupDialogProps) {
             className="text-sm text-text-primary"
           />
         </label>
-        <Input label="Instance name (optional — defaults to the name in the backup)" name="import-name" data-testid="import-name" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input label="Instance name (optional — defaults to the name in the backup)" name="import-name" placeholder="restored-1" data-testid="import-name" value={name} onChange={(e) => setName(e.target.value)} />
         <Select label="Storage pool (optional)" name="import-pool" data-testid="import-pool" value={pool} onChange={(e) => setPool(e.target.value)}>
           <option value="">Default from backup</option>
           {pools.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}

@@ -131,8 +131,8 @@ export function ClusterGroupsPage({ registerBar }: { registerBar?: (bar: BarStat
         </>
       }>
         <div className="space-y-3">
-          <Input label="Name" name="group-name" data-testid="group-name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input label="Description" name="group-desc" data-testid="group-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <Input label="Name" name="group-name" placeholder="edge" data-testid="group-name" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input label="Description" name="group-desc" placeholder="Optional" data-testid="group-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
       </Dialog>
 
@@ -144,7 +144,7 @@ export function ClusterGroupsPage({ registerBar }: { registerBar?: (bar: BarStat
       }>
         <div className="space-y-3">
           <Input label="Name" name="group-edit-name" data-testid="group-edit-name" value={editing?.name ?? ""} disabled />
-          <Input label="Description" name="group-edit-desc" data-testid="group-edit-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <Input label="Description" name="group-edit-desc" placeholder="Optional" data-testid="group-edit-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
       </Dialog>
 

@@ -174,7 +174,7 @@ export function SnapshotsTab({ instanceName, project, registerActions }: Snapsho
         </>
       }>
         <div className="space-y-3">
-          <Input label="Name" name="snap-name" data-testid="snap-name" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input label="Name" name="snap-name" placeholder="pre-upgrade" data-testid="snap-name" value={name} onChange={(e) => setName(e.target.value)} />
           <Switch checked={stateful} onChange={setStateful} label="Stateful (include running state)" />
         </div>
       </Dialog>

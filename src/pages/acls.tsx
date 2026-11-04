@@ -424,8 +424,8 @@ export function AclsPage() {
         </>
       }>
         <div className="space-y-3">
-          <Input label="Name" name="acl-name" data-testid="acl-name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input label="Description" name="acl-desc" data-testid="acl-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <Input label="Name" name="acl-name" placeholder="web" data-testid="acl-name" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input label="Description" name="acl-desc" placeholder="Allow HTTP(S) traffic" data-testid="acl-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
       </Dialog>
 

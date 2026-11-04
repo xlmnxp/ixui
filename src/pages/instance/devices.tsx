@@ -214,7 +214,7 @@ export function DevicesTab({ instanceName, project, registerActions }: DevicesTa
         }
       >
         <div className="space-y-3">
-          <Input label="Name" data-testid="device-name" value={draftName} onChange={(e) => setDraftName(e.target.value)} />
+          <Input label="Name" data-testid="device-name" placeholder="eth0" value={draftName} onChange={(e) => setDraftName(e.target.value)} />
           <Select label="Type" data-testid="device-type" value={draftType} onChange={(e) => setDraftType(e.target.value)}>
             {DEVICE_TYPES.map((t) => (
               <option key={t} value={t}>{t}</option>

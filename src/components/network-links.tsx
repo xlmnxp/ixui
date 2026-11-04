@@ -251,8 +251,8 @@ export function NetworkLinksDialog({ network, onClose }: NetworkLinksDialogProps
         }
       >
         <div className="space-y-3">
-          <Input label="Listen address" name="lb-listen" data-testid="lb-listen" value={listen} onChange={(e) => setListen(e.target.value)} />
-          <Input label="Description" name="lb-desc" value={lbDesc} onChange={(e) => setLbDesc(e.target.value)} />
+          <Input label="Listen address" name="lb-listen" placeholder="10.0.0.1:80" data-testid="lb-listen" value={listen} onChange={(e) => setListen(e.target.value)} />
+          <Input label="Description" name="lb-desc" placeholder="Optional" value={lbDesc} onChange={(e) => setLbDesc(e.target.value)} />
           <div>
             <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">Backends</h3>
             {backends.map((b, i) => (
@@ -295,9 +295,9 @@ export function NetworkLinksDialog({ network, onClose }: NetworkLinksDialogProps
         }
       >
         <div className="space-y-3">
-          <Input label="Peer name" name="peer-name" data-testid="peer-name" value={peerName} onChange={(e) => setPeerName(e.target.value)} />
-          <Input label="Target project" name="peer-project" data-testid="peer-project" value={peerProject} onChange={(e) => setPeerProject(e.target.value)} />
-          <Input label="Target network" name="peer-network" data-testid="peer-network" value={peerNetwork} onChange={(e) => setPeerNetwork(e.target.value)} />
+          <Input label="Peer name" name="peer-name" placeholder="peer-1" data-testid="peer-name" value={peerName} onChange={(e) => setPeerName(e.target.value)} />
+          <Input label="Target project" name="peer-project" placeholder="default" data-testid="peer-project" value={peerProject} onChange={(e) => setPeerProject(e.target.value)} />
+          <Input label="Target network" name="peer-network" placeholder="br0" data-testid="peer-network" value={peerNetwork} onChange={(e) => setPeerNetwork(e.target.value)} />
           <p className="text-xs text-text-tertiary">A peering only becomes active once the same peering is created from the target network back to this one.</p>
         </div>
       </Dialog>

@@ -144,7 +144,7 @@ export function BackupsTab({ instanceName, project, registerActions }: BackupsTa
         }
       >
         <div className="space-y-3">
-          <Input label="Name" name="backup-name" data-testid="backup-name" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input label="Name" name="backup-name" placeholder="backup-1" data-testid="backup-name" value={name} onChange={(e) => setName(e.target.value)} />
           <Switch checked={instanceOnly} onChange={setInstanceOnly} label="Instance only (exclude snapshots)" />
           <Switch checked={optimized} onChange={setOptimized} label="Optimized storage format" />
         </div>

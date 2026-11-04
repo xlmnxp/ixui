@@ -186,7 +186,7 @@ export function ProjectsPage() {
             ) : (
               <>
                 <p>This permanently deletes project <strong>{deleteTarget.name}</strong>. Type its name to confirm.</p>
-                <Input label="Project name" name="project-delete-name" data-testid="project-delete-name" value={confirmName} onChange={(e) => setConfirmName(e.target.value)} />
+                <Input label="Project name" name="project-delete-name" placeholder="Type the project name" data-testid="project-delete-name" value={confirmName} onChange={(e) => setConfirmName(e.target.value)} />
               </>
             )}
           </div>

@@ -639,7 +639,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
           <Button onClick={createBucket} loading={bucketBusy} disabled={!bucketName.trim()} data-testid="bucket-create-submit"><Plus size={14} /> Create</Button>
         </>
       }>
-        <Input label="Bucket name" name="bucket-name" data-testid="bucket-name" value={bucketName} onChange={(e) => setBucketName(e.target.value)} />
+        <Input label="Bucket name" name="bucket-name" placeholder="backups" data-testid="bucket-name" value={bucketName} onChange={(e) => setBucketName(e.target.value)} />
       </Dialog>
 
       <ConfirmDialog
@@ -659,7 +659,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
         </>
       }>
         <div className="space-y-3">
-          <Input label="Name" name="pool-name" data-testid="pool-name" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input label="Name" name="pool-name" placeholder="fast-ssd" data-testid="pool-name" value={name} onChange={(e) => setName(e.target.value)} />
           <Select label="Driver" name="pool-driver" data-testid="pool-driver" value={driver} onChange={(e) => setDriver(e.target.value)}>
             <option value="dir">dir</option>
             <option value="btrfs">btrfs</option>
@@ -684,12 +684,12 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
         </>
       }>
         <div className="space-y-3">
-          <Input label="Name" name="volume-name" data-testid="volume-name" value={volumeName} onChange={(e) => setVolumeName(e.target.value)} />
+          <Input label="Name" name="volume-name" placeholder="data" data-testid="volume-name" value={volumeName} onChange={(e) => setVolumeName(e.target.value)} />
           <Select label="Content type" name="volume-content-type" data-testid="volume-content-type" value={volumeContentType} onChange={(e) => setVolumeContentType(e.target.value)}>
             <option value="filesystem">filesystem</option>
             <option value="block">block</option>
           </Select>
-          <Input label="Size (e.g. 10GB)" name="volume-size" data-testid="volume-size" value={volumeSize} onChange={(e) => setVolumeSize(e.target.value)} />
+          <Input label="Size (e.g. 10GB)" name="volume-size" placeholder="10GiB" data-testid="volume-size" value={volumeSize} onChange={(e) => setVolumeSize(e.target.value)} />
           <KeyValueEditor values={volumeConfig} onChange={setVolumeConfig} dataTestId="volume-config" />
           {volumeError && <p className="text-xs text-red-300" data-testid="volume-error">{volumeError}</p>}
         </div>
@@ -730,7 +730,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
         </>
       }>
         <div className="space-y-3">
-          <Input label="New name" name="volume-rename-name" data-testid="volume-rename-name" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />
+          <Input label="New name" name="volume-rename-name" placeholder="data-2" data-testid="volume-rename-name" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />
           {renameError && <p className="text-xs text-red-300" data-testid="rename-error">{renameError}</p>}
         </div>
       </Dialog>
@@ -741,7 +741,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
           <Button onClick={createSnapshot} loading={busy} data-testid="snapshot-create-submit"><Plus size={14} /> Create</Button>
         </>
       }>
-        <Input label="Snapshot name" name="snapshot-name" data-testid="snapshot-name" value={snapName} onChange={(e) => setSnapName(e.target.value)} />
+        <Input label="Snapshot name" name="snapshot-name" placeholder="daily-1" data-testid="snapshot-name" value={snapName} onChange={(e) => setSnapName(e.target.value)} />
       </Dialog>
 
       <Dialog open={attachTarget !== null} onClose={() => setAttachTarget(null)} title={`Attach volume ${attachTarget?.name ?? ""}`} footer={

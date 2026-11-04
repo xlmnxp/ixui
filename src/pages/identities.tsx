@@ -203,8 +203,8 @@ export function IdentitiesPage() {
         }
       >
         <div className="space-y-3">
-          <Input label="Name" name="authgroup-name" data-testid="authgroup-name" value={groupName} disabled={groupDialog?.existing != null} onChange={(e) => setGroupName(e.target.value)} />
-          <Input label="Description" name="authgroup-desc" data-testid="authgroup-desc" value={groupDesc} onChange={(e) => setGroupDesc(e.target.value)} />
+          <Input label="Name" name="authgroup-name" placeholder="admins" data-testid="authgroup-name" value={groupName} disabled={groupDialog?.existing != null} onChange={(e) => setGroupName(e.target.value)} />
+          <Input label="Description" name="authgroup-desc" placeholder="Optional" data-testid="authgroup-desc" value={groupDesc} onChange={(e) => setGroupDesc(e.target.value)} />
           <div>
             <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">Permissions</h3>
             {perms.map((p, i) => (

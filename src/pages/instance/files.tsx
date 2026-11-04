@@ -407,7 +407,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
       >
         <div className="space-y-3">
           {newOpen && (
-            <Input label="File name" name="file-new-name" data-testid="file-new-name" value={newName} onChange={(e) => { setNewName(e.target.value); setEditPath(e.target.value.trim()); }} />
+            <Input label="File name" name="file-new-name" placeholder="notes.txt" data-testid="file-new-name" value={newName} onChange={(e) => { setNewName(e.target.value); setEditPath(e.target.value.trim()); }} />
           )}
           <Textarea label="Content" name="file-content" data-testid="file-content" value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={14} className="font-mono text-xs" />
         </div>
@@ -424,7 +424,7 @@ export function FilesTab({ instanceName, project }: FilesTabProps) {
           </>
         }
       >
-        <Input label="Folder name" name="mkdir-name" data-testid="mkdir-name" value={mkdirName} onChange={(e) => setMkdirName(e.target.value)} />
+        <Input label="Folder name" name="mkdir-name" placeholder="uploads" data-testid="mkdir-name" value={mkdirName} onChange={(e) => setMkdirName(e.target.value)} />
       </Dialog>
 
       <ConfirmDialog

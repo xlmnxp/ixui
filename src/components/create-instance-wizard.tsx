@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Box, Monitor, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { ReviewList, StepDialog } from "./step-dialog";
 import type { Step } from "./step-dialog";
 import { Input } from "./input";
@@ -127,25 +127,21 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
       hideHint: true,
       content: (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            {(["container", "virtual-machine"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                data-testid={`wizard-type-${t}`}
-                aria-pressed={type === t}
-                onClick={() => setType(t)}
-                className={`flex flex-col items-center gap-2 rounded border p-4 ${type === t ? "border-accent-600 bg-accent-600/10 text-text-primary" : "border-border text-text-secondary hover:bg-surface-700"}`}
-              >
-                {t === "container" ? <Box size={22} /> : <Monitor size={22} />}
-                <span className="text-[13px] font-medium">{t === "container" ? "Container" : "Virtual machine"}</span>
-              </button>
-            ))}
-          </div>
+          <Select
+            label="Type"
+            name="wizard-type"
+            data-testid="wizard-type"
+            value={type}
+            onChange={(e) => setType(e.target.value as "container" | "virtual-machine")}
+          >
+            <option value="container">Container</option>
+            <option value="virtual-machine">Virtual machine</option>
+          </Select>
           <Input
             label="Name"
             name="wizard-name"
             data-testid="wizard-name"
+            placeholder="web1"
             value={name}
             onChange={(e) => {
               setName(e.target.value);
@@ -154,7 +150,7 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
             onBlur={() => setNameTouched(true)}
             error={nameValid ? undefined : name ? nameError : nameTouched ? "Enter an instance name" : undefined}
           />
-          <Input label="Description (optional)" name="wizard-description" data-testid="wizard-description" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <Input label="Description (optional)" name="wizard-description" data-testid="wizard-description" placeholder="What is this instance for?" value={description} onChange={(e) => setDescription(e.target.value)} />
           <Select label="Project" name="wizard-project" data-testid="wizard-project" value={project} onChange={(e) => setProject(e.target.value)}>
             {projects.map((p) => (
               <option key={p.name} value={p.name}>{p.name}</option>
@@ -186,8 +182,8 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
             </div>
           </fieldset>
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Memory limit (e.g. 512MiB)" name="wizard-memory" data-testid="wizard-memory" value={memory} onChange={(e) => setMemory(e.target.value)} />
-            <Input label="CPU limit (e.g. 2)" name="wizard-cpu" data-testid="wizard-cpu" value={cpu} onChange={(e) => setCpu(e.target.value)} />
+            <Input label="Memory limit (e.g. 512MiB)" name="wizard-memory" placeholder="512MiB" data-testid="wizard-memory" value={memory} onChange={(e) => setMemory(e.target.value)} />
+            <Input label="CPU limit (e.g. 2)" name="wizard-cpu" placeholder="2" data-testid="wizard-cpu" value={cpu} onChange={(e) => setCpu(e.target.value)} />
           </div>
           <Select label="Network" name="wizard-network" data-testid="wizard-network" value={network} onChange={(e) => setNetwork(e.target.value)}>
             <option value="">— none —</option>

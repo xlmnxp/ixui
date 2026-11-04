@@ -95,7 +95,7 @@ export function PullImageDialog({ open, onClose, onPulled }: PullImageDialogProp
           ) : (
             <div className="space-y-3">
               <Input label="Alias" name="pull-alias" data-testid="pull-alias" value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="ubuntu/24.04" />
-              <Input label="Server" name="pull-server" data-testid="pull-server" value={server} onChange={(e) => setServer(e.target.value)} />
+              <Input label="Server" name="pull-server" placeholder="https://images.linuxcontainers.org" data-testid="pull-server" value={server} onChange={(e) => setServer(e.target.value)} />
               <Select label="Protocol" name="pull-protocol" data-testid="pull-protocol" value={protocol} onChange={(e) => setProtocol(e.target.value as "simplestreams" | "oci")}>
                 <option value="simplestreams">simplestreams</option>
                 <option value="oci">oci</option>

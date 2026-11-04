@@ -166,7 +166,7 @@ function NetworkObjectsPage({ kind, registerBar }: PageProps & { kind: Kind }) {
           disabled={editor?.existing != null}
           onChange={(e) => setName(e.target.value)}
         />
-        <Input label="Description" name="netobj-desc" data-testid="netobj-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+        <Input label="Description" name="netobj-desc" placeholder="Optional" data-testid="netobj-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
     ),
   };

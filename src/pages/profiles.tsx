@@ -34,8 +34,8 @@ function profileSteps(f: ProfileFormState): Step[] {
       invalid: f.name.trim() ? null : "Enter a profile name",
       content: (
         <div className="space-y-3">
-          <Input label="Name" name="profile-name" data-testid="profile-name" value={f.name} disabled={!f.nameEditable} onChange={(e) => f.setName(e.target.value)} />
-          <Input label="Description" name="profile-description" data-testid="profile-description" value={f.description} onChange={(e) => f.setDescription(e.target.value)} />
+          <Input label="Name" name="profile-name" placeholder="default" data-testid="profile-name" value={f.name} disabled={!f.nameEditable} onChange={(e) => f.setName(e.target.value)} />
+          <Input label="Description" name="profile-description" placeholder="Optional" data-testid="profile-description" value={f.description} onChange={(e) => f.setDescription(e.target.value)} />
         </div>
       ),
     },

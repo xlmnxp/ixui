@@ -281,14 +281,14 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
             invalid: name.trim() ? null : "Enter a network name",
             content: (
               <div className="space-y-3">
-                <Input label="Name" name="network-name" data-testid="network-name" value={name} onChange={(e) => setName(e.target.value)} />
+                <Input label="Name" name="network-name" placeholder="br0" data-testid="network-name" value={name} onChange={(e) => setName(e.target.value)} />
                 <Select label="Type" name="network-type" data-testid="network-type" value={type} onChange={(e) => setType(e.target.value)}>
                   <option value="bridge">bridge</option>
                   <option value="ovn">ovn</option>
                   <option value="physical">physical</option>
                   <option value="macvlan">macvlan</option>
                 </Select>
-                <Input label="Description" name="network-desc" data-testid="network-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+                <Input label="Description" name="network-desc" placeholder="Optional" data-testid="network-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
             ),
           },
@@ -338,7 +338,7 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
               <div className="space-y-3">
                 <Input label="Name" name="network-edit-name" value={editing?.name ?? ""} disabled />
                 <Input label="Type" name="network-edit-type" value={editing?.type ?? ""} disabled />
-                <Input label="Description" name="network-edit-desc" data-testid="network-edit-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+                <Input label="Description" name="network-edit-desc" placeholder="Optional" data-testid="network-edit-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
             ),
           },
@@ -393,8 +393,8 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
         </>
       }>
         <div className="space-y-3">
-          <Input label="Listen address" name="forward-address" data-testid="forward-address" value={forwardAddress} onChange={(e) => setForwardAddress(e.target.value)} />
-          <Input label="Description" name="forward-description" data-testid="forward-description" value={forwardDescription} onChange={(e) => setForwardDescription(e.target.value)} />
+          <Input label="Listen address" name="forward-address" placeholder="10.0.0.1:8080" data-testid="forward-address" value={forwardAddress} onChange={(e) => setForwardAddress(e.target.value)} />
+          <Input label="Description" name="forward-description" placeholder="Optional" data-testid="forward-description" value={forwardDescription} onChange={(e) => setForwardDescription(e.target.value)} />
         </div>
       </Dialog>
 

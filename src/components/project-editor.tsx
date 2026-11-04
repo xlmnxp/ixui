@@ -224,8 +224,8 @@ export function ProjectEditor({ project, usage = {}, state, onClose, onSaved }: 
       invalid: nameError,
       content: (
         <div className="space-y-3" data-testid="project-editor">
-          <Input label="Name" name="project-name" data-testid="project-name" value={name} disabled={!creating} onChange={(e) => setName(e.target.value)} />
-          <Input label="Description" name="project-description" data-testid="project-description" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <Input label="Name" name="project-name" placeholder="staging" data-testid="project-name" value={name} disabled={!creating} onChange={(e) => setName(e.target.value)} />
+          <Input label="Description" name="project-description" placeholder="Optional" data-testid="project-description" value={description} onChange={(e) => setDescription(e.target.value)} />
           {creating && <p className="text-xs text-text-tertiary">The name can't be changed later.</p>}
         </div>
       ),

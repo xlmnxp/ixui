@@ -402,7 +402,7 @@ export function ImagePicker({ type, cloudInitEnabled, onSelect, allowPull = true
         {pullOpen && (
           <div className="space-y-2 rounded border border-border bg-surface-900 p-3">
             <Input label="Alias" name="pull-alias" data-testid="wizard-pull-alias" value={pullAlias} onChange={(e) => setPullAlias(e.target.value)} placeholder="ubuntu/24.04" />
-            <Input label="Server" name="pull-server" data-testid="wizard-pull-server" value={pullServer} onChange={(e) => setPullServer(e.target.value)} />
+            <Input label="Server" name="pull-server" data-testid="wizard-pull-server" placeholder="https://images.linuxcontainers.org" value={pullServer} onChange={(e) => setPullServer(e.target.value)} />
             <Button size="sm" onClick={pull} loading={busy} data-testid="wizard-pull-submit"><Download size={13} /> Pull</Button>
           </div>
         )}

@@ -282,8 +282,8 @@ export function MemberView() {
         </>
       }>
         <div className="space-y-3">
-          <Input label="Description" name="member-desc" data-testid="member-desc" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
-          <Input label="Failure domain" name="member-domain" data-testid="member-domain" value={editDomain} onChange={(e) => setEditDomain(e.target.value)} />
+          <Input label="Description" name="member-desc" placeholder="Optional" data-testid="member-desc" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+          <Input label="Failure domain" name="member-domain" placeholder="default" data-testid="member-domain" value={editDomain} onChange={(e) => setEditDomain(e.target.value)} />
           <div>
             <span className="text-xs font-medium text-text-secondary">Roles</span>
             <div className="mt-1 space-y-1">
@@ -317,7 +317,7 @@ export function MemberView() {
         </>
       }>
         <div className="space-y-3">
-          <Input label="Server name" name="token-name" data-testid="token-name" value={tokenName} onChange={(e) => setTokenName(e.target.value)} disabled={Boolean(token)} />
+          <Input label="Server name" name="token-name" placeholder="mnode-1" data-testid="token-name" value={tokenName} onChange={(e) => setTokenName(e.target.value)} disabled={Boolean(token)} />
           {!token && (
             <div>
               <span className="text-xs font-medium text-text-secondary">Groups</span>
