@@ -194,7 +194,7 @@ describe("CreateInstanceWizard", () => {
     // The window stays open and reports the failure inline.
     expect(await screen.findByTestId("wizard-create-error")).toHaveTextContent("no space left");
     expect(onClose).not.toHaveBeenCalled();
-    // Progress follows the operation description while it runs.
+    // Progress follows the operation description (and download percentage) while it runs.
     expect(vi.mocked(operationsApi.wait).mock.calls.at(-1)?.[1]?.onUpdate).toBeTypeOf("function");
   });
 

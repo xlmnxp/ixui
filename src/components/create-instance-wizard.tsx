@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Box, Monitor, Plus, RefreshCw } from "lucide-react";
 import { ReviewList, StepDialog } from "./step-dialog";
+import { operationProgress } from "../lib/operation-progress";
 import type { Step } from "./step-dialog";
 import { Input } from "./input";
 import { SegmentedControl } from "./segmented-control";
@@ -118,7 +119,9 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
         // window must stay open (with the operation state) until it settles.
         const op = await operationsApi.wait(result.operation, {
           onUpdate: (current) => {
-            if (current.description) setProgress(current.description);
+            const percent = operationProgress(current);
+            const label = current.description || "Creating instance";
+            setProgress(percent === undefined ? label : `${label} — ${percent}%`);
           },
         });
         if (op.status !== "Success") throw new Error(op.err || "Create failed");

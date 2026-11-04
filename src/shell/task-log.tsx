@@ -6,6 +6,7 @@ import { operationsStore, dismissOperation } from "../state/operations";
 import { useStore } from "../state/store";
 import { Badge } from "../components/badge";
 import { Progress } from "../components/progress";
+import { operationProgress } from "../lib/operation-progress";
 
 const statusTone = { Running: "info", Success: "success", Failure: "danger", Cancelled: "warning", Unknown: "neutral" } as const;
 
@@ -43,10 +44,18 @@ export function TaskLog({ collapsed, onToggle }: TaskLogProps) {
     };
   }, [dragging]);
 
+  const runningOperations = operations.filter((o) => o.status === "Running");
+  const activePercent = runningOperations
+    .map((o) => operationProgress(o))
+    .filter((p): p is number => p !== undefined)
+    .sort((a, b) => b - a)[0];
+
   if (collapsed) {
     return (
       <div className="flex h-8 items-center justify-between border-t border-border bg-surface-900/95 px-3 backdrop-blur" data-testid="task-log">
-        <span className="text-xs text-text-secondary">Operations ({operations.length})</span>
+        <span className="text-xs text-text-secondary">
+          Operations ({operations.length}){activePercent !== undefined && ` · ${activePercent}%`}
+        </span>
         <button data-testid="tasklog-toggle" onClick={() => onToggle(false)} className="text-text-tertiary hover:text-text-primary" aria-label="Expand task log"><ChevronUp size={14} /></button>
       </div>
     );
@@ -77,7 +86,14 @@ export function TaskLog({ collapsed, onToggle }: TaskLogProps) {
               <li key={op.id} className="flex items-center gap-3 px-3 py-1.5" data-testid="tasklog-entry">
                 <Badge tone={statusTone[op.status]}>{op.status}</Badge>
                 <span className="flex-1 truncate text-xs text-text-primary">{op.description}</span>
-                {op.status === "Running" && <div className="w-32"><Progress value={undefined} /></div>}
+                {op.status === "Running" && (
+                  <div className="flex w-36 items-center gap-2" data-testid={`tasklog-progress-${op.id}`}>
+                    <Progress value={operationProgress(op)} />
+                    <span className="w-8 shrink-0 text-right text-[11px] text-text-secondary">
+                      {operationProgress(op) === undefined ? "" : `${operationProgress(op)}%`}
+                    </span>
+                  </div>
+                )}
                 {op.status === "Running" && op.may_cancel && (
                   <button data-testid={`tasklog-cancel-${op.id}`} onClick={() => void cancelOperation(op.id, op.description)} className="text-xs text-text-tertiary hover:text-red-300" aria-label={`Cancel ${op.description || op.id}`}>Cancel</button>
                 )}

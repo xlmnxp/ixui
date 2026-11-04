@@ -13,6 +13,8 @@ import type { BadgeTone } from "../components/badge";
 import { Button } from "../components/button";
 import { EmptyState } from "../components/empty-state";
 import { Loading } from "../components/loading";
+import { Progress } from "../components/progress";
+import { isOperationRunning, operationProgress } from "../lib/operation-progress";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
@@ -78,6 +80,22 @@ export function OperationsPage({ registerBar }: { registerBar?: (bar: BarState |
         render: (o) => (
           <Badge tone={statusTones[o.status] ?? "neutral"}>{o.status}</Badge>
         ),
+      },
+      {
+        key: "progress",
+        header: "Progress",
+        render: (o) => {
+          if (!isOperationRunning(o)) return <span className="text-text-tertiary">—</span>;
+          const percent = operationProgress(o);
+          return (
+            <span className="flex w-32 items-center gap-2" data-testid={`operation-progress-${o.id}`}>
+              <Progress value={percent} />
+              <span className="w-8 shrink-0 text-right text-xs text-text-secondary">
+                {percent === undefined ? "…" : `${percent}%`}
+              </span>
+            </span>
+          );
+        },
       },
       { key: "created", header: "Created", sortValue: (o) => o.created_at, render: (o) => new Date(o.created_at).toLocaleString() },
       {
