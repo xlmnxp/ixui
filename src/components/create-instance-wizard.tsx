@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Box, Monitor, Plus } from "lucide-react";
 import { ReviewList, StepDialog } from "./step-dialog";
 import type { Step } from "./step-dialog";
 import { Input } from "./input";
@@ -127,16 +127,33 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
       hideHint: true,
       content: (
         <div className="space-y-4">
-          <Select
-            label="Type"
-            name="wizard-type"
-            data-testid="wizard-type"
-            value={type}
-            onChange={(e) => setType(e.target.value as "container" | "virtual-machine")}
-          >
-            <option value="container">Container</option>
-            <option value="virtual-machine">Virtual machine</option>
-          </Select>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-text-secondary">Type</span>
+            <div
+              role="radiogroup"
+              aria-label="Type"
+              className="inline-flex w-fit rounded border border-border bg-surface-500 p-0.5"
+            >
+              {(["container", "virtual-machine"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={type === t}
+                  data-testid={`wizard-type-${t}`}
+                  onClick={() => setType(t)}
+                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition-colors ${
+                    type === t
+                      ? "bg-accent-600 font-medium text-white"
+                      : "text-text-secondary hover:text-text-primary"
+                  }`}
+                >
+                  {t === "container" ? <Box size={13} /> : <Monitor size={13} />}
+                  {t === "container" ? "Container" : "Virtual machine"}
+                </button>
+              ))}
+            </div>
+          </div>
           <Input
             label="Name"
             name="wizard-name"
