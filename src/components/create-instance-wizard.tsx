@@ -3,6 +3,7 @@ import { Box, Monitor, Plus } from "lucide-react";
 import { ReviewList, StepDialog } from "./step-dialog";
 import type { Step } from "./step-dialog";
 import { Input } from "./input";
+import { SegmentedControl } from "./segmented-control";
 import { Select } from "./select";
 import { Checkbox } from "./checkbox";
 import { ImagePicker } from "./image-picker";
@@ -127,33 +128,6 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
       hideHint: true,
       content: (
         <div className="space-y-4">
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-text-secondary">Type</span>
-            <div
-              role="radiogroup"
-              aria-label="Type"
-              className="inline-flex w-fit rounded border border-border bg-surface-500 p-0.5"
-            >
-              {(["container", "virtual-machine"] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  role="radio"
-                  aria-checked={type === t}
-                  data-testid={`wizard-type-${t}`}
-                  onClick={() => setType(t)}
-                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition-colors ${
-                    type === t
-                      ? "bg-accent-600 font-medium text-white"
-                      : "text-text-secondary hover:text-text-primary"
-                  }`}
-                >
-                  {t === "container" ? <Box size={13} /> : <Monitor size={13} />}
-                  {t === "container" ? "Container" : "Virtual machine"}
-                </button>
-              ))}
-            </div>
-          </div>
           <Input
             label="Name"
             name="wizard-name"
@@ -166,6 +140,16 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
             }}
             onBlur={() => setNameTouched(true)}
             error={nameValid ? undefined : name ? nameError : nameTouched ? "Enter an instance name" : undefined}
+          />
+          <SegmentedControl
+            label="Type"
+            value={type}
+            dataTestId="wizard-type"
+            onChange={setType}
+            options={[
+              { value: "container", label: "Container", icon: <Box size={13} /> },
+              { value: "virtual-machine", label: "Virtual machine", icon: <Monitor size={13} /> },
+            ]}
           />
           <Input label="Description (optional)" name="wizard-description" data-testid="wizard-description" placeholder="What is this instance for?" value={description} onChange={(e) => setDescription(e.target.value)} />
           <Select label="Project" name="wizard-project" data-testid="wizard-project" value={project} onChange={(e) => setProject(e.target.value)}>

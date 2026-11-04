@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Bell, Check, FilePlus2, FolderPlus, Maximize2, Monitor, MoveRight, Play, Plus, ShieldAlert, Square, SquareTerminal, Trash2, X } from "lucide-react";
+import { Bell, Box, Check, FilePlus2, FolderPlus, Maximize2, Monitor, MoveRight, Play, Plus, ShieldAlert, Square, SquareTerminal, Trash2, X } from "lucide-react";
 import { Button } from "../components/button";
 import { Badge } from "../components/badge";
 import { StatusDot } from "../components/status-dot";
@@ -24,6 +24,7 @@ import { EmptyState } from "../components/empty-state";
 import { SplitPane } from "../components/split-pane";
 import { PageBar } from "../components/page-bar";
 import { KeyValueEditor } from "../components/key-value-editor";
+import { SegmentedControl } from "../components/segmented-control";
 import { Dropdown } from "../components/dropdown";
 import { ColorPicker } from "../components/color-picker";
 import { SplitButton } from "../components/split-button";
@@ -59,6 +60,8 @@ export function Gallery() {
   const [vtab, setVtab] = useState("a");
   const [kvValues, setKvValues] = useState<Record<string, string>>({ "limits.memory": "512MiB", "server.name": "ix" });
   const [kvSelected, setKvSelected] = useState<string[]>([]);
+  const [segmented, setSegmented] = useState<"container" | "virtual-machine">("container");
+  const [segmentedSize, setSegmentedSize] = useState<"sm" | "md" | "lg">("md");
   const [kvEnumValues, setKvEnumValues] = useState<Record<string, string>>({
     "snapshots.schedule": "@daily",
     "io.bus": "virtio-blk",
@@ -156,6 +159,30 @@ export function Gallery() {
         <Textarea label="Notes" placeholder="Optional" />
         <Checkbox label="Ephemeral" />
         <Switch checked onChange={() => {}} label="Auto start" />
+      </Section>
+
+      <Section title="SegmentedControl">
+        <SegmentedControl
+          label="Instance type"
+          value={segmented}
+          dataTestId="gallery-segmented"
+          onChange={setSegmented}
+          options={[
+            { value: "container", label: "Container", icon: <Box size={13} /> },
+            { value: "virtual-machine", label: "Virtual machine", icon: <Monitor size={13} /> },
+          ]}
+        />
+        <SegmentedControl
+          value={segmentedSize}
+          dataTestId="gallery-segmented-size"
+          ariaLabel="Size"
+          onChange={setSegmentedSize}
+          options={[
+            { value: "sm", label: "S" },
+            { value: "md", label: "M" },
+            { value: "lg", label: "L" },
+          ]}
+        />
       </Section>
 
       <Section title="Field errors">
