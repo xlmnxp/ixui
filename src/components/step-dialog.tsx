@@ -10,6 +10,8 @@ export interface Step {
   content: ReactNode;
   /** Return a message when the step can't be left yet; omit or return null/true when it's fine. */
   invalid?: string | null;
+  /** Hide the step-level hint when the offending field already shows the message itself. */
+  hideHint?: boolean;
 }
 
 export interface StepDialogProps {
@@ -119,7 +121,7 @@ export function StepDialog({
         })}
       </ol>
       <div data-testid={`step-content-${step.key}`}>{step.content}</div>
-      {step.invalid && (
+      {step.invalid && !step.hideHint && (
         <p role="alert" className="mt-3 text-xs text-text-tertiary" data-testid="step-hint">{step.invalid}</p>
       )}
       {last && submitBlocked && (

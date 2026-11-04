@@ -158,6 +158,23 @@ export function Gallery() {
         <Switch checked onChange={() => {}} label="Auto start" />
       </Section>
 
+      <Section title="Field errors">
+        <div className="w-64">
+          <Input
+            label="Instance name"
+            name="gallery-invalid-name"
+            defaultValue="web 1"
+            error="Name must contain only letters, numbers, and hyphens"
+          />
+        </div>
+        <div className="w-48">
+          <Select label="Project" name="gallery-invalid-project" defaultValue="" error="Pick a project">
+            <option value="">—</option>
+            <option value="default">default</option>
+          </Select>
+        </div>
+      </Section>
+
       <Section title="ColorPicker">
         <ColorPicker value={cpColor} onChange={setCpColor} dataTestId="gallery-colorpicker" />
       </Section>

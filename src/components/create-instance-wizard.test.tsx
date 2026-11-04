@@ -63,7 +63,9 @@ describe("CreateInstanceWizard", () => {
     const user = userEvent.setup();
     render(<CreateInstanceWizard open onClose={() => {}} />);
     await user.type(screen.getByTestId("wizard-name"), "bad name!");
-    expect(screen.getAllByText("Name must contain only letters, numbers, and hyphens").length).toBeGreaterThan(0);
+    // The message is attached under the field as an error chip, not a step hint.
+    expect(screen.getByTestId("input-error")).toHaveTextContent("Name must contain only letters, numbers, and hyphens");
+    expect(screen.queryByTestId("step-hint")).not.toBeInTheDocument();
     expect(screen.getByTestId("step-next")).toBeDisabled();
     await user.clear(screen.getByTestId("wizard-name"));
     await user.type(screen.getByTestId("wizard-name"), "web1");

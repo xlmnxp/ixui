@@ -30,6 +30,8 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
   const [project, setProject] = useState<string>(currentProject === ALL_PROJECTS ? "default" : currentProject);
   const [type, setType] = useState<"container" | "virtual-machine">("container");
   const [name, setName] = useState("");
+  /** Only surface the empty-name message once the user has interacted with the field. */
+  const [nameTouched, setNameTouched] = useState(false);
   const [description, setDescription] = useState("");
   const [picked, setPicked] = useState<PickedImage | null>(null);
   const [profiles, setProfiles] = useState<string[]>(["default"]);
@@ -44,6 +46,7 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
     if (!open) return;
     setType("container");
     setName("");
+    setNameTouched(false);
     setDescription("");
     setPicked(null);
     setProfiles(["default"]);
@@ -121,6 +124,7 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
       key: "basics",
       title: "Type & name",
       invalid: nameValid ? null : name ? nameError : "Enter an instance name",
+      hideHint: true,
       content: (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -138,7 +142,18 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
               </button>
             ))}
           </div>
-          <Input label="Name" name="wizard-name" data-testid="wizard-name" value={name} onChange={(e) => setName(e.target.value)} error={name && !nameValid ? nameError : undefined} />
+          <Input
+            label="Name"
+            name="wizard-name"
+            data-testid="wizard-name"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setNameTouched(true);
+            }}
+            onBlur={() => setNameTouched(true)}
+            error={nameValid ? undefined : name ? nameError : nameTouched ? "Enter an instance name" : undefined}
+          />
           <Input label="Description (optional)" name="wizard-description" data-testid="wizard-description" value={description} onChange={(e) => setDescription(e.target.value)} />
           <Select label="Project" name="wizard-project" data-testid="wizard-project" value={project} onChange={(e) => setProject(e.target.value)}>
             {projects.map((p) => (
