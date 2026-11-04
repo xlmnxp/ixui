@@ -24,6 +24,8 @@ export interface StepDialogProps {
   submitIcon?: ReactNode;
   busy?: boolean;
   wide?: boolean;
+  /** Width tier passed through to the dialog; "xl" suits pickers and tables. */
+  size?: "default" | "wide" | "xl";
   /** Edit flows let people jump straight to any step; create flows must go in order. */
   freeNavigation?: boolean;
 }
@@ -38,6 +40,7 @@ export function StepDialog({
   submitIcon = <Save size={14} />,
   busy = false,
   wide = false,
+  size,
   freeNavigation = false,
 }: StepDialogProps) {
   const [index, setIndex] = useState(0);
@@ -74,6 +77,7 @@ export function StepDialog({
       onClose={onClose}
       title={title}
       wide={wide}
+      size={size}
       footer={
         <div className="flex w-full items-center justify-between gap-2">
           <Button variant="ghost" onClick={onClose} data-testid="step-cancel"><X size={14} /> Cancel</Button>
