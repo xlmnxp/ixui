@@ -17,9 +17,10 @@ export function ColorPicker({ value, onChange, colors = DEFAULT_COLORS, allowNon
           type="button"
           data-testid={`${dataTestId}-${c}`}
           aria-label={`Color ${c}`}
+          aria-pressed={value === c}
           onClick={() => onChange(value === c ? "" : c)}
           className={`h-6 w-6 rounded-full border-2 transition-transform hover:scale-110 ${
-            value === c ? "border-white scale-110" : "border-transparent"
+            value === c ? "border-text-primary scale-110" : "border-transparent"
           }`}
           style={{ background: c }}
         />
@@ -29,8 +30,9 @@ export function ColorPicker({ value, onChange, colors = DEFAULT_COLORS, allowNon
           type="button"
           data-testid={`${dataTestId}-none`}
           onClick={() => onChange("")}
+          aria-pressed={!value}
           className={`relative ml-1 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-transform hover:scale-110 ${
-            !value ? "border-white scale-110" : "border-transparent"
+            !value ? "border-text-primary scale-110" : "border-transparent"
           }`}
           aria-label="No color"
         >
