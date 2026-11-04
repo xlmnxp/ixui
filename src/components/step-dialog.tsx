@@ -32,8 +32,8 @@ export interface StepDialogProps {
   subtitle?: string;
   /** Window width in px when windowMode is set (default 1120). */
   windowWidth?: number;
-  /** Window body height in px when windowMode is set (default 620). */
-  windowBodyHeight?: number;
+  /** Window body height (px or any CSS length) when windowMode is set (default 620). */
+  windowBodyHeight?: number | string;
   /** Edit flows let people jump straight to any step; create flows must go in order. */
   freeNavigation?: boolean;
 }

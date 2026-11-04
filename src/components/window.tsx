@@ -13,8 +13,8 @@ export interface WindowProps {
   footer?: ReactNode;
   /** Panel width in px (default 640). */
   width?: number;
-  /** Body max height in px (default 420). */
-  bodyMaxHeight?: number;
+  /** Body max height: px number or any CSS length (default 420). */
+  bodyMaxHeight?: number | string;
 }
 
 interface DragState {
@@ -94,7 +94,12 @@ export function Window({ open, onClose, title, subtitle, children, footer, width
             <X size={16} />
           </button>
         </div>
-        <div className="overflow-auto p-4 text-sm text-text-secondary" style={{ maxHeight: `${bodyMaxHeight}px` }}>{children}</div>
+        <div
+          className="overflow-auto p-4 text-sm text-text-secondary"
+          style={{ maxHeight: typeof bodyMaxHeight === "number" ? `${bodyMaxHeight}px` : bodyMaxHeight }}
+        >
+          {children}
+        </div>
         {footer && <div className="flex justify-end gap-2 border-t border-border bg-surface-900 px-4 py-3">{footer}</div>}
       </div>
     </div>,

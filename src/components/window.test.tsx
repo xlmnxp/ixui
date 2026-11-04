@@ -18,6 +18,27 @@ describe("Window", () => {
     expect(screen.getByRole("button", { name: "Go" })).toBeInTheDocument();
   });
 
+  it("accepts a CSS length for the body height so it can follow the viewport", () => {
+    render(
+      <Window open onClose={() => {}} title="T" bodyMaxHeight="min(700px, calc(100vh - 190px))">
+        <p>body</p>
+      </Window>
+    );
+    const body = screen.getByText("body").parentElement;
+    // jsdom normalises calc(), so assert the viewport unit survived.
+    expect(body?.style.maxHeight).toContain("100vh");
+    expect(body?.style.maxHeight).not.toMatch(/^\d+px$/);
+  });
+
+  it("still accepts a pixel number for the body height", () => {
+    render(
+      <Window open onClose={() => {}} title="T" bodyMaxHeight={420}>
+        <p>body</p>
+      </Window>
+    );
+    expect(screen.getByText("body").parentElement?.style.maxHeight).toBe("420px");
+  });
+
   it("closes on backdrop click", () => {
     const onClose = vi.fn();
     render(<Window open onClose={onClose} title="T">x</Window>);

@@ -236,7 +236,7 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
       busy={busy}
       windowMode
       windowWidth={1120}
-      windowBodyHeight={700}
+      windowBodyHeight="min(700px, calc(100vh - 190px))"
       submitLabel="Create"
       submitIcon={<Plus size={14} />}
       onSubmit={create}
