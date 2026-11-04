@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Box, Monitor, Plus } from "lucide-react";
+import { Box, Monitor, Plus, RefreshCw } from "lucide-react";
 import { ReviewList, StepDialog } from "./step-dialog";
 import type { Step } from "./step-dialog";
 import { Input } from "./input";
@@ -42,12 +42,17 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
   const [profileList, setProfileList] = useState<Profile[]>([]);
   const [networkList, setNetworkList] = useState<Network[]>([]);
   const [busy, setBusy] = useState(false);
+  /** Live text while the create operation runs ("Creating instance", "Downloading image", …). */
+  const [progress, setProgress] = useState<string>("");
+  const [createError, setCreateError] = useState<string>("");
 
   useEffect(() => {
     if (!open) return;
     setType("container");
     setName("");
     setNameTouched(false);
+    setCreateError("");
+    setProgress("");
     setDescription("");
     setPicked(null);
     setProfiles(["default"]);
@@ -87,6 +92,8 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
   const create = async () => {
     if (!nameValid || !picked) return;
     setBusy(true);
+    setCreateError("");
+    setProgress("Creating instance");
     try {
       const config: Record<string, string> = {};
       if (memory.trim()) config[LIMIT_KEYS.memory] = memory.trim();
@@ -107,16 +114,28 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
         devices,
       }, targetMember, project);
       if (result && "type" in result && result.type === "async") {
-        const op = await operationsApi.wait(result.operation);
-        if (op.status !== "Success") throw new Error(op.err ?? "Create failed");
+        // Wait with live progress: image downloads can take minutes, and the
+        // window must stay open (with the operation state) until it settles.
+        const op = await operationsApi.wait(result.operation, {
+          onUpdate: (current) => {
+            if (current.description) setProgress(current.description);
+          },
+        });
+        if (op.status !== "Success") throw new Error(op.err || "Create failed");
       }
+      setProgress("Created");
       toast("success", `Instance ${name.trim()} created`);
       void loadInstances(project).catch(() => {});
       onClose();
     } catch (err) {
-      toast("danger", err instanceof Error ? err.message : "Create failed");
+      // Keep the window open so the failure is visible where it happened, and
+      // still raise a toast for people who navigated away from the last step.
+      const message = err instanceof Error ? err.message : "Create failed";
+      setCreateError(message);
+      toast("danger", message);
     } finally {
       setBusy(false);
+      setProgress("");
     }
   };
 
@@ -222,6 +241,17 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
               ...(targetMember ? [{ label: "Target member", value: targetMember }] : []),
             ]}
           />
+          {busy && (
+            <p className="mt-3 flex items-center gap-2 text-xs text-text-secondary" data-testid="wizard-progress">
+              <RefreshCw size={12} className="animate-spin" />
+              {progress || "Creating instance"}…
+            </p>
+          )}
+          {createError && (
+            <p className="mt-3 rounded bg-danger/10 px-2 py-1 text-xs text-red-300" role="alert" data-testid="wizard-create-error">
+              {createError}
+            </p>
+          )}
         </div>
       ),
     },

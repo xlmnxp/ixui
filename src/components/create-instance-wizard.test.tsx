@@ -174,6 +174,30 @@ describe("CreateInstanceWizard", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it("shows the live operation state and the error in the window", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const { operationsApi } = await import("../api");
+    vi.mocked(operationsApi.wait).mockImplementationOnce(async (_id, opts) => {
+      opts?.onUpdate?.({
+        id: "op1", class: "task", description: "Downloading image", status: "Running", status_code: 103,
+        created_at: "", updated_at: "", may_cancel: false,
+      } as Operation);
+      return {
+        id: "op1", class: "task", description: "", status: "Failure", status_code: 400,
+        created_at: "", updated_at: "", may_cancel: false, err: "no space left",
+      } as Operation;
+    });
+    render(<CreateInstanceWizard open onClose={onClose} />);
+    await goToStage4(user);
+    await user.click(screen.getByTestId("step-submit"));
+    // The window stays open and reports the failure inline.
+    expect(await screen.findByTestId("wizard-create-error")).toHaveTextContent("no space left");
+    expect(onClose).not.toHaveBeenCalled();
+    // Progress follows the operation description while it runs.
+    expect(vi.mocked(operationsApi.wait).mock.calls.at(-1)?.[1]?.onUpdate).toBeTypeOf("function");
+  });
+
   it("resets state when reopened", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<CreateInstanceWizard open onClose={() => {}} />);

@@ -103,7 +103,7 @@ describe("API endpoints", () => {
     await serverApi.info();
     await operationsApi.wait("op1");
     expect(fetchMock.mock.calls[0]![0]).toBe("/1.0");
-    expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/operations/op1/wait");
+    expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/operations/op1");
   });
 
   it("server info returns the config from the sync metadata", async () => {
@@ -346,9 +346,9 @@ describe("API endpoints", () => {
     const fetchMock = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(200, {})));
     vi.stubGlobal("fetch", fetchMock);
     await operationsApi.wait("/1.0/operations/abc123");
-    expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/operations/abc123/wait");
+    expect(fetchMock.mock.calls[0]![0]).toBe("/1.0/operations/abc123");
     await operationsApi.wait("abc123");
-    expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/operations/abc123/wait");
+    expect(fetchMock.mock.calls[1]![0]).toBe("/1.0/operations/abc123");
   });
 
   it("backups exportUrl returns the base-qualified download path", () => {
