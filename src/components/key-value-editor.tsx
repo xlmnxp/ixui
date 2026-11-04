@@ -25,7 +25,26 @@ export interface KeyValueEditorProps {
   stickyHeaderOffset?: number;
   /** Draw a rounded border around the editor so nested editors stand out inside outer tables (default false). */
   bordered?: boolean;
+  /**
+   * Extra value suggestions, keyed by the config key or its last segment
+   * (e.g. "parent", "pool"). Pages pass live infrastructure names here.
+   */
+  valueOptions?: Record<string, string[]>;
 }
+
+/** Known valid values for common Incus keys — used for type-aware completion. */
+const KNOWN_VALUES: Record<string, string[]> = {
+  "snapshots.schedule": ["@hourly", "@daily", "@weekly", "@monthly", "@yearly", "@startup", "@never"],
+  "snapshots.expiry": ["1d", "3d", "7d", "2w", "1M", "1y"],
+  "snapshots.pattern": ["snap%d", "snap%d-%Y%m%d"],
+  "snapshots.schedule.stopped": ["true", "false"],
+  nictype: ["bridged", "macvlan", "ipvlan", "p2p", "routed", "ovn", "physical", "sriov"],
+  type: ["disk", "nic", "proxy", "gpu", "usb", "pci", "tpm", "none"],
+  action: ["allow", "drop", "reject"],
+  state: ["enabled", "disabled", "logged"],
+};
+
+const lastSegment = (key: string): string => key.split(".").pop() ?? key;
 
 export function KeyValueEditor({
   values,
@@ -40,6 +59,7 @@ export function KeyValueEditor({
   stickyHeader = false,
   stickyHeaderOffset = 0,
   bordered = false,
+  valueOptions,
 }: KeyValueEditorProps) {
   const [internalSelected, setInternalSelected] = useState<string[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
@@ -54,6 +74,9 @@ export function KeyValueEditor({
   const effectiveDescriptions = descriptions ?? metadataDescriptions;
   const effectiveLongs = descriptions === undefined ? metadataLongs : undefined;
   const [suggestionIndex, setSuggestionIndex] = useState(-1);
+  const [valueSuggestionIndex, setValueSuggestionIndex] = useState(-1);
+  /** True once the user has typed in the value field (suppresses eager dropdowns). */
+  const [valueTouched, setValueTouched] = useState(false);
 
   useEffect(() => {
     if (descriptions === undefined) loadMetadata();
@@ -71,6 +94,55 @@ export function KeyValueEditor({
       })
       .slice(0, 8);
   }, [draftKey, effectiveDescriptions]);
+
+  /**
+   * Value completions for the row being edited, derived from the key's type,
+   * the values already used by sibling keys, and any options the page supplied.
+   */
+  const { valueSuggestions, hasKnownValueOptions } = useMemo(() => {
+    const empty = { valueSuggestions: [] as string[], hasKnownValueOptions: false };
+    if (editing === null || editing === DESCRIPTION_ROW) return empty;
+    const key = draftKey;
+    if (!key) return empty;
+    // Booleans render a Switch, and numbers get no meaningful completions.
+    const type = metadataTypes[key];
+    if (type === "bool") return empty;
+
+    const segment = lastSegment(key);
+    const known = [...(KNOWN_VALUES[key] ?? []), ...(KNOWN_VALUES[segment] ?? [])];
+    const provided = [...(valueOptions?.[key] ?? []), ...(valueOptions?.[segment] ?? [])];
+    const fromSiblings = Object.entries(displayValues)
+      .filter(([otherKey, value]) => value !== "" && otherKey !== key && lastSegment(otherKey) === segment)
+      .map(([, value]) => value);
+
+    const candidates = new Set<string>([...known, ...provided, ...fromSiblings]);
+    candidates.delete(draftValue);
+    // Only narrow by what the user actually typed — the prefilled current value
+    // would otherwise filter every candidate out.
+    const needle = valueTouched ? draftValue.trim().toLowerCase() : "";
+    const matches = [...candidates].filter((value) => !needle || value.toLowerCase().includes(needle));
+    const sorted = matches.sort((a, b) => {
+      const aPrefix = needle && a.toLowerCase().startsWith(needle) ? 0 : 1;
+      const bPrefix = needle && b.toLowerCase().startsWith(needle) ? 0 : 1;
+      return aPrefix - bPrefix || a.localeCompare(b);
+    });
+    return { valueSuggestions: sorted.slice(0, 8), hasKnownValueOptions: known.length > 0 || provided.length > 0 };
+  }, [editing, draftKey, draftValue, valueTouched, metadataTypes, valueOptions, displayValues]);
+
+  // Show completions once the user types, or immediately for keys with a known value set.
+  const showValueSuggestions =
+    valueSuggestions.length > 0 &&
+    metadataTypes[draftKey] !== "bool" &&
+    (valueTouched || hasKnownValueOptions);
+
+  const applyValueSuggestion = (rowKey: string, value: string) => {
+    setDraftValue(value);
+    setValueTouched(true);
+    setValueSuggestionIndex(-1);
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLInputElement>(`[data-testid="kv-value-edit-${rowKey}"]`)?.focus();
+    });
+  };
 
   // Open the suggestion dropdown upward when there is no room below the row.
   const [suggestionsUp, setSuggestionsUp] = useState(false);
@@ -124,6 +196,9 @@ export function KeyValueEditor({
     editingRef.current = key;
     setDraftKey(key === DESCRIPTION_ROW ? "Description" : key);
     setDraftValue(key === DESCRIPTION_ROW ? (description ?? "") : (values[key] ?? ""));
+    setValueTouched(false);
+    setValueSuggestionIndex(-1);
+    setSuggestionIndex(-1);
     setEditing(key);
   };
 
@@ -308,15 +383,35 @@ export function KeyValueEditor({
       );
     }
     return (
-      <div className="flex items-center gap-1.5">
+      <div className="relative">
         <input
           data-testid={`kv-value-edit-${rowKey}`}
           data-kv-edit-row={rowKey}
           inputMode={valueType === "integer" ? "numeric" : undefined}
           className="h-7 w-full rounded border border-border bg-surface-500 px-1.5 text-sm text-text-primary focus:border-accent-500 focus:outline-none"
           value={draftValue}
-          onChange={(e) => setDraftValue(e.target.value)}
+          onChange={(e) => {
+            setDraftValue(e.target.value);
+            setValueTouched(true);
+            setValueSuggestionIndex(-1);
+          }}
           onKeyDown={(e) => {
+            if (showValueSuggestions && e.key === "ArrowDown") {
+              e.preventDefault();
+              setValueSuggestionIndex((i) => Math.min(i + 1, valueSuggestions.length - 1));
+              return;
+            }
+            if (showValueSuggestions && e.key === "ArrowUp") {
+              e.preventDefault();
+              setValueSuggestionIndex((i) => Math.max(i - 1, -1));
+              return;
+            }
+            if (showValueSuggestions && e.key === "Enter" && valueSuggestionIndex >= 0 && valueSuggestionIndex < valueSuggestions.length) {
+              e.preventDefault();
+              const chosen = valueSuggestions[valueSuggestionIndex];
+              if (chosen !== undefined) commitEdit(rowKey, draftKey, chosen);
+              return;
+            }
             if (e.key === "Enter") commitEdit(rowKey, draftKey, draftValue);
             if (e.key === "Escape") cancelEdit();
           }}
@@ -328,6 +423,34 @@ export function KeyValueEditor({
           }}
           aria-label={`Edit value ${rowKey}`}
         />
+        {showValueSuggestions && (
+          <div
+            className="absolute left-0 top-full z-20 mt-1 w-64 overflow-hidden rounded border border-border bg-surface-700 shadow-xl"
+            data-testid="kv-value-suggestions"
+          >
+            {valueSuggestions.map((value, i) => (
+              <button
+                type="button"
+                key={value}
+                data-testid={`kv-value-suggest-${value}`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  applyValueSuggestion(rowKey, value);
+                }}
+                className={`flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-xs text-text-primary ${
+                  i === valueSuggestionIndex ? "bg-surface-600" : "hover:bg-surface-600"
+                }`}
+              >
+                <span className="truncate font-mono">{value}</span>
+                {metadataTypes[draftKey] && (
+                  <span className="shrink-0 rounded bg-surface-500 px-1 text-[10px] text-text-tertiary">
+                    {metadataTypes[draftKey]}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     );
   };

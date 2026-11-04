@@ -297,4 +297,60 @@ describe("KeyValueEditor", () => {
     expect(screen.getByTestId("kv-key-key1")).toHaveTextContent("Memory limit");
     expect(screen.getByTestId("kv-value-key1")).not.toHaveTextContent("Memory limit");
   });
+
+  it("suggests known values for a key with an enumerable type", async () => {
+    const user = userEvent.setup();
+    render(<KeyValueEditor values={{ "snapshots.schedule": "@daily" }} onChange={() => {}} />);
+    await user.dblClick(screen.getByTestId("kv-value-snapshots.schedule"));
+    const list = await screen.findByTestId("kv-value-suggestions");
+    expect(list).toBeInTheDocument();
+    // The current value is excluded, the other schedule aliases are offered.
+    expect(screen.getByTestId("kv-value-suggest-@hourly")).toBeInTheDocument();
+    expect(screen.queryByTestId("kv-value-suggest-@daily")).not.toBeInTheDocument();
+  });
+
+  it("suggests values already used by sibling keys with the same property", async () => {
+    const user = userEvent.setup();
+    render(
+      <KeyValueEditor
+        values={{ "devices.eth0.parent": "br0", "devices.eth1.parent": "" }}
+        onChange={() => {}}
+      />
+    );
+    await user.dblClick(screen.getByTestId("kv-value-devices.eth1.parent"));
+    // Nothing shows until the user types for content-derived suggestions.
+    expect(screen.queryByTestId("kv-value-suggestions")).not.toBeInTheDocument();
+    await user.type(screen.getByTestId("kv-value-edit-devices.eth1.parent"), "b");
+    expect(await screen.findByTestId("kv-value-suggest-br0")).toBeInTheDocument();
+  });
+
+  it("uses valueOptions supplied by the page", async () => {
+    const user = userEvent.setup();
+    render(
+      <KeyValueEditor
+        values={{ "devices.disk0.pool": "" }}
+        onChange={() => {}}
+        valueOptions={{ pool: ["local", "remote-state"] }}
+      />
+    );
+    await user.dblClick(screen.getByTestId("kv-value-devices.disk0.pool"));
+    // Supplied options are known up-front, so the dropdown opens without typing.
+    expect(await screen.findByTestId("kv-value-suggest-local")).toBeInTheDocument();
+    expect(screen.getByTestId("kv-value-suggest-remote-state")).toBeInTheDocument();
+  });
+
+  it("applies a value suggestion with the keyboard and commits it", async () => {
+    const user = userEvent.setup();
+    render(
+      <KeyValueEditor
+        values={{ "snapshots.schedule": "@daily" }}
+        onChange={() => {}}
+      />
+    );
+    await user.dblClick(screen.getByTestId("kv-value-snapshots.schedule"));
+    await screen.findByTestId("kv-value-suggestions");
+    await user.keyboard("{ArrowDown}{Enter}");
+    // The highlighted alias is committed to the row.
+    expect(await screen.findByTestId("kv-value-snapshots.schedule")).toHaveTextContent("@hourly");
+  });
 });

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, Pencil, Trash2, X } from "lucide-react";
-import { instancesApi } from "../../api";
+import { infraApi, instancesApi } from "../../api";
 import type { Instance } from "../../api/types";
 import { KeyValueEditor } from "../../components/key-value-editor";
 import { Loading } from "../../components/loading";
@@ -41,12 +41,37 @@ export function DevicesTab({ instanceName, project, registerActions }: DevicesTa
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
+  /** Live infrastructure names offered as device property values. */
+  const [valueOptions, setValueOptions] = useState<Record<string, string[]>>({});
 
   const refresh = useCallback(() => {
     instancesApi.get(instanceName, project).then(setInstance).catch(() => {});
   }, [instanceName, project]);
 
   useEffect(refresh, [refresh]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [pools, networks] = await Promise.all([infraApi.listPools(), infraApi.listNetworks()]);
+        if (cancelled) return;
+        const poolNames = pools.map((p) => p.name);
+        const networkNames = networks.map((n) => n.name);
+        setValueOptions({
+          pool: poolNames,
+          source: poolNames,
+          network: networkNames,
+          parent: networkNames,
+        });
+      } catch {
+        // Suggestions are a convenience; ignore failures (e.g. restricted perms).
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const openAdd = useCallback(() => {
     setEditingName(null);
@@ -162,7 +187,7 @@ export function DevicesTab({ instanceName, project, registerActions }: DevicesTa
                   <td data-testid={`device-name-${name}`} className="px-2 py-2 align-top font-mono text-xs text-text-primary">{name}</td>
                   <td data-testid={`device-type-${name}`} className="px-2 py-2 align-top text-xs text-text-secondary">{type ?? "none"}</td>
                   <td className="px-2 py-2">
-                    <KeyValueEditor values={rest} onChange={(v) => void updateProps(name, v)} dataTestId={`device-props-${name}`} showToolbar={false} bordered />
+                    <KeyValueEditor values={rest} onChange={(v) => void updateProps(name, v)} dataTestId={`device-props-${name}`} showToolbar={false} bordered valueOptions={valueOptions} />
                   </td>
                   <td className="px-2 py-2 align-top">
                     <div className="flex justify-end gap-1">
@@ -195,7 +220,7 @@ export function DevicesTab({ instanceName, project, registerActions }: DevicesTa
               <option key={t} value={t}>{t}</option>
             ))}
           </Select>
-          <KeyValueEditor values={draftProps} onChange={setDraftProps} dataTestId="device-props-editor" showToolbar={false} />
+          <KeyValueEditor values={draftProps} onChange={setDraftProps} dataTestId="device-props-editor" showToolbar={false} valueOptions={valueOptions} />
           {error && <p className="text-xs text-red-300" data-testid="device-error">{error}</p>}
         </div>
       </Dialog>
