@@ -305,7 +305,7 @@ export function ImagePicker({ type, cloudInitEnabled, value = null, onSelect, al
   );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex items-end gap-2">
         <div className="flex-1">
           <Select label="Remote" name="picker-remote" data-testid="picker-remote" value={remote} onChange={(e) => changeRemote(e.target.value)}>
@@ -386,7 +386,7 @@ export function ImagePicker({ type, cloudInitEnabled, value = null, onSelect, al
           {catalog === null && !catalogLoading && (
             <p className="text-[11px] text-text-tertiary">Offline — showing bundled image list.</p>
           )}
-          <div className="max-h-96 overflow-auto rounded border border-border" data-testid="picker-list">
+          <div className="max-h-80 overflow-auto rounded border border-border" data-testid="picker-list">
             {grouped.length === 0 && <p className="py-6 text-center text-xs text-text-tertiary">No matching images.</p>}
             {grouped.map(([os, osRows]) => (
               <div key={os} className="divide-y divide-border">
