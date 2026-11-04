@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
 import { Badge } from "./badge";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
@@ -109,6 +109,8 @@ export function KeyValueEditor({
   const [valueSuggestionIndex, setValueSuggestionIndex] = useState(-1);
   /** True once the user has typed in the value field (suppresses eager dropdowns). */
   const [valueTouched, setValueTouched] = useState(false);
+  /** Dropdown visibility for enumerated values; null means "open when the key has options". */
+  const [valueListOpen, setValueListOpen] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (descriptions === undefined) loadMetadata();
@@ -180,20 +182,26 @@ export function KeyValueEditor({
     displayValues,
   ]);
 
-  // Show completions once the user types, or immediately for keys with a known value set.
+  // Keys with an enumerated value set render as a combobox (open by default);
+  // otherwise completions appear once the user starts typing.
+  const isValueCombobox = hasKnownValueOptions && valueSuggestions.length > 0 && metadataTypes[draftKey] !== "bool";
   const showValueSuggestions =
     valueSuggestions.length > 0 &&
     metadataTypes[draftKey] !== "bool" &&
-    (valueTouched || hasKnownValueOptions);
+    (valueListOpen ?? isValueCombobox) &&
+    (valueTouched || isValueCombobox || valueListOpen === true);
 
   const applyValueSuggestion = (rowKey: string, value: string) => {
     setDraftValue(value);
     setValueTouched(true);
+    setValueListOpen(false);
     setValueSuggestionIndex(-1);
     requestAnimationFrame(() => {
       document.querySelector<HTMLInputElement>(`[data-testid="kv-value-edit-${rowKey}"]`)?.focus();
     });
   };
+
+  const toggleValueList = () => setValueListOpen(!(valueListOpen ?? isValueCombobox));
 
   // Open the suggestion dropdown upward when there is no room below the row.
   const [suggestionsUp, setSuggestionsUp] = useState(false);
@@ -248,6 +256,7 @@ export function KeyValueEditor({
     setDraftKey(key === DESCRIPTION_ROW ? "Description" : key);
     setDraftValue(key === DESCRIPTION_ROW ? (description ?? "") : (values[key] ?? ""));
     setValueTouched(false);
+    setValueListOpen(null);
     setValueSuggestionIndex(-1);
     setSuggestionIndex(-1);
     setEditing(key);
@@ -439,11 +448,14 @@ export function KeyValueEditor({
           data-testid={`kv-value-edit-${rowKey}`}
           data-kv-edit-row={rowKey}
           inputMode={valueType === "integer" ? "numeric" : undefined}
-          className="h-7 w-full rounded border border-border bg-surface-500 px-1.5 text-sm text-text-primary focus:border-accent-500 focus:outline-none"
+          className={`h-7 w-full rounded border border-border bg-surface-500 px-1.5 text-sm text-text-primary focus:border-accent-500 focus:outline-none ${
+            isValueCombobox ? "pr-6" : ""
+          }`}
           value={draftValue}
           onChange={(e) => {
             setDraftValue(e.target.value);
             setValueTouched(true);
+            setValueListOpen(true);
             setValueSuggestionIndex(-1);
           }}
           onKeyDown={(e) => {
@@ -464,7 +476,15 @@ export function KeyValueEditor({
               return;
             }
             if (e.key === "Enter") commitEdit(rowKey, draftKey, draftValue);
-            if (e.key === "Escape") cancelEdit();
+            if (e.key === "Escape") {
+              // Close the dropdown first; a second Escape cancels the edit.
+              if (showValueSuggestions) {
+                setValueListOpen(false);
+                setValueSuggestionIndex(-1);
+              } else {
+                cancelEdit();
+              }
+            }
           }}
           onBlur={(e) => {
             if (editingRef.current !== rowKey) return;
@@ -474,6 +494,22 @@ export function KeyValueEditor({
           }}
           aria-label={`Edit value ${rowKey}`}
         />
+        {isValueCombobox && (
+          <button
+            type="button"
+            data-testid={`kv-value-toggle-${rowKey}`}
+            aria-label={showValueSuggestions ? "Hide value options" : "Show value options"}
+            aria-expanded={showValueSuggestions}
+            onMouseDown={(e) => {
+              // Keep focus in the input so blur does not commit the edit.
+              e.preventDefault();
+              toggleValueList();
+            }}
+            className="absolute right-0.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-tertiary hover:text-text-primary"
+          >
+            <ChevronDown size={12} className={showValueSuggestions ? "rotate-180" : ""} />
+          </button>
+        )}
         {showValueSuggestions && (
           <div
             className="absolute left-0 top-full z-20 mt-1 w-64 overflow-hidden rounded border border-border bg-surface-700 shadow-xl"

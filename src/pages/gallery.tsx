@@ -59,6 +59,12 @@ export function Gallery() {
   const [vtab, setVtab] = useState("a");
   const [kvValues, setKvValues] = useState<Record<string, string>>({ "limits.memory": "512MiB", "server.name": "ix" });
   const [kvSelected, setKvSelected] = useState<string[]>([]);
+  const [kvEnumValues, setKvEnumValues] = useState<Record<string, string>>({
+    "snapshots.schedule": "@daily",
+    "io.bus": "virtio-blk",
+    nictype: "bridged",
+    "limits.memory": "512MiB",
+  });
   const [explorerCwd, setExplorerCwd] = useState("/srv/www");
   const [explorerHistory, setExplorerHistory] = useState<string[]>(["/srv/www"]);
   const [explorerIndex, setExplorerIndex] = useState(0);
@@ -463,6 +469,22 @@ export function Gallery() {
             dataTestId="gallery-kv-bordered"
             showToolbar={false}
             bordered
+          />
+        </div>
+        <div className="w-full rounded border border-border p-2">
+          <p className="mb-2 text-[11px] text-text-tertiary">
+            Enumerated values — double-click a value to edit. Keys with a known set (here schedule,
+            io.bus, nictype) render as a combobox: pick from the list or type anything.
+          </p>
+          <KeyValueEditor
+            values={kvEnumValues}
+            onChange={setKvEnumValues}
+            dataTestId="gallery-kv-enum"
+            showToolbar={false}
+            valueOptions={{
+              schedule: ["@hourly", "@daily", "@weekly", "@monthly"],
+              bus: ["nvme", "virtio-blk", "virtio-scsi", "usb", "9p", "auto"],
+            }}
           />
         </div>
       </Section>

@@ -369,6 +369,33 @@ describe("KeyValueEditor", () => {
     expect(screen.getByTestId("kv-value-suggest-remote-state")).toBeInTheDocument();
   });
 
+  it("renders enumerated values as a combobox that still accepts free text", async () => {
+    const user = userEvent.setup();
+    const changes: Record<string, string>[] = [];
+    render(
+      <KeyValueEditor
+        values={{ "snapshots.schedule": "@daily" }}
+        onChange={(next) => changes.push(next)}
+      />
+    );
+    await user.dblClick(screen.getByTestId("kv-value-snapshots.schedule"));
+    // The field exposes a dropdown toggle and opens with the documented options.
+    const toggle = await screen.findByTestId("kv-value-toggle-snapshots.schedule");
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId("kv-value-suggestions")).toBeInTheDocument();
+
+    // Collapsing hides the list but keeps the editable input.
+    await user.click(toggle);
+    expect(screen.queryByTestId("kv-value-suggestions")).not.toBeInTheDocument();
+    expect(screen.getByTestId("kv-value-edit-snapshots.schedule")).toBeInTheDocument();
+
+    // Free text that is not an option is still committed.
+    const input = screen.getByTestId("kv-value-edit-snapshots.schedule");
+    await user.clear(input);
+    await user.type(input, "0 3 * * *{Enter}");
+    expect(changes.at(-1)?.["snapshots.schedule"]).toBe("0 3 * * *");
+  });
+
   it("applies a value suggestion with the keyboard and commits it", async () => {
     const user = userEvent.setup();
     render(
