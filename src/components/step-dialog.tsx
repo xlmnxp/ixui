@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Save, X } from "lucide-react";
 import { Dialog } from "./dialog";
+import { Window } from "./window";
 import { Button } from "./button";
 
 export interface Step {
@@ -26,6 +27,13 @@ export interface StepDialogProps {
   wide?: boolean;
   /** Width tier passed through to the dialog; "xl" suits pickers and tables. */
   size?: "default" | "wide" | "xl";
+  /** Render in the draggable Window shell (the large surface used across the app). */
+  windowMode?: boolean;
+  subtitle?: string;
+  /** Window width in px when windowMode is set (default 1120). */
+  windowWidth?: number;
+  /** Window body height in px when windowMode is set (default 620). */
+  windowBodyHeight?: number;
   /** Edit flows let people jump straight to any step; create flows must go in order. */
   freeNavigation?: boolean;
 }
@@ -41,6 +49,10 @@ export function StepDialog({
   busy = false,
   wide = false,
   size,
+  windowMode = false,
+  subtitle,
+  windowWidth = 1120,
+  windowBodyHeight = 620,
   freeNavigation = false,
 }: StepDialogProps) {
   const [index, setIndex] = useState(0);
@@ -71,29 +83,24 @@ export function StepDialog({
 
   const submitBlocked = firstInvalid !== -1;
 
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title={title}
-      wide={wide}
-      size={size}
-      footer={
-        <div className="flex w-full items-center justify-between gap-2">
-          <Button variant="ghost" onClick={onClose} data-testid="step-cancel"><X size={14} /> Cancel</Button>
-          <div className="flex items-center gap-2">
-            {index > 0 && (
-              <Button variant="secondary" onClick={() => goTo(index - 1)} data-testid="step-back"><ArrowLeft size={14} /> Back</Button>
-            )}
-            {last ? (
-              <Button onClick={onSubmit} loading={busy} disabled={submitBlocked} data-testid="step-submit">{submitIcon} {submitLabel}</Button>
-            ) : (
-              <Button onClick={() => goTo(index + 1)} disabled={Boolean(step.invalid)} data-testid="step-next">Next <ArrowRight size={14} /></Button>
-            )}
-          </div>
-        </div>
-      }
-    >
+  const footerNode = (
+    <div className="flex w-full items-center justify-between gap-2">
+      <Button variant="ghost" onClick={onClose} data-testid="step-cancel"><X size={14} /> Cancel</Button>
+      <div className="flex items-center gap-2">
+        {index > 0 && (
+          <Button variant="secondary" onClick={() => goTo(index - 1)} data-testid="step-back"><ArrowLeft size={14} /> Back</Button>
+        )}
+        {last ? (
+          <Button onClick={onSubmit} loading={busy} disabled={submitBlocked} data-testid="step-submit">{submitIcon} {submitLabel}</Button>
+        ) : (
+          <Button onClick={() => goTo(index + 1)} disabled={Boolean(step.invalid)} data-testid="step-next">Next <ArrowRight size={14} /></Button>
+        )}
+      </div>
+    </div>
+  );
+
+  const body = (
+    <>
       <ol className="mb-4 flex items-center gap-1 text-xs" aria-label="Steps" data-testid="stepper">
         {steps.map((s, i) => {
           // Progress ticks only make sense when creating; when editing, every step already has a value.
@@ -133,6 +140,28 @@ export function StepDialog({
           Finish “{steps[firstInvalid]!.title}” first: {steps[firstInvalid]!.invalid}
         </p>
       )}
+    </>
+  );
+
+  if (windowMode) {
+    return (
+      <Window
+        open={open}
+        onClose={onClose}
+        title={title}
+        subtitle={subtitle}
+        width={windowWidth}
+        bodyMaxHeight={windowBodyHeight}
+        footer={footerNode}
+      >
+        {body}
+      </Window>
+    );
+  }
+
+  return (
+    <Dialog open={open} onClose={onClose} title={title} wide={wide} size={size} footer={footerNode}>
+      {body}
     </Dialog>
   );
 }
