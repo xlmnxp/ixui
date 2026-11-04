@@ -1,5 +1,11 @@
 # Changelog
 
+## 26.11.0 (2026-11-04)
+
+### Bug fixes
+
+- **instances:** don't show loopback as an instance's IP address (4d7d896)
+
 ## 26.10.0 (2026-10-06)
 
 ### Features
