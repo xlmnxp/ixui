@@ -82,15 +82,17 @@ export function TaskLog({ collapsed, onToggle }: TaskLogProps) {
           <p className="px-3 pb-2 text-xs text-text-tertiary">No operations.</p>
         ) : (
           <ul className="divide-y divide-border">
-            {operations.map((op) => (
+            {operations.map((op) => {
+              const percent = operationProgress(op);
+              return (
               <li key={op.id} className="flex items-center gap-3 px-3 py-1.5" data-testid="tasklog-entry">
                 <Badge tone={statusTone[op.status]}>{op.status}</Badge>
                 <span className="flex-1 truncate text-xs text-text-primary">{op.description}</span>
                 {op.status === "Running" && (
                   <div className="flex w-36 items-center gap-2" data-testid={`tasklog-progress-${op.id}`}>
-                    <Progress value={operationProgress(op)} />
+                    <Progress value={percent} />
                     <span className="w-8 shrink-0 text-right text-[11px] text-text-secondary">
-                      {operationProgress(op) === undefined ? "" : `${operationProgress(op)}%`}
+                      {percent === undefined ? "" : `${percent}%`}
                     </span>
                   </div>
                 )}
@@ -102,7 +104,8 @@ export function TaskLog({ collapsed, onToggle }: TaskLogProps) {
                   <button data-testid={`tasklog-dismiss-${op.id}`} onClick={() => dismissOperation(op.id)} className="text-text-tertiary hover:text-text-primary" aria-label="Dismiss"><X size={12} /></button>
                 )}
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>
