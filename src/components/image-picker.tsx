@@ -328,11 +328,11 @@ export function ImagePicker({ type, cloudInitEnabled, onSelect, allowPull = true
           {catalog === null && !catalogLoading && (
             <p className="text-[11px] text-text-tertiary">Offline — showing bundled image list.</p>
           )}
-          <div className="max-h-56 space-y-1 overflow-auto" data-testid="picker-list">
-            {grouped.length === 0 && <p className="py-4 text-center text-xs text-text-tertiary">No matching images.</p>}
+          <div className="max-h-96 overflow-auto rounded border border-border" data-testid="picker-list">
+            {grouped.length === 0 && <p className="py-6 text-center text-xs text-text-tertiary">No matching images.</p>}
             {grouped.map(([os, osRows]) => (
-              <div key={os}>
-                <p className="sticky top-0 bg-surface-800 px-1 py-0.5 text-xs font-semibold text-text-secondary">
+              <div key={os} className="divide-y divide-border">
+                <p className="sticky top-0 z-10 bg-surface-700 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-text-tertiary">
                   {DISPLAY_NAMES[os] ?? os}
                 </p>
                 {osRows.map((row) => {
@@ -344,7 +344,11 @@ export function ImagePicker({ type, cloudInitEnabled, onSelect, allowPull = true
                       type="button"
                       data-testid={`picker-row-${row.key}`}
                       onClick={() => handleRowClick(row)}
-                      className={`flex w-full items-center justify-between gap-2 rounded border px-2.5 py-1.5 text-left text-[13px] ${isSelected ? "border-accent-600 bg-accent-600/10 text-text-primary" : "border-border text-text-secondary hover:bg-surface-700"}`}
+                      className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 text-left text-[13px] transition-colors ${
+                        isSelected
+                          ? "bg-accent-600/15 text-text-primary"
+                          : "text-text-secondary hover:bg-surface-700"
+                      }`}
                     >
                       <span className="min-w-0">
                         <span className="font-medium text-text-primary">{row.release}</span>
@@ -400,7 +404,7 @@ export function ImagePicker({ type, cloudInitEnabled, onSelect, allowPull = true
           <RefreshCw size={13} /> Pull from remote
         </Button>
         {pullOpen && (
-          <div className="space-y-2 rounded border border-border bg-surface-900 p-3">
+          <div className="space-y-2" data-testid="wizard-pull-form">
             <Input label="Alias" name="pull-alias" data-testid="wizard-pull-alias" value={pullAlias} onChange={(e) => setPullAlias(e.target.value)} placeholder="ubuntu/24.04" />
             <Input label="Server" name="pull-server" data-testid="wizard-pull-server" placeholder="https://images.linuxcontainers.org" value={pullServer} onChange={(e) => setPullServer(e.target.value)} />
             <Button size="sm" onClick={pull} loading={busy} data-testid="wizard-pull-submit"><Download size={13} /> Pull</Button>
