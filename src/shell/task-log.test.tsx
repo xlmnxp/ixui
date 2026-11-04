@@ -28,6 +28,15 @@ describe("TaskLog progress", () => {
     expect(cell.querySelector('[role="progressbar"]')).toHaveAttribute("aria-valuenow", "37");
   });
 
+  it("shows what the operation is doing, e.g. the rootfs download", () => {
+    operationsStore.setState([
+      op({ id: "op1", description: "Creating instance", metadata: { download_progress: "rootfs: 46% (7.76MB/s)" } }),
+    ]);
+    render(<TaskLog collapsed={false} onToggle={() => {}} />);
+    expect(screen.getByTestId("tasklog-detail-op1")).toHaveTextContent("rootfs: 46% (7.76MB/s)");
+    expect(screen.getByTestId("tasklog-progress-op1")).toHaveTextContent("46%");
+  });
+
   it("falls back to an indeterminate bar without a percentage", () => {
     operationsStore.setState([op({ id: "op2", description: "Starting web1" })]);
     render(<TaskLog collapsed={false} onToggle={() => {}} />);

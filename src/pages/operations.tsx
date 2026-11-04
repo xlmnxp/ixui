@@ -14,7 +14,7 @@ import { Button } from "../components/button";
 import { EmptyState } from "../components/empty-state";
 import { Loading } from "../components/loading";
 import { Progress } from "../components/progress";
-import { isOperationRunning, operationProgress } from "../lib/operation-progress";
+import { isOperationRunning, operationProgress, operationProgressText } from "../lib/operation-progress";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
@@ -88,7 +88,11 @@ export function OperationsPage({ registerBar }: { registerBar?: (bar: BarState |
           if (!isOperationRunning(o)) return <span className="text-text-tertiary">—</span>;
           const percent = operationProgress(o);
           return (
-            <span className="flex w-32 items-center gap-2" data-testid={`operation-progress-${o.id}`}>
+            <span
+              className="flex w-32 items-center gap-2"
+              data-testid={`operation-progress-${o.id}`}
+              title={operationProgressText(o)}
+            >
               <Progress value={percent} />
               <span className="w-8 shrink-0 text-right text-xs text-text-secondary">
                 {percent === undefined ? "…" : `${percent}%`}

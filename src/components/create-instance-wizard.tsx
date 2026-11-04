@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Box, Monitor, Plus, RefreshCw } from "lucide-react";
+import { Box, Monitor, Plus } from "lucide-react";
 import { ReviewList, StepDialog } from "./step-dialog";
-import { operationProgress } from "../lib/operation-progress";
 import type { Step } from "./step-dialog";
 import { Input } from "./input";
 import { SegmentedControl } from "./segmented-control";
@@ -9,7 +8,7 @@ import { Select } from "./select";
 import { Checkbox } from "./checkbox";
 import { ImagePicker } from "./image-picker";
 import type { PickedImage } from "./image-picker";
-import { instancesApi, operationsApi, infraApi } from "../api";
+import { instancesApi, infraApi } from "../api";
 import { loadInstances } from "../state/instances";
 import { projectsStore, currentProjectStore } from "../state/projects";
 import { ALL_PROJECTS } from "../api/client";
@@ -43,8 +42,6 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
   const [profileList, setProfileList] = useState<Profile[]>([]);
   const [networkList, setNetworkList] = useState<Network[]>([]);
   const [busy, setBusy] = useState(false);
-  /** Live text while the create operation runs ("Creating instance", "Downloading image", …). */
-  const [progress, setProgress] = useState<string>("");
   const [createError, setCreateError] = useState<string>("");
 
   useEffect(() => {
@@ -53,7 +50,6 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
     setName("");
     setNameTouched(false);
     setCreateError("");
-    setProgress("");
     setDescription("");
     setPicked(null);
     setProfiles(["default"]);
@@ -94,7 +90,6 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
     if (!nameValid || !picked) return;
     setBusy(true);
     setCreateError("");
-    setProgress("Creating instance");
     try {
       const config: Record<string, string> = {};
       if (memory.trim()) config[LIMIT_KEYS.memory] = memory.trim();
@@ -114,31 +109,22 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
         config,
         devices,
       }, targetMember, project);
+      // Fire and forget: the daemon runs the create as an operation, so the
+      // window closes immediately and the operations pane tracks progress.
       if (result && "type" in result && result.type === "async") {
-        // Wait with live progress: image downloads can take minutes, and the
-        // window must stay open (with the operation state) until it settles.
-        const op = await operationsApi.wait(result.operation, {
-          onUpdate: (current) => {
-            const percent = operationProgress(current);
-            const label = current.description || "Creating instance";
-            setProgress(percent === undefined ? label : `${label} — ${percent}%`);
-          },
-        });
-        if (op.status !== "Success") throw new Error(op.err || "Create failed");
+        toast("info", `Creating ${name.trim()}…`);
+      } else {
+        toast("success", `Instance ${name.trim()} created`);
       }
-      setProgress("Created");
-      toast("success", `Instance ${name.trim()} created`);
       void loadInstances(project).catch(() => {});
       onClose();
     } catch (err) {
-      // Keep the window open so the failure is visible where it happened, and
-      // still raise a toast for people who navigated away from the last step.
+      // Only reachable when the request itself is rejected; keep the window up.
       const message = err instanceof Error ? err.message : "Create failed";
       setCreateError(message);
       toast("danger", message);
     } finally {
       setBusy(false);
-      setProgress("");
     }
   };
 
@@ -244,12 +230,6 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
               ...(targetMember ? [{ label: "Target member", value: targetMember }] : []),
             ]}
           />
-          {busy && (
-            <p className="mt-3 flex items-center gap-2 text-xs text-text-secondary" data-testid="wizard-progress">
-              <RefreshCw size={12} className="animate-spin" />
-              {progress || "Creating instance"}…
-            </p>
-          )}
           {createError && (
             <p className="mt-3 rounded bg-danger/10 px-2 py-1 text-xs text-red-300" role="alert" data-testid="wizard-create-error">
               {createError}

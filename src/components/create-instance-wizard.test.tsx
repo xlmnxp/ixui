@@ -2,7 +2,6 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CreateInstanceWizard } from "./create-instance-wizard";
 import { toastStore } from "./toast";
-import type { Operation } from "../api/types";
 import type { SimplestreamsCatalog } from "../api/simplestreams";
 import { SIMPLE_STREAMS_DEFAULT } from "../api/simplestreams";
 
@@ -104,8 +103,10 @@ describe("CreateInstanceWizard", () => {
       type: "container",
       source: { type: "image", server: SIMPLE_STREAMS_DEFAULT, protocol: "simplestreams", alias: "ubuntu/24.04/cloud/amd64" },
     }), undefined, "default"));
-    expect(operationsApi.wait).toHaveBeenCalled();
+    // Creation is fire-and-forget: the window closes at once and the operation
+    // carries on in the background.
     await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(operationsApi.wait).not.toHaveBeenCalled();
     expect(vi.mocked(instancesApi.create).mock.calls[0]![0]).not.toHaveProperty("project");
   });
 
@@ -153,49 +154,17 @@ describe("CreateInstanceWizard", () => {
     await waitFor(() => expect(instancesApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: "web1" }), "incus-1", "default"));
   });
 
-  it("toasts an error and does not close when the async create fails", async () => {
+  it("keeps the window open and reports a rejected create", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    const { instancesApi, operationsApi } = await import("../api");
-    const failedOp: Operation = {
-      id: "op1", class: "task", description: "", status: "Failure", status_code: 400,
-      created_at: "", updated_at: "", may_cancel: false, err: "boom",
-    };
-    vi.mocked(operationsApi.wait).mockResolvedValueOnce(failedOp);
+    const { instancesApi } = await import("../api");
+    vi.mocked(instancesApi.create).mockRejectedValueOnce(new Error("boom"));
     render(<CreateInstanceWizard open onClose={onClose} />);
     await goToStage4(user);
     await user.click(screen.getByTestId("step-submit"));
-    await waitFor(() => expect(instancesApi.create).toHaveBeenCalled());
-    await waitFor(() => {
-      const toasts = toastStore.getState();
-      expect(toasts.some((t) => t.tone === "danger" && t.message === "boom")).toBe(true);
-      expect(toasts.some((t) => t.tone === "success")).toBe(false);
-    });
+    expect(await screen.findByTestId("wizard-create-error")).toHaveTextContent("boom");
     expect(onClose).not.toHaveBeenCalled();
-  });
-
-  it("shows the live operation state and the error in the window", async () => {
-    const user = userEvent.setup();
-    const onClose = vi.fn();
-    const { operationsApi } = await import("../api");
-    vi.mocked(operationsApi.wait).mockImplementationOnce(async (_id, opts) => {
-      opts?.onUpdate?.({
-        id: "op1", class: "task", description: "Downloading image", status: "Running", status_code: 103,
-        created_at: "", updated_at: "", may_cancel: false,
-      } as Operation);
-      return {
-        id: "op1", class: "task", description: "", status: "Failure", status_code: 400,
-        created_at: "", updated_at: "", may_cancel: false, err: "no space left",
-      } as Operation;
-    });
-    render(<CreateInstanceWizard open onClose={onClose} />);
-    await goToStage4(user);
-    await user.click(screen.getByTestId("step-submit"));
-    // The window stays open and reports the failure inline.
-    expect(await screen.findByTestId("wizard-create-error")).toHaveTextContent("no space left");
-    expect(onClose).not.toHaveBeenCalled();
-    // Progress follows the operation description (and download percentage) while it runs.
-    expect(vi.mocked(operationsApi.wait).mock.calls.at(-1)?.[1]?.onUpdate).toBeTypeOf("function");
+    expect(toastStore.getState().some((t) => t.tone === "danger" && t.message === "boom")).toBe(true);
   });
 
   it("resets state when reopened", async () => {

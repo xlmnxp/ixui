@@ -6,7 +6,7 @@ import { operationsStore, dismissOperation } from "../state/operations";
 import { useStore } from "../state/store";
 import { Badge } from "../components/badge";
 import { Progress } from "../components/progress";
-import { operationProgress } from "../lib/operation-progress";
+import { operationProgress, operationProgressText } from "../lib/operation-progress";
 
 const statusTone = { Running: "info", Success: "success", Failure: "danger", Cancelled: "warning", Unknown: "neutral" } as const;
 
@@ -45,6 +45,29 @@ export function TaskLog({ collapsed, onToggle }: TaskLogProps) {
   }, [dragging]);
 
   const runningOperations = operations.filter((o) => o.status === "Running");
+
+  // Progress lives in the operation itself, so poll while anything is running.
+  const runningIds = runningOperations.map((o) => o.id).join(",");
+  useEffect(() => {
+    if (!runningIds || typeof operationsApi.get !== "function") return;
+    const ids = runningIds.split(",");
+    let cancelled = false;
+    const tick = async () => {
+      const updates = await Promise.all(
+        ids.map((id) => operationsApi.get(id).catch(() => null))
+      );
+      if (cancelled) return;
+      operationsStore.setState((prev) =>
+        prev.map((op) => updates.find((update) => update?.id === op.id) ?? op)
+      );
+    };
+    const timer = window.setInterval(() => void tick(), 2_000);
+    void tick();
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [runningIds]);
   const activePercent = runningOperations
     .map((o) => operationProgress(o))
     .filter((p): p is number => p !== undefined)
@@ -87,7 +110,14 @@ export function TaskLog({ collapsed, onToggle }: TaskLogProps) {
               return (
               <li key={op.id} className="flex items-center gap-3 px-3 py-1.5" data-testid="tasklog-entry">
                 <Badge tone={statusTone[op.status]}>{op.status}</Badge>
-                <span className="flex-1 truncate text-xs text-text-primary">{op.description}</span>
+                <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                  <span className="truncate text-xs text-text-primary">{op.description}</span>
+                  {op.status === "Running" && operationProgressText(op) && (
+                    <span className="truncate text-[11px] text-text-tertiary" data-testid={`tasklog-detail-${op.id}`}>
+                      {operationProgressText(op)}
+                    </span>
+                  )}
+                </span>
                 {op.status === "Running" && (
                   <div className="flex w-36 items-center gap-2" data-testid={`tasklog-progress-${op.id}`}>
                     <Progress value={percent} />
