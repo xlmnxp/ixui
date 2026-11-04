@@ -164,7 +164,7 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
       key: "image",
       title: "Image",
       invalid: picked ? null : "Pick an image from the list",
-      content: <ImagePicker key={type} type={type} cloudInitEnabled={cloudInitEnabled} onSelect={setPicked} />,
+      content: <ImagePicker key={type} type={type} cloudInitEnabled={cloudInitEnabled} value={picked} onSelect={setPicked} />,
     },
     {
       key: "config",

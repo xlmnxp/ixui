@@ -52,6 +52,23 @@ async function goToStage4(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("CreateInstanceWizard", () => {
+  it("keeps the chosen image after moving forward and back between steps", async () => {
+    const user = userEvent.setup();
+    render(<CreateInstanceWizard open onClose={() => {}} />);
+    await goToStage2(user);
+    await user.click(await screen.findByTestId("picker-row-ubuntu/24.04/cloud/amd64"));
+    expect(await screen.findByTestId("picker-selected")).toHaveTextContent("ubuntu/24.04/cloud/amd64");
+
+    // Move on to Configuration, then back to Image.
+    await user.click(screen.getByTestId("step-next"));
+    expect(screen.queryByTestId("picker-selected")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("step-back"));
+
+    // The picker remounts, but the selection is owned by the wizard.
+    expect(await screen.findByTestId("picker-selected")).toHaveTextContent("ubuntu/24.04/cloud/amd64");
+    expect(screen.getByTestId("picker-row-ubuntu/24.04/cloud/amd64")).toHaveClass("bg-accent-600/15");
+  });
+
   beforeEach(async () => {
     toastStore.setState([]);
     const { loadCatalog } = await import("../lib/image-prefill");

@@ -29,6 +29,8 @@ export interface PickedImage {
 export interface ImagePickerProps {
   type: "container" | "virtual-machine";
   cloudInitEnabled: boolean;
+  /** Currently selected image, owned by the caller so it survives step changes. */
+  value?: PickedImage | null;
   onSelect: (image: PickedImage | null) => void;
   /** Show the inline "pull a custom image" form (default true). Hidden where the host dialog does the pulling. */
   allowPull?: boolean;
@@ -125,7 +127,7 @@ const DISPLAY_NAMES: Record<string, string> = {
   nixos: "NixOS",
 };
 
-export function ImagePicker({ type, cloudInitEnabled, onSelect, allowPull = true }: ImagePickerProps) {
+export function ImagePicker({ type, cloudInitEnabled, value = null, onSelect, allowPull = true }: ImagePickerProps) {
   const [tab, setTab] = useState<"distro" | "oci">("distro");
   const [search, setSearch] = useState("");
   const [catalog, setCatalog] = useState<SimplestreamsCatalog | null>(null);
@@ -134,7 +136,7 @@ export function ImagePicker({ type, cloudInitEnabled, onSelect, allowPull = true
   const [remotes, setRemotes] = useState<string[]>([SIMPLE_STREAMS_DEFAULT]);
   const [manageOpen, setManageOpen] = useState(false);
   const [newRemote, setNewRemote] = useState("");
-  const [selected, setSelected] = useState<PickedImage | null>(null);
+  const [selected, setSelected] = useState<PickedImage | null>(value);
   const [localImages, setLocalImages] = useState<Image[]>([]);
   const [ociImage, setOciImage] = useState("");
   const [pullOpen, setPullOpen] = useState(false);
@@ -164,9 +166,16 @@ export function ImagePicker({ type, cloudInitEnabled, onSelect, allowPull = true
     loadLocalImages();
   }, [loadCatalogFor, loadLocalImages]);
 
+  // The caller owns the selection (the wizard unmounts this step when you move
+  // between steps), so keep the local copy in sync with it.
   useEffect(() => {
-    setSelected(null);
-  }, [type, remote]);
+    setSelected(value);
+  }, [value]);
+
+  // Switching remotes invalidates a selection made against the previous server.
+  useEffect(() => {
+    setSelected((prev) => (prev && prev.server === remote ? prev : null));
+  }, [remote]);
 
   const rows = useMemo(() => {
     const source = catalog ? rowsFromCatalog(catalog, type) : rowsFromPrefill();
@@ -307,6 +316,33 @@ export function ImagePicker({ type, cloudInitEnabled, onSelect, allowPull = true
         </div>
         <Button size="sm" variant="ghost" data-testid="picker-remote-manage" onClick={() => setManageOpen(true)}>Manage</Button>
       </div>
+
+      {selected && (
+        <div
+          className="flex items-center justify-between gap-2 rounded border border-accent-600 bg-accent-600/10 px-2.5 py-1.5"
+          data-testid="picker-selected"
+        >
+          <span className="flex min-w-0 items-center gap-1.5 text-xs text-text-primary">
+            <Check size={13} className="shrink-0 text-accent-400" />
+            <span className="truncate font-medium">{selected.alias}</span>
+            <span className="shrink-0 text-text-tertiary">
+              {selected.protocol === "oci" ? "docker.io" : selected.server.replace("https://", "").replace("http://", "")}
+            </span>
+          </span>
+          <button
+            type="button"
+            data-testid="picker-selected-clear"
+            aria-label="Clear selected image"
+            onClick={() => {
+              setSelected(null);
+              onSelect(null);
+            }}
+            className="shrink-0 rounded p-0.5 text-text-tertiary hover:text-text-primary"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      )}
 
       <div className="flex gap-1 border-b border-border">
         {tabButton("distro", "Distro")}
