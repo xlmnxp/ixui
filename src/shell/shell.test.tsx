@@ -88,6 +88,7 @@ describe("Shell", () => {
     );
     await screen.findByTestId("sidebar");
     const toggle = screen.getByTestId("tree-section-toggle");
+    expect(toggle).toHaveTextContent("Resources");
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId("tree-section")).toBeInTheDocument();
 

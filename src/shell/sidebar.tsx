@@ -113,19 +113,19 @@ export function Sidebar() {
         </button>
       </div>
       <ProjectDropdown />
-      {/* Explorer header: click the title to fold the whole section, like VS Code. */}
+      {/* Resources header: click the title to fold the whole section. */}
       <div className="flex items-center gap-1 bg-section px-1.5 py-1">
         <button
           type="button"
           data-testid="tree-section-toggle"
           aria-expanded={sectionOpen}
           aria-controls="tree-section"
-          title={sectionOpen ? "Collapse explorer" : "Expand explorer"}
+          title={sectionOpen ? "Collapse resources" : "Expand resources"}
           onClick={() => setSectionOpen((open) => !open)}
           className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-text-secondary hover:bg-surface-700 hover:text-text-primary"
         >
           {sectionOpen ? <ChevronDown size={12} className="shrink-0" /> : <ChevronRight size={12} className="shrink-0" />}
-          <span className="truncate">Explorer</span>
+          <span className="truncate">Resources</span>
         </button>
         <Tooltip label="New instance" side="bottom">
           <button
