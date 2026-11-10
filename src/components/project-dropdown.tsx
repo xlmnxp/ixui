@@ -43,8 +43,10 @@ export function ProjectDropdown() {
         aria-selected={selected}
         data-testid={testId}
         onClick={() => choose(value)}
-        className={`flex w-full items-center justify-between gap-2 px-2 py-1 text-left text-xs hover:bg-surface-700 ${
-          selected ? "text-accent-400" : "text-text-primary"
+        className={`flex w-full items-center justify-between gap-2 px-2 py-1 text-left text-xs ${
+          selected
+            ? "bg-accent-600/15 font-medium text-accent-300"
+            : "text-text-primary hover:bg-surface-700"
         }`}
       >
         <span className="truncate">{text}</span>

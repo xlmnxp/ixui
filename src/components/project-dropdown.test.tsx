@@ -36,6 +36,22 @@ describe("ProjectDropdown", () => {
     expect(screen.getByTestId("project-selector")).toHaveTextContent("prod");
   });
 
+  it("tints the selected option so it reads in both themes", async () => {
+    const user = userEvent.setup();
+    render(<ProjectDropdown />);
+    await user.click(screen.getByTestId("project-selector"));
+
+    const selected = screen.getByTestId("project-option-default");
+    expect(selected).toHaveAttribute("aria-selected", "true");
+    // A background tint, not just a text colour: the light theme needs a fill.
+    expect(selected.className).toContain("bg-accent-600/15");
+    expect(selected.className).toContain("text-accent-300");
+
+    const other = screen.getByTestId("project-option-prod");
+    expect(other).toHaveAttribute("aria-selected", "false");
+    expect(other.className).not.toContain("bg-accent-600/15");
+  });
+
   it("closes on outside click", async () => {
     const user = userEvent.setup();
     render(<ProjectDropdown />);
