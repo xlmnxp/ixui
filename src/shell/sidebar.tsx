@@ -111,7 +111,7 @@ export function Sidebar() {
       </div>
       <ProjectDropdown />
       {/* Explorer header: click the title to fold the whole section, like VS Code. */}
-      <div className="flex items-center gap-1 border-y border-border bg-accent-600/10 px-1.5 py-1">
+      <div className="flex items-center gap-1 border-y border-border bg-surface-800 px-1.5 py-1">
         <button
           type="button"
           data-testid="tree-section-toggle"

@@ -113,8 +113,9 @@ describe("Shell", () => {
     );
     await screen.findByTestId("sidebar");
     const toggle = screen.getByTestId("tree-section-toggle");
-    // The bar carries the accent tint, not just a hover state.
-    expect(toggle.parentElement?.className).toContain("bg-accent-600/10");
+    // The bar uses a raised dark surface, not the accent colour.
+    expect(toggle.parentElement?.className).toContain("bg-surface-800");
+    expect(toggle.parentElement?.className).not.toContain("bg-accent");
     for (const label of ["New instance", "Expand all", "Collapse all"]) {
       expect(screen.getByRole("tooltip", { name: label })).toHaveTextContent(label);
     }
