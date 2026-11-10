@@ -25,6 +25,7 @@ import { SplitPane } from "../components/split-pane";
 import { PageBar } from "../components/page-bar";
 import { KeyValueEditor } from "../components/key-value-editor";
 import { SegmentedControl } from "../components/segmented-control";
+import { CreateInstanceIcon } from "../components/create-instance-icon";
 import { Dropdown } from "../components/dropdown";
 import { ColorPicker } from "../components/color-picker";
 import { SplitButton } from "../components/split-button";
@@ -493,7 +494,7 @@ export function Gallery() {
       </Section>
 
       <Section title="EmptyState">
-        <EmptyState title="No instances" description="Create your first instance." action={<Button size="sm"><Plus size={14} /> Create instance</Button>} />
+        <EmptyState title="No instances" description="Create your first instance." action={<Button size="sm"><CreateInstanceIcon size={14} /> Create instance</Button>} />
       </Section>
 
       <Section title="SplitPane">

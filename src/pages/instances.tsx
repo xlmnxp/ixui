@@ -18,7 +18,8 @@ import { Loading } from "../components/loading";
 import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
-import { Camera, Copy as CopyIcon, Upload, Play, Square, RotateCw, Snowflake, Trash2, Plus, Eye } from "lucide-react";
+import { Camera, Copy as CopyIcon, Upload, Play, Square, RotateCw, Snowflake, Trash2, Eye } from "lucide-react";
+import { CreateInstanceIcon } from "../components/create-instance-icon";
 import type { Instance, InstanceStateInfo } from "../api/types";
 import { ipSummary } from "../lib/instance-status";
 import { CopyInstanceDialog } from "../components/instance-dialogs";
@@ -180,7 +181,7 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
 
   const barActions = useMemo(
     () => [
-      ...(onCreate ? [<Button key="create" size="sm" onClick={onCreate} data-testid="action-create"><Plus size={14} /> Create instance</Button>] : []),
+      ...(onCreate ? [<Button key="create" size="sm" onClick={onCreate} data-testid="action-create"><CreateInstanceIcon size={14} /> Create instance</Button>] : []),
       <Button key="import" size="sm" variant="secondary" data-testid="action-import" onClick={() => setImportOpen(true)}><Upload size={14} /> Import</Button>,
       <Button key="start" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-start" onClick={() => runAction("start", selected)}><Play size={14} /> Start</Button>,
       <Button key="stop" size="sm" variant="secondary" disabled={actionDisabled} data-testid="action-stop" onClick={() => runAction("stop", selected)}><Square size={14} /> Stop</Button>,
@@ -207,7 +208,7 @@ export function InstancesPage({ location, onCreate, registerBar }: { location?: 
         <EmptyState
           title="No instances"
           description="Create your first instance to get started."
-          action={onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create-empty"><Plus size={14} /> Create instance</Button>}
+          action={onCreate && <Button size="sm" onClick={onCreate} data-testid="action-create-empty"><CreateInstanceIcon size={14} /> Create instance</Button>}
         />
       ) : (
         <Table

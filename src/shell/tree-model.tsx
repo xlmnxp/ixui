@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
-import { Activity, BookOpen, Boxes, Bug, Check, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, PackagePlus, History, Settings, SlidersHorizontal, ShieldCheck, TriangleAlert, Users } from "lucide-react";
+import { Activity, BookOpen, Boxes, Bug, Check, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, History, Settings, SlidersHorizontal, ShieldCheck, TriangleAlert, Users } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import type { TreeNode } from "../components/tree";
 import { Tooltip } from "../components/tooltip";
+import { CreateInstanceIcon } from "../components/create-instance-icon";
 import { ALL_PROJECTS } from "../api/client";
 import type { ClusterMember, Instance } from "../api/types";
 import { InstanceIcon } from "./instance-icon";
@@ -43,7 +44,7 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
         className="rounded p-0.5 text-text-tertiary hover:bg-surface-600 hover:text-text-primary"
         aria-label={target ? `New instance on ${target}` : "New instance"}
       >
-        <PackagePlus size={13} />
+        <CreateInstanceIcon size={13} />
       </button>
     </Tooltip>
   );

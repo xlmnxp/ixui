@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Tree } from "../components/tree";
-import { ChevronDown, ChevronRight, Monitor, Moon, PackagePlus, RefreshCw, Search, SquareChevronUp, Sun } from "lucide-react";
+import { ChevronDown, ChevronRight, Monitor, Moon, RefreshCw, Search, Sun } from "lucide-react";
+import { CollapseAllIcon } from "../components/collapse-all-icon";
+import { CreateInstanceIcon } from "../components/create-instance-icon";
 import { ProjectDropdown } from "../components/project-dropdown";
 import { Tooltip } from "../components/tooltip";
 import { buildTree } from "./tree-model";
@@ -133,7 +135,7 @@ export function Sidebar() {
             onClick={() => { setWizardTarget(undefined); setWizardOpen(true); }}
             className="shrink-0 rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
           >
-            <PackagePlus size={13} />
+            <CreateInstanceIcon size={13} />
           </button>
         </Tooltip>
         <Tooltip label="Collapse all" side="bottom">
@@ -144,7 +146,7 @@ export function Sidebar() {
             onClick={() => { setTreeExpanded(false); setTreeEpoch((e) => e + 1); }}
             className="shrink-0 rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
           >
-            <SquareChevronUp size={13} />
+            <CollapseAllIcon size={13} />
           </button>
         </Tooltip>
         <Tooltip label={refreshing ? "Refreshing…" : "Refresh"} side="bottom">

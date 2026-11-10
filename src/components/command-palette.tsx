@@ -2,18 +2,21 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Boxes, Database, FolderCog, Folder, Gauge, Globe, History, Image as ImageIcon, KeyRound, ListTodo, Users, Network, Play,
-  Plus, RotateCw, Search, Server, Settings, ShieldCheck, Square, Terminal as TerminalIcon, TriangleAlert, UserCog,
+  RotateCw, Search, Server, Settings, ShieldCheck, Square, Terminal as TerminalIcon, TriangleAlert, UserCog,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import type { ComponentType } from "react";
 import { InstanceIcon } from "../shell/instance-icon";
+import { CreateInstanceIcon } from "./create-instance-icon";
 import { filterCommands } from "../lib/palette";
 import type { PaletteCommand, PaletteIcon } from "../lib/palette";
 
-const ICONS: Record<PaletteIcon, LucideIcon> = {
+type PaletteGlyph = ComponentType<{ size?: number; className?: string; "aria-hidden"?: boolean }>;
+
+const ICONS: Record<PaletteIcon, PaletteGlyph> = {
   dashboard: Gauge, instances: Boxes, images: ImageIcon, profiles: UserCog, networks: Network, storage: Database,
   acls: ShieldCheck, zones: Globe, projects: FolderCog, operations: ListTodo, activity: History,
   warnings: TriangleAlert, cluster: Server, certificates: KeyRound, identities: Users, settings: Settings, project: Folder,
-  create: Plus, start: Play, stop: Square, restart: RotateCw, terminal: TerminalIcon,
+  create: CreateInstanceIcon, start: Play, stop: Square, restart: RotateCw, terminal: TerminalIcon,
 };
 
 function CommandIcon({ cmd }: { cmd: PaletteCommand }) {
