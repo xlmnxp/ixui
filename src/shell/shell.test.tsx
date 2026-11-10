@@ -137,6 +137,28 @@ describe("Shell", () => {
     expect(screen.queryByTestId("tree-expand-all")).not.toBeInTheDocument();
   });
 
+  it("labels the header search and theme buttons with tooltips", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByTestId("sidebar");
+
+    await user.hover(screen.getByTestId("open-palette"));
+    expect(screen.getByRole("tooltip", { name: "Search (Ctrl+K)" })).toBeInTheDocument();
+    await user.unhover(screen.getByTestId("open-palette"));
+
+    await user.hover(screen.getByTestId("theme-toggle"));
+    expect(screen.getByRole("tooltip", { name: /^Theme: (system|dark|light)$/ })).toBeInTheDocument();
+    await user.unhover(screen.getByTestId("theme-toggle"));
+  });
+
   it("refreshes instances and members from the explorer bar", async () => {
     const user = userEvent.setup();
     const { clusterApi, instancesApi } = await import("../api");

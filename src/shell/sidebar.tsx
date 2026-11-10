@@ -91,26 +91,30 @@ export function Sidebar() {
       <div className="flex h-10 items-center gap-2 border-b border-border px-3">
         <span className="h-3 w-3 rounded-sm bg-accent-600" data-testid="sidebar-mark" />
         <span className="truncate text-sm font-semibold text-text-primary" data-testid="sidebar-title">{uiTitle}</span>
-        <button
-          type="button"
-          data-testid="open-palette"
-          aria-label="Search (Ctrl+K)"
-          title="Search (Ctrl+K)"
-          onClick={() => setPaletteOpen(true)}
-          className="ml-auto rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
-        >
-          <Search size={14} />
-        </button>
-        <button
-          type="button"
-          data-testid="theme-toggle"
-          aria-label={`Theme: ${theme} (click to change)`}
-          title={`Theme: ${theme}`}
-          onClick={cycleTheme}
-          className="rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
-        >
-          {theme === "system" ? <Monitor size={14} /> : theme === "dark" ? <Moon size={14} /> : <Sun size={14} />}
-        </button>
+        <span className="ml-auto inline-flex">
+          <Tooltip label="Search (Ctrl+K)" side="bottom">
+            <button
+              type="button"
+              data-testid="open-palette"
+              aria-label="Search (Ctrl+K)"
+              onClick={() => setPaletteOpen(true)}
+              className="rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+            >
+              <Search size={14} />
+            </button>
+          </Tooltip>
+        </span>
+        <Tooltip label={`Theme: ${theme}`} side="bottom">
+          <button
+            type="button"
+            data-testid="theme-toggle"
+            aria-label={`Theme: ${theme} (click to change)`}
+            onClick={cycleTheme}
+            className="rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+          >
+            {theme === "system" ? <Monitor size={14} /> : theme === "dark" ? <Moon size={14} /> : <Sun size={14} />}
+          </button>
+        </Tooltip>
       </div>
       <ProjectDropdown />
       {/* Resources header: click the title to fold the whole section. */}
