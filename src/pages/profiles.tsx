@@ -208,6 +208,7 @@ export function ProfilesPage({ registerBar }: { registerBar?: (bar: BarState | n
         submitIcon={<Plus size={14} />}
         busy={busy}
         wide
+        dirty={name.trim() !== "" || description.trim() !== "" || Object.keys(config).length > 0}
         onSubmit={create}
         steps={profileSteps({ name, setName, description, setDescription, config, setConfig, nameEditable: true })}
       />
@@ -220,6 +221,12 @@ export function ProfilesPage({ registerBar }: { registerBar?: (bar: BarState | n
         busy={busy}
         wide
         freeNavigation
+        dirty={
+          editing !== null &&
+          (description !== (editing.description ?? "") ||
+            JSON.stringify(config) !== JSON.stringify(editing.config ?? {}))
+        }
+        discardMessage="This profile has unsaved edits. Discard them?"
         onSubmit={save}
         steps={profileSteps({ name: editing?.name ?? "", setName, description, setDescription, config, setConfig, nameEditable: false })}
       />

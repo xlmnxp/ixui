@@ -128,6 +128,15 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
     }
   };
 
+  // Anything typed here would be lost if the window closed silently.
+  const dirty =
+    name.trim() !== "" ||
+    description.trim() !== "" ||
+    picked !== null ||
+    memory.trim() !== "" ||
+    cpu.trim() !== "" ||
+    network !== "";
+
   const steps: Step[] = [
     {
       key: "basics",
@@ -247,6 +256,8 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
       title="Create instance"
       steps={steps}
       busy={busy}
+      dirty={dirty}
+      discardMessage="The instance has not been created yet. Discard these settings?"
       windowMode
       windowWidth={1120}
       windowBodyHeight="min(700px, calc(100vh - 190px))"

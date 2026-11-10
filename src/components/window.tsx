@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useFocusTrap } from "../lib/use-focus-trap";
+import { useUnsavedGuard } from "../lib/use-unsaved-guard";
+import { ConfirmDialog } from "./confirm-dialog";
 
 export interface WindowProps {
   open: boolean;
@@ -15,6 +17,12 @@ export interface WindowProps {
   width?: number;
   /** Body max height: px number or any CSS length (default 420). */
   bodyMaxHeight?: number | string;
+  /** Unsaved edits: backdrop, Escape and the close button ask before discarding. */
+  dirty?: boolean;
+  /** Copy for the confirmation prompt. */
+  discardMessage?: string;
+  /** Render the footer with a close handler that honours the unsaved guard. */
+  renderFooter?: (close: () => void) => ReactNode;
 }
 
 interface DragState {
@@ -24,20 +32,33 @@ interface DragState {
   origY: number;
 }
 
-export function Window({ open, onClose, title, subtitle, children, footer, width = 640, bodyMaxHeight = 420 }: WindowProps) {
+export function Window({
+  open,
+  onClose,
+  title,
+  subtitle,
+  children,
+  footer,
+  width = 640,
+  bodyMaxHeight = 420,
+  dirty = false,
+  discardMessage = "You have unsaved changes. Discard them?",
+  renderFooter,
+}: WindowProps) {
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const dragRef = useRef<DragState | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const guard = useUnsavedGuard(dirty, onClose);
   useFocusTrap(panelRef, open);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") guard.requestClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, guard]);
 
   useEffect(() => {
     if (!open) return;
@@ -66,8 +87,11 @@ export function Window({ open, onClose, title, subtitle, children, footer, width
 
   if (!open) return null;
 
+  const footerNode = renderFooter ? renderFooter(guard.requestClose) : footer;
+
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center" data-testid="window-backdrop" onClick={onClose}>
+    <>
+    <div className="fixed inset-0 z-50 flex items-center justify-center" data-testid="window-backdrop" onClick={guard.requestClose}>
       <div
         ref={panelRef}
         tabIndex={-1}
@@ -90,7 +114,7 @@ export function Window({ open, onClose, title, subtitle, children, footer, width
             <h2 className="text-sm font-semibold text-text-primary">{title}</h2>
             {subtitle && <p className="text-xs text-text-secondary">{subtitle}</p>}
           </div>
-          <button data-testid="window-close" onClick={onClose} aria-label="Close" className="text-text-tertiary hover:text-text-primary">
+          <button data-testid="window-close" onClick={guard.requestClose} aria-label="Close" className="text-text-tertiary hover:text-text-primary">
             <X size={16} />
           </button>
         </div>
@@ -100,9 +124,19 @@ export function Window({ open, onClose, title, subtitle, children, footer, width
         >
           {children}
         </div>
-        {footer && <div className="flex justify-end gap-2 border-t border-border bg-surface-900 px-4 py-3">{footer}</div>}
+        {footerNode && <div className="flex justify-end gap-2 border-t border-border bg-surface-900 px-4 py-3">{footerNode}</div>}
       </div>
-    </div>,
+    </div>
+    <ConfirmDialog
+      open={guard.asking}
+      title="Discard changes?"
+      body={discardMessage}
+      confirmLabel="Discard"
+      tone="danger"
+      onConfirm={guard.discard}
+      onCancel={guard.cancel}
+    />
+    </>,
     document.body
   );
 }

@@ -27,6 +27,10 @@ export interface StepDialogProps {
   wide?: boolean;
   /** Width tier passed through to the dialog; "xl" suits pickers and tables. */
   size?: "default" | "wide" | "xl";
+  /** Unsaved edits: closing asks for confirmation first. */
+  dirty?: boolean;
+  /** Copy for the discard confirmation. */
+  discardMessage?: string;
   /** Render in the draggable Window shell (the large surface used across the app). */
   windowMode?: boolean;
   subtitle?: string;
@@ -49,6 +53,8 @@ export function StepDialog({
   busy = false,
   wide = false,
   size,
+  dirty = false,
+  discardMessage,
   windowMode = false,
   subtitle,
   windowWidth = 1120,
@@ -83,9 +89,9 @@ export function StepDialog({
 
   const submitBlocked = firstInvalid !== -1;
 
-  const footerNode = (
+  const footerFor = (close: () => void) => (
     <div className="flex w-full items-center justify-between gap-2">
-      <Button variant="ghost" onClick={onClose} data-testid="step-cancel"><X size={14} /> Cancel</Button>
+      <Button variant="ghost" onClick={close} data-testid="step-cancel"><X size={14} /> Cancel</Button>
       <div className="flex items-center gap-2">
         {index > 0 && (
           <Button variant="secondary" onClick={() => goTo(index - 1)} data-testid="step-back"><ArrowLeft size={14} /> Back</Button>
@@ -152,7 +158,9 @@ export function StepDialog({
         subtitle={subtitle}
         width={windowWidth}
         bodyMaxHeight={windowBodyHeight}
-        footer={footerNode}
+        dirty={dirty}
+        discardMessage={discardMessage}
+        renderFooter={footerFor}
       >
         {body}
       </Window>
@@ -160,7 +168,16 @@ export function StepDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title={title} wide={wide} size={size} footer={footerNode}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title={title}
+      wide={wide}
+      size={size}
+      dirty={dirty}
+      discardMessage={discardMessage}
+      renderFooter={footerFor}
+    >
       {body}
     </Dialog>
   );
