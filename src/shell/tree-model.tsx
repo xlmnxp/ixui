@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { Activity, BookOpen, Boxes, Bug, Check, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, Plus, History, Settings, SlidersHorizontal, ShieldCheck, TriangleAlert, Users } from "lucide-react";
+import { Activity, BookOpen, Boxes, Bug, Check, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, SquarePlus, History, Settings, SlidersHorizontal, ShieldCheck, TriangleAlert, Users } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import type { TreeNode } from "../components/tree";
+import { Tooltip } from "../components/tooltip";
 import { ALL_PROJECTS } from "../api/client";
 import type { ClusterMember, Instance } from "../api/types";
 import { InstanceIcon } from "./instance-icon";
@@ -35,14 +36,16 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
   const isAll = project === ALL_PROJECTS;
 
   const createAction = (testId: string, target?: string): ReactNode => (
-    <button
-      data-testid={testId}
-      onClick={(e) => { e.stopPropagation(); onCreate?.(target); }}
-      className="p-0.5 text-text-tertiary hover:bg-surface-600 hover:text-text-primary"
-      aria-label="Create instance"
-    >
-      <Plus size={13} />
-    </button>
+    <Tooltip label={target ? `New instance on ${target}` : "New instance"} side="top">
+      <button
+        data-testid={testId}
+        onClick={(e) => { e.stopPropagation(); onCreate?.(target); }}
+        className="rounded p-0.5 text-text-tertiary hover:bg-surface-600 hover:text-text-primary"
+        aria-label={target ? `New instance on ${target}` : "New instance"}
+      >
+        <SquarePlus size={13} />
+      </button>
+    </Tooltip>
   );
 
   const memberNodes: TreeNode[] = [...members]
