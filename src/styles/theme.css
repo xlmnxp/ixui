@@ -25,6 +25,9 @@
   --color-text-tertiary: #7e7a74;
   --color-border: #3a3835;
 
+  /* Section header band: raised in dark, recessed in light. */
+  --color-section: #262524;
+
   /* Semantic (unchanged) */
   --color-success: #3fb950;
   --color-warning: #d29922;
@@ -48,6 +51,9 @@
   --color-text-secondary: #4a4742;
   --color-text-tertiary: #6b675f;
   --color-border: #d4d0cb;
+
+  /* Darker than the light sidebar, so the band still reads as a header. */
+  --color-section: #e2dfdb;
 
   --color-success: #1a7f37;
   --color-warning: #9a6700;

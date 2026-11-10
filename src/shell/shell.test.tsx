@@ -113,8 +113,8 @@ describe("Shell", () => {
     );
     await screen.findByTestId("sidebar");
     const toggle = screen.getByTestId("tree-section-toggle");
-    // The bar uses a raised dark surface, not the accent colour.
-    expect(toggle.parentElement?.className).toContain("bg-surface-800");
+    // The bar uses its own themed band (raised in dark, darker in light).
+    expect(toggle.parentElement?.className).toContain("bg-section");
     expect(toggle.parentElement?.className).not.toContain("bg-accent");
     for (const label of ["New instance", "Collapse all", "Refresh"]) {
       expect(screen.getByRole("tooltip", { name: label })).toHaveTextContent(label);
