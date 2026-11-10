@@ -1,5 +1,11 @@
 # Changelog
 
+## 26.11.3 (2026-11-10)
+
+### Features
+
+- **palette:** open an instance console from Ctrl+K (fbd5d85)
+
 ## 26.11.2 (2026-11-10)
 
 ### Features
