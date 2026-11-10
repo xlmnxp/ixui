@@ -46,7 +46,7 @@ export function ProjectDropdown() {
         className={`flex w-full items-center justify-between gap-2 px-2 py-1 text-left text-xs ${
           selected
             ? "bg-accent-600/15 font-medium text-accent-300"
-            : "text-text-primary hover:bg-surface-700"
+            : "text-text-primary hover:bg-hover"
         }`}
       >
         <span className="truncate">{text}</span>
@@ -66,7 +66,7 @@ export function ProjectDropdown() {
         aria-label={`Project: ${label}`}
         title={label}
         onClick={() => setOpen((o) => !o)}
-        className="flex h-8 w-full items-center gap-1.5 px-2 text-xs font-medium text-text-primary hover:bg-surface-700 focus-visible:bg-surface-700 focus-visible:outline-none"
+        className="flex h-8 w-full items-center gap-1.5 px-2 text-xs font-medium text-text-primary hover:bg-hover focus-visible:bg-surface-700 focus-visible:outline-none"
       >
         <Folder size={13} className="shrink-0 text-text-tertiary" />
         <span className="truncate">{label}</span>

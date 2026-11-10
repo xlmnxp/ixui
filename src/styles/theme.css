@@ -27,6 +27,8 @@
 
   /* Section header band: raised in dark, recessed in light. */
   --color-section: #262524;
+  /* Hover fill for rows on the sidebar; clearly lighter than --color-sidebar. */
+  --color-hover: #34322f;
 
   /* Semantic (unchanged) */
   --color-success: #3fb950;
@@ -54,6 +56,8 @@
 
   /* Darker than the light sidebar, so the band still reads as a header. */
   --color-section: #e2dfdb;
+  /* Darker than the light sidebar; surface-700 equals it, so it cannot be reused. */
+  --color-hover: #dcd8d2;
 
   --color-success: #1a7f37;
   --color-warning: #9a6700;

@@ -98,7 +98,7 @@ export function Sidebar() {
               data-testid="open-palette"
               aria-label="Search (Ctrl+K)"
               onClick={() => setPaletteOpen(true)}
-              className="rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+              className="rounded p-1 text-text-secondary hover:bg-hover hover:text-text-primary"
             >
               <Search size={14} />
             </button>
@@ -110,7 +110,7 @@ export function Sidebar() {
             data-testid="theme-toggle"
             aria-label={`Theme: ${theme} (click to change)`}
             onClick={cycleTheme}
-            className="rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+            className="rounded p-1 text-text-secondary hover:bg-hover hover:text-text-primary"
           >
             {theme === "system" ? <Monitor size={14} /> : theme === "dark" ? <Moon size={14} /> : <Sun size={14} />}
           </button>
@@ -126,7 +126,7 @@ export function Sidebar() {
           aria-controls="tree-section"
           title={sectionOpen ? "Collapse resources" : "Expand resources"}
           onClick={() => setSectionOpen((open) => !open)}
-          className="flex min-w-0 flex-1 items-center gap-1 rounded px-0.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+          className="flex min-w-0 flex-1 items-center gap-1 rounded px-0.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-text-secondary hover:bg-hover hover:text-text-primary"
         >
           {sectionOpen ? <ChevronDown size={12} className="shrink-0" /> : <ChevronRight size={12} className="shrink-0" />}
           <span className="truncate">Resources</span>
@@ -137,7 +137,7 @@ export function Sidebar() {
             data-testid="tree-new-instance"
             aria-label="New instance"
             onClick={() => { setWizardTarget(undefined); setWizardOpen(true); }}
-            className="shrink-0 rounded p-0.5 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+            className="shrink-0 rounded p-0.5 text-text-secondary hover:bg-hover hover:text-text-primary"
           >
             <CreateInstanceIcon size={13} />
           </button>
@@ -148,7 +148,7 @@ export function Sidebar() {
             data-testid="tree-collapse-all"
             aria-label="Collapse all"
             onClick={() => { setTreeExpanded(false); setTreeEpoch((e) => e + 1); }}
-            className="shrink-0 rounded p-0.5 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+            className="shrink-0 rounded p-0.5 text-text-secondary hover:bg-hover hover:text-text-primary"
           >
             <CollapseAllIcon size={13} />
           </button>
@@ -164,7 +164,7 @@ export function Sidebar() {
               setRefreshing(true);
               void reload().finally(() => setRefreshing(false));
             }}
-            className="shrink-0 rounded p-0.5 text-text-secondary hover:bg-surface-700 hover:text-text-primary disabled:opacity-60"
+            className="shrink-0 rounded p-0.5 text-text-secondary hover:bg-hover hover:text-text-primary disabled:opacity-60"
           >
             <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
           </button>
