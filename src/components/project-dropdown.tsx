@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Folder } from "lucide-react";
 import { projectsStore, currentProjectStore, setCurrentProject } from "../state/projects";
 import { ALL_PROJECTS } from "../api/client";
 import { useStore } from "../state/store";
@@ -26,43 +26,59 @@ export function ProjectDropdown() {
     };
   }, [open]);
 
-  return (
-    <div ref={rootRef} className="relative mt-2 flex h-8 items-center px-2">
+  const choose = (value: string) => {
+    setCurrentProject(value);
+    setOpen(false);
+  };
+
+  const label = current === ALL_PROJECTS ? "All projects" : current;
+
+  const option = (value: string, text: string, testId: string) => {
+    const selected = value === current;
+    return (
       <button
-        data-testid="project-selector"
-        onClick={() => setOpen((o) => !o)}
-        className="flex h-7 w-full items-center justify-between rounded border border-border bg-surface-700 px-2.5 text-xs text-text-primary hover:bg-surface-600"
+        key={value}
+        type="button"
+        role="option"
+        aria-selected={selected}
+        data-testid={testId}
+        onClick={() => choose(value)}
+        className={`flex w-full items-center justify-between gap-2 px-2 py-1 text-left text-xs hover:bg-surface-700 ${
+          selected ? "text-accent-400" : "text-text-primary"
+        }`}
       >
-        <span className="truncate">{current === ALL_PROJECTS ? "All projects" : current}</span>
-        <ChevronsUpDown size={13} className="text-text-tertiary" />
+        <span className="truncate">{text}</span>
+        {selected && <Check size={13} className="shrink-0" />}
+      </button>
+    );
+  };
+
+  return (
+    <div ref={rootRef} className="relative mt-1">
+      {/* Flush row on the sidebar rail, like VS Code's repository picker. */}
+      <button
+        type="button"
+        data-testid="project-selector"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Project: ${label}`}
+        title={label}
+        onClick={() => setOpen((o) => !o)}
+        className="flex h-8 w-full items-center gap-1.5 px-2 text-xs font-medium text-text-primary hover:bg-surface-700 focus-visible:bg-surface-700 focus-visible:outline-none"
+      >
+        <Folder size={13} className="shrink-0 text-text-tertiary" />
+        <span className="truncate">{label}</span>
+        <ChevronsUpDown size={13} className="ml-auto shrink-0 text-text-tertiary" />
       </button>
       {open && (
-        <div data-testid="project-menu" className="absolute left-2 right-2 top-8 z-40 mt-1 overflow-hidden rounded border border-border bg-surface-800 shadow-xl">
-          <button
-            data-testid="project-option-all"
-            onClick={() => {
-              setCurrentProject(ALL_PROJECTS);
-              setOpen(false);
-            }}
-            className={`flex w-full items-center justify-between px-2.5 py-1 text-left text-xs hover:bg-surface-700 ${current === ALL_PROJECTS ? "text-accent-400" : "text-text-primary"}`}
-          >
-            <span className="truncate">All projects</span>
-            {current === ALL_PROJECTS && <Check size={13} />}
-          </button>
-          {projects.map((p) => (
-            <button
-              key={p.name}
-              data-testid={`project-option-${p.name}`}
-              onClick={() => {
-                setCurrentProject(p.name);
-                setOpen(false);
-              }}
-              className={`flex w-full items-center justify-between px-2.5 py-1 text-left text-xs hover:bg-surface-700 ${p.name === current ? "text-accent-400" : "text-text-primary"}`}
-            >
-              <span className="truncate">{p.name}</span>
-              {p.name === current && <Check size={13} />}
-            </button>
-          ))}
+        <div
+          data-testid="project-menu"
+          role="listbox"
+          aria-label="Project"
+          className="absolute left-2 right-2 top-full z-40 mt-1 max-h-60 overflow-y-auto rounded border border-border bg-surface-800 py-0.5 shadow-xl"
+        >
+          {option(ALL_PROJECTS, "All projects", "project-option-all")}
+          {projects.map((p) => option(p.name, p.name, `project-option-${p.name}`))}
         </div>
       )}
     </div>
