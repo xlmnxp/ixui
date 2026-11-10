@@ -101,6 +101,25 @@ describe("Shell", () => {
     expect(screen.getByTestId("tree-section")).toBeInTheDocument();
   });
 
+  it("highlights the explorer bar and labels its action buttons with tooltips", async () => {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByTestId("sidebar");
+    const toggle = screen.getByTestId("tree-section-toggle");
+    // The bar carries the accent tint, not just a hover state.
+    expect(toggle.parentElement?.className).toContain("bg-accent-600/10");
+    for (const label of ["New instance", "Expand all", "Collapse all"]) {
+      expect(screen.getByRole("tooltip", { name: label })).toHaveTextContent(label);
+    }
+  });
+
   it("shows the configured UI title in the sidebar header", async () => {
     uiTitleStore.setState("My Cloud");
     render(

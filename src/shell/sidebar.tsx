@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Tree } from "../components/tree";
 import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Monitor, Moon, Plus, Search, Sun } from "lucide-react";
 import { ProjectDropdown } from "../components/project-dropdown";
+import { Tooltip } from "../components/tooltip";
 import { buildTree } from "./tree-model";
 import { useTreeData } from "./use-tree-data";
 import { currentProjectStore } from "../state/projects";
@@ -110,7 +111,7 @@ export function Sidebar() {
       </div>
       <ProjectDropdown />
       {/* Explorer header: click the title to fold the whole section, like VS Code. */}
-      <div className="flex items-center gap-1 px-1.5 py-1">
+      <div className="flex items-center gap-1 border-y border-border bg-accent-600/10 px-1.5 py-1">
         <button
           type="button"
           data-testid="tree-section-toggle"
@@ -118,41 +119,44 @@ export function Sidebar() {
           aria-controls="tree-section"
           title={sectionOpen ? "Collapse explorer" : "Expand explorer"}
           onClick={() => setSectionOpen((open) => !open)}
-          className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
+          className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-text-secondary hover:bg-surface-700 hover:text-text-primary"
         >
           {sectionOpen ? <ChevronDown size={12} className="shrink-0" /> : <ChevronRight size={12} className="shrink-0" />}
           <span className="truncate">Explorer</span>
         </button>
-        <button
-          type="button"
-          data-testid="tree-new-instance"
-          aria-label="New instance"
-          title="New instance"
-          onClick={() => { setWizardTarget(undefined); setWizardOpen(true); }}
-          className="shrink-0 rounded p-1 text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
-        >
-          <Plus size={13} />
-        </button>
-        <button
-          type="button"
-          data-testid="tree-expand-all"
-          aria-label="Expand all"
-          title="Expand all"
-          onClick={() => { setTreeExpanded(true); setTreeEpoch((e) => e + 1); }}
-          className="shrink-0 rounded p-1 text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
-        >
-          <ChevronsUpDown size={13} />
-        </button>
-        <button
-          type="button"
-          data-testid="tree-collapse-all"
-          aria-label="Collapse all"
-          title="Collapse all"
-          onClick={() => { setTreeExpanded(false); setTreeEpoch((e) => e + 1); }}
-          className="shrink-0 rounded p-1 text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
-        >
-          <ChevronsDownUp size={13} />
-        </button>
+        <Tooltip label="New instance">
+          <button
+            type="button"
+            data-testid="tree-new-instance"
+            aria-label="New instance"
+            onClick={() => { setWizardTarget(undefined); setWizardOpen(true); }}
+            className="shrink-0 rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+          >
+            <Plus size={13} />
+          </button>
+        </Tooltip>
+        <Tooltip label="Expand all">
+          <button
+            type="button"
+            data-testid="tree-expand-all"
+            aria-label="Expand all"
+            onClick={() => { setTreeExpanded(true); setTreeEpoch((e) => e + 1); }}
+            className="shrink-0 rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+          >
+            <ChevronsUpDown size={13} />
+          </button>
+        </Tooltip>
+        <Tooltip label="Collapse all">
+          <button
+            type="button"
+            data-testid="tree-collapse-all"
+            aria-label="Collapse all"
+            onClick={() => { setTreeExpanded(false); setTreeEpoch((e) => e + 1); }}
+            className="shrink-0 rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+          >
+            <ChevronsDownUp size={13} />
+          </button>
+        </Tooltip>
       </div>
       {sectionOpen && (
         <div id="tree-section" className="min-h-0 flex-1 overflow-y-auto pb-2" data-testid="tree-section">
