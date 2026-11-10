@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Tree } from "../components/tree";
-import { ChevronDown, ChevronRight, Monitor, Moon, RefreshCw, Search, SquareChevronUp, SquarePlus, Sun } from "lucide-react";
+import { ChevronDown, ChevronRight, Monitor, Moon, PackagePlus, RefreshCw, Search, SquareChevronUp, Sun } from "lucide-react";
 import { ProjectDropdown } from "../components/project-dropdown";
 import { Tooltip } from "../components/tooltip";
 import { buildTree } from "./tree-model";
@@ -133,7 +133,7 @@ export function Sidebar() {
             onClick={() => { setWizardTarget(undefined); setWizardOpen(true); }}
             className="shrink-0 rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
           >
-            <SquarePlus size={13} />
+            <PackagePlus size={13} />
           </button>
         </Tooltip>
         <Tooltip label="Collapse all" side="bottom">

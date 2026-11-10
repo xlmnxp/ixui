@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Activity, BookOpen, Boxes, Bug, Check, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, SquarePlus, History, Settings, SlidersHorizontal, ShieldCheck, TriangleAlert, Users } from "lucide-react";
+import { Activity, BookOpen, Boxes, Bug, Check, ExternalLink, Folder, KeyRound, ListTodo, Server, Palette, Gauge, PackagePlus, History, Settings, SlidersHorizontal, ShieldCheck, TriangleAlert, Users } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import type { TreeNode } from "../components/tree";
 import { Tooltip } from "../components/tooltip";
@@ -43,7 +43,7 @@ export function buildTree({ project, members, instancesByMember, unassigned, onC
         className="rounded p-0.5 text-text-tertiary hover:bg-surface-600 hover:text-text-primary"
         aria-label={target ? `New instance on ${target}` : "New instance"}
       >
-        <SquarePlus size={13} />
+        <PackagePlus size={13} />
       </button>
     </Tooltip>
   );
