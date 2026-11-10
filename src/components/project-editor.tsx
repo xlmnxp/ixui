@@ -352,7 +352,9 @@ export function ProjectEditor({ project, usage = {}, state, onClose, onSaved }: 
       title={creating ? "Create project" : `Edit project ${project.name}`}
       steps={steps}
       busy={busy}
-      wide
+      windowMode
+      windowWidth={960}
+      windowBodyHeight="min(680px, calc(100vh - 190px))"
       freeNavigation={!creating}
       submitLabel={creating ? "Create" : "Save"}
       submitIcon={creating ? <Plus size={14} /> : undefined}

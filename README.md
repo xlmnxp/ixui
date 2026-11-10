@@ -1,169 +1,188 @@
+# IXUI — a web interface for Incus
 
-
-# ixui — Incus Web UI
+[![CI](https://github.com/xlmnxp/ixui/actions/workflows/ci.yml/badge.svg)](https://github.com/xlmnxp/ixui/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/xlmnxp/ixui?label=release)](https://github.com/xlmnxp/ixui/releases)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
 > [!WARNING]
-> **Pre-alpha.** ixui is in early, pre-alpha development — expect missing
-> features, rough edges, and breaking changes. Don't rely on it to manage
-> production Incus servers yet.
+> **Pre-alpha.** IXUI is early software — expect missing features, rough edges and
+> breaking changes. Do not point it at a production cluster you are not prepared
+> to re-create.
 
-A hand-crafted React web UI for Incus. Dark Proxmox-style theme with ESXi-style
-layout, built entirely on a custom component system (no UI libraries). Features
-a cluster-aware member/instance tree, a project selector, vertical tabs for
-instance views, and a floating create-instance wizard.
+IXUI is a web UI for [Incus](https://linuxcontainers.org/incus/): a single-page
+React app that talks straight to incusd over its REST API and event stream. It is
+built on a hand-written component system — no component library, no CSS
+framework beyond Tailwind utilities — so the whole surface is ours to shape.
 
-![ixui](docs/screenshot.png)
+![Instance list with the cluster tree, bulk actions and the operations bar](docs/screenshots/hero.png)
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/instance-overview-light.png" alt="Instance overview with live CPU, memory, network and disk sparklines"></td>
+<td width="50%"><img src="docs/screenshots/command-palette.png" alt="Command palette filtering instances and actions"></td>
+</tr>
+<tr>
+<td align="center"><em>Instance overview — live metrics and health</em></td>
+<td align="center"><em>Command palette — Ctrl/Cmd+K for anything</em></td>
+</tr>
+</table>
+
+*Screenshots use demo data.*
+
+## Why another UI
+
+- **Cluster-first.** The sidebar is a real tree: cluster members, their instances,
+  the project selector and the system/monitoring pages — not a flat table bolted
+  onto a cluster API.
+- **Fast to operate.** Bulk start/stop/restart/freeze/snapshot/delete, per-instance
+  context menus, a command palette and keyboard-navigable dialogs.
+- **Honest state.** Operations show live progress (download percentage, unpack
+  stage), the task bar keeps running work visible, and editors warn before you
+  throw away unsaved changes.
+- **Light and dark, remembered.** System/dark/light theme, remembered split
+  position and table sorting, and a drawer layout on narrow screens.
+- **Small dependency surface.** `lucide-react` for icons is the only UI dependency;
+  everything else is React, TypeScript and Tailwind tokens.
 
 ## Features
 
-- **Authentication** — TLS client certificate or OIDC sign-in, including
-  `user.ui.sso_only` redirect mode.
-- **Sidebar tree** — cluster members with their instances (flat list on
-  standalone servers), project selector with an all-projects mode,
-  expand/collapse all, create-instance button, and a right-click context menu
-  on instances (start / stop / restart / terminal / rename / delete / move to
-  node).
-- **Instances** — create wizard (simplestreams catalog + cached images,
-  profiles, storage pool, cluster member targeting); detail view with
-  Overview, Snapshots (create/restore/delete + an automatic-snapshots editor
-  for `snapshots.schedule`/`snapshots.expiry` with an enable switch), Config
-  editor with server-side key descriptions, Devices editor, Logs, Files, and
-  per-instance Activity tabs; lifecycle actions (start/stop/restart/freeze),
-  rename, copy, move (across projects and cluster members, optionally live),
-  delete, and backup export download; VM display thumbnail.
-- **File explorer** — browse an instance's filesystem with back/forward and a
-  path bar, open and edit text files in place, upload and download files,
-  create directories, and delete entries.
-- **Terminal** — popup shell terminal per instance, with a VGA (SPICE) console
-  toggle for VMs.
-- **Images** — local image list, pull from simplestreams remotes, alias
-  management.
-- **Networks** — create/delete networks and manage network forwards.
-- **Network ACLs** — project-scoped ACLs with an inline rule editor
-  (ingress/egress tables, action dropdown with icons, prefilled protocol
-  list, pfSense-like enable/disable and logging indicators, confirmed rule
-  removal) in a large draggable window; attach to NICs via the
-  `security.acls` device option.
-- **Storage** — create pools, manage custom volumes (create, rename, delete,
-  snapshots), upload ISOs.
-- **Profiles & projects** — full CRUD with config editors.
-- **Cluster** — member overview and capacity, evacuate/restore, join tokens,
-  cluster groups.
-- **System & Monitoring** — the sidebar's System group holds projects, server
-  settings, cluster groups, certificates, and identities & groups; Monitoring
-  holds the operations log (with a persistent task bar), the activity
-  (lifecycle event) log, and warnings.
-- **Realtime** — the Incus events websocket drives live instance status and
-  operation updates.
-- **Command palette** — Ctrl/Cmd+K jumps to any instance, page or project and
-  runs start/stop/restart/terminal/create actions.
-- **Bulk instance actions** — start, stop, restart, freeze, snapshot, and
-  delete across a selection, with per-instance failure reporting.
-- **Backups** — per-instance backup list with create (instance-only /
-  optimized options), download, and delete.
-- **Network zones & address sets** — project-scoped side tabs beside Networks:
-  create, edit, and delete.
-- **Load balancers & peers** — per-network dialog (peers on OVN networks).
-- **Backup import** — create an instance from an uploaded backup archive.
-- **Identities & groups** — assign groups to identities and manage auth
-  groups with permissions (OpenFGA).
-- **Project usage** — real limits and usage (from the project state
-  endpoint) in the projects table and editor.
-- **Cluster member editing** — description, failure domain, groups, and
-  user-assignable roles.
-- **Usage graphs** — live CPU, memory, network throughput, and disk usage on
-  the instance overview.
-- **Themes & layout** — system/dark/light theme, remembered split position and
-  table sort, and a drawer navigation on narrow screens.
-- **Accessibility** — focus-trapped dialogs, keyboard-navigable tree and
-  tabs, and axe checks in the test suite.
-- **Component system** — custom-built primitives (no UI libraries) with a
-  browsable gallery.
+**Instances**
+- Create wizard: simplestreams catalog or cached images, profile selection,
+  memory/CPU limits, network, target cluster member.
+- Detail view with Overview (live CPU/memory/network/disk sparklines), Snapshots,
+  Backups, Config, Devices, Logs, Files and per-instance Activity.
+- Lifecycle actions (start, stop, restart, freeze), rename, copy, move across
+  projects and members (optionally live), delete, backup export download, and a VM
+  console thumbnail.
+- Automatic snapshots: an editor for `snapshots.schedule` / `snapshots.expiry` with
+  an enable switch.
+- Backups: create (instance-only or optimised), download, delete; import an
+  instance from an uploaded backup archive.
 
-## Not yet implemented
+**Files and terminal**
+- File explorer with back/forward history, a path bar, in-place text editing,
+  upload, download, create folder and delete.
+- Popup shell terminal per instance, plus a SPICE (VGA) console for VMs with
+  fit-to-window scaling.
 
-- Storage buckets.
-- Image upload, export, or property editing.
-- Instance rebuild.
-- Persistent metrics history (graphs show only the current session's samples).
-- Localization.
+**Infrastructure**
+- Images: local list, pull from simplestreams remotes, alias management.
+- Networks: create/delete, forwards, load balancers, and peers on OVN networks;
+  network zones and address sets in their own tabs.
+- Network ACLs: project-scoped rules with a large rule editor (ingress/egress,
+  action dropdown, protocol presets, logging and state indicators).
+- Storage: pools, custom volumes (create, rename, resize, snapshots, attach), ISO
+  import, and buckets with an object-store friendly driver list.
+- Profiles and projects: full CRUD, project usage against real limits, and
+  stepped editors.
+- Cluster: member overview and capacity, evacuate/restore, join tokens, cluster
+  groups, failure domains and member editing.
 
-## Development
+**Everything else**
+- Authentication via TLS client certificate or OIDC, including the
+  `user.ui.sso_only` redirect mode and `user.ui.title` branding.
+- Realtime updates from the Incus event websocket, with automatic reconnects.
+- Operations and activity logs, warnings, a persistent task bar with live progress,
+  and cancellation.
+- Identities and auth groups (OpenFGA), certificates, and server settings.
+- Accessibility: focus-trapped dialogs, keyboard-navigable tree and tabs, axe
+  checks in the test suite.
+- A component gallery at `/ui/gallery` showing every primitive and its states.
 
-Requirements: local incusd reachable at `https://127.0.0.1:8443`, client cert in
-`~/.config/incus/` (generate with `incus list` if missing).
+## Quick start
+
+Requirements: Node 20+, and an incusd you can reach (defaults to
+`https://127.0.0.1:8443`).
 
 ```bash
-incus config set core.https_address :8443
+git clone https://github.com/xlmnxp/ixui.git
+cd ixui
 npm install
+
+# client certificate for the dev proxy
+incus list >/dev/null 2>&1 || incus remote add local https://127.0.0.1:8443
+
 npm run dev
 ```
 
-Open http://localhost:5173/ui/. The Vite plugin proxies `/1.0`, `/1.0/events`,
-`/oidc`, and `/documentation` to incusd using your client cert. Override with
-`INCUS_CERT_DIR` and `INCUS_TARGET` env vars.
-
-`lucide-react` is the only icon dependency (component system rule: no other UI
-libraries).
-
-The instance Terminal opens in a browser popup at `/ui/terminal/<instance>` with
-a shell (and VGA toggle for VMs). The sidebar tree's `+` buttons create
-instances, targeted at the hovered cluster member. Config-key descriptions come
-from `GET /1.0/metadata` — enable them on the server with
-`incus config set metadata.enabled true` (the UI shows "—" when unavailable).
-
-## Testing
+Open <http://localhost:5173/ui/>. The Vite plugin proxies `/1.0`, the event
+websocket, `/oidc` and `/documentation` to incusd using the client certificate in
+`~/.config/incus/`. Point it elsewhere with environment variables:
 
 ```bash
-npm test        # vitest unit + component tests
-npm run typecheck
-npm run lint
+INCUS_TARGET=https://incus.example.com:8443 INCUS_CERT_DIR=~/.config/incus npm run dev
 ```
 
-## Production (served by incusd at /ui/)
+## Deploy
 
 ```bash
-npm run build
-```
-
-Copy the contents of `dist/` into incusd's UI assets directory (commonly
-`/usr/share/incus/ui` — confirm the path on your distro), then restart incusd:
-
-```bash
-sudo cp -r dist/* /usr/share/incus/ui/
+npm run build   # type-check + bundle into dist/
+sudo cp -r dist/* /usr/share/incus/ui/   # confirm the path on your distro
 sudo systemctl restart incus
 ```
 
-Browse to https://your-host:8443/ui/. Authentication is automatic when your
-browser has the server's client certificate installed, or via OIDC otherwise.
+Then browse to `https://your-host:8443/ui/`. Authentication is automatic when the
+browser has a trusted client certificate, or through OIDC when configured.
 
-## Component system
+### Server options the UI reads
 
-Design tokens live in `src/styles/theme.css` (`@theme`). Primitives live in
-`src/components/`, each with unit + component tests — including Window
-(now with configurable size), Dialog (regular + wide), Loading,
-SnapshotSchedule, VerticalTabs, and ProjectDropdown. The gallery at
-http://localhost:5173/ui/gallery shows every component and its variants.
+| Key | Effect |
+| --- | --- |
+| `user.ui.title` | Name shown in the sidebar and window title |
+| `user.ui.sso_only` | `true` skips the local login screen and redirects to OIDC |
+| `metadata.enabled` | `true` exposes config-key descriptions in editors |
 
-## AI-assisted development
+```bash
+incus config set user.ui.title "Acme Cloud"
+incus config set metadata.enabled true
+```
 
-ixui is developed with substantial help from AI / LLM coding tools. Generated
-code is human-reviewed and covered by the test suite, but given the pre-alpha
-state you should apply the usual scrutiny before trusting it with your servers.
-Bug reports are very welcome.
+## Project layout
 
-## License
+```
+src/
+  api/          typed Incus REST client, event stream, endpoint modules
+  components/   hand-written primitives (Dialog, Window, Table, Tree, …)
+  lib/          small helpers: paths, formatting, guards, operation progress
+  pages/        route-level screens, one folder per instance tab
+  shell/        layout, sidebar tree, command palette, task bar, context menus
+  state/        tiny external stores consumed through useSyncExternalStore
+  styles/       design tokens (@theme) and the two theme variants
+scripts/        conventional-commit release tooling
+plugins/        Vite dev proxy for incusd (HTTP + websocket)
+```
 
-Copyright 2026 Salem Alsaiari
+## Development
 
-ixui is licensed under the [Apache License 2.0](LICENSE).
+```bash
+npm run dev        # Vite dev server with the Incus proxy
+npm run build      # type-check then bundle
+npm test           # vitest unit + component tests
+npm run typecheck  # tsc --noEmit
+npm run lint       # eslint, zero warnings allowed
+```
+
+Design tokens live in `src/styles/theme.css`; every component in
+`src/components/` ships with tests. The gallery at `/ui/gallery` renders each one
+with its variants and states.
 
 ## Releases
 
-Releases are fully automatic and use year-month versions (`YY.M.N`, e.g.
-`26.10.0`). Commit messages follow
-[Conventional Commits](https://www.conventionalcommits.org/): `feat`, `fix`,
-`perf` and breaking changes trigger a release, which gets a tag, an updated
-`CHANGELOG.md`, and a GitHub release with `ixui-<version>.zip` (the contents of
-`dist/`) and its checksum. The running app shows its version at the bottom of the
-sidebar. See [CONTRIBUTING.md](CONTRIBUTING.md) for the rules.
+Releases are automatic. Commit messages follow
+[Conventional Commits](https://www.conventionalcommits.org/); `feat`, `fix`,
+`perf` and breaking changes trigger a release with a tag, an updated
+`CHANGELOG.md`, and a GitHub release carrying `ixui-<version>.zip` (the built
+`dist/`) plus its checksum. Versions are year-month based (`YY.M.N`), and the
+running app shows its version at the bottom of the sidebar.
+
+## AI-assisted development
+
+IXUI is built with substantial help from AI coding tools. Contributions are
+human-reviewed and covered by the test suite, but given the pre-alpha state,
+apply the usual scrutiny before trusting it with your clusters. Bug reports and
+pull requests are very welcome.
+
+## License
+
+Copyright 2026 Salem Alsaiari. Licensed under the
+[Apache License 2.0](LICENSE).
