@@ -1,5 +1,25 @@
 # Changelog
 
+## 26.11.2 (2026-11-10)
+
+### Features
+
+- **projects:** open the project editor in the large window shell (c3d613d)
+- **dialogs:** guard closing editors with unsaved changes (dcc73af)
+- **sidebar:** tooltips for the search and theme buttons (c7f943a)
+- **sidebar:** refresh spins and awaits both fetches (7390d2f)
+- **sidebar:** replace expand-all with refresh in the explorer bar (e4e8450)
+- **sidebar:** tint the explorer bar and add tooltips to its actions (51b6a1a)
+- **sidebar:** VS Code style collapsible explorer header with icon actions (d205b65)
+
+### Bug fixes
+
+- **theme:** sidebar hover fill that is visible in light mode (b21117d)
+- **sidebar:** tint the selected project option for light mode (2fe6c62)
+- **sidebar:** flush project picker that fits the rail; tidy section spacing (ee00013)
+- **tooltip:** portal the bubble so a centred tooltip is never clipped (ef659df)
+- **tooltip:** anchor to the inline end; explorer tooltips drop below (ab27f34)
+
 ## 26.11.1 (2026-11-04)
 
 ### Features
