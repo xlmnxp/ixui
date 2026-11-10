@@ -3,7 +3,7 @@ import type { Instance, Project } from "../api/types";
 export type PaletteIcon =
   | "dashboard" | "instances" | "images" | "profiles" | "networks" | "storage" | "acls" | "zones"
   | "projects" | "operations" | "activity" | "warnings" | "cluster" | "certificates" | "identities" | "settings"
-  | "project" | "create" | "start" | "stop" | "restart" | "terminal";
+  | "project" | "create" | "start" | "stop" | "restart" | "terminal" | "console";
 
 export interface PaletteCommand {
   id: string;
@@ -63,6 +63,7 @@ export interface PaletteDeps {
   setProject: (name: string) => void;
   instanceAction: (instance: Instance, action: "start" | "stop" | "restart") => void;
   openTerminal: (instance: Instance) => void;
+  openConsole: (instance: Instance) => void;
   createInstance: () => void;
 }
 
@@ -109,6 +110,7 @@ export function buildCommands(d: PaletteDeps): PaletteCommand[] {
       run: () => d.navigate(`/instances/${encodeURIComponent(i.name)}`),
     });
     cmds.push({ id: `terminal-${key}`, group: "Actions", label: `Open terminal: ${i.name}`, icon: "terminal", hint: i.project, run: () => d.openTerminal(i) });
+    cmds.push({ id: `console-${key}`, group: "Actions", label: `Open console: ${i.name}`, icon: "console", hint: i.project, run: () => d.openConsole(i) });
     if (running) {
       cmds.push({ id: `stop-${key}`, group: "Actions", label: `Stop ${i.name}`, icon: "stop", hint: i.project, run: () => d.instanceAction(i, "stop") });
       cmds.push({ id: `restart-${key}`, group: "Actions", label: `Restart ${i.name}`, icon: "restart", hint: i.project, run: () => d.instanceAction(i, "restart") });

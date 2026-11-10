@@ -11,6 +11,7 @@ const deps = (instances: Instance[] = []) => ({
   setProject: vi.fn(),
   instanceAction: vi.fn(),
   openTerminal: vi.fn(),
+  openConsole: vi.fn(),
   createInstance: vi.fn(),
 });
 
@@ -34,6 +35,17 @@ describe("buildCommands / filterCommands", () => {
     expect(ids).toContain("stop-default/b");
     expect(ids).toContain("restart-default/b");
     expect(ids).not.toContain("start-default/b");
+  });
+
+  it("offers a console action next to the terminal action", () => {
+    const d = deps([inst("web1", "Running")]);
+    const cmds = buildCommands(d);
+    const consoleCmd = cmds.find((c) => c.id === "console-default/web1");
+    expect(consoleCmd?.label).toBe("Open console: web1");
+    expect(consoleCmd?.icon).toBe("console");
+    consoleCmd!.run();
+    expect(d.openConsole).toHaveBeenCalledTimes(1);
+    expect(d.openTerminal).not.toHaveBeenCalled();
   });
 
   it("filters, ranks, and runs commands", () => {

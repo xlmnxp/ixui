@@ -38,6 +38,12 @@ export function PaletteHost() {
         createInstance: requestCreateInstance,
         openTerminal: (i: Instance) =>
           window.open(`/ui/terminal/${i.name}?project=${encodeURIComponent(i.project)}`, `terminal-${i.name}`, "width=1000,height=640"),
+        openConsole: (i: Instance) =>
+          window.open(
+            `/ui/terminal/${i.name}?project=${encodeURIComponent(i.project)}&mode=vga`,
+            `console-${i.name}`,
+            "width=1000,height=640"
+          ),
         instanceAction: (i, action) => {
           instancesApi
             .setState(i.name, action, false, i.project)
