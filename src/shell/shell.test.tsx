@@ -117,7 +117,12 @@ describe("Shell", () => {
     expect(toggle.parentElement?.className).toContain("bg-section");
     expect(toggle.parentElement?.className).not.toContain("bg-accent");
     for (const label of ["New instance", "Collapse all", "Refresh"]) {
-      expect(screen.getByRole("tooltip", { name: label })).toHaveTextContent(label);
+      const tooltip = screen.getByRole("tooltip", { name: label });
+      expect(tooltip).toHaveTextContent(label);
+      // Drops below the bar and grows inwards, so the sidebar edge cannot clip it.
+      expect(tooltip.className).toContain("top-full");
+      expect(tooltip.className).toContain("right-0");
+      expect(tooltip.className).not.toContain("left-1/2");
     }
     // Expand-all was dropped in favour of refresh.
     expect(screen.queryByTestId("tree-expand-all")).not.toBeInTheDocument();
