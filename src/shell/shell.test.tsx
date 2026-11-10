@@ -75,6 +75,32 @@ describe("Shell", () => {
     expect(await screen.findByTestId("step-next")).toBeInTheDocument();
   });
 
+  it("folds the explorer section from its header, like VS Code", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByTestId("sidebar");
+    const toggle = screen.getByTestId("tree-section-toggle");
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId("tree-section")).toBeInTheDocument();
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByTestId("tree-section")).not.toBeInTheDocument();
+    // The actions stay reachable while folded.
+    expect(screen.getByTestId("tree-new-instance")).toBeInTheDocument();
+
+    await user.click(toggle);
+    expect(screen.getByTestId("tree-section")).toBeInTheDocument();
+  });
+
   it("shows the configured UI title in the sidebar header", async () => {
     uiTitleStore.setState("My Cloud");
     render(

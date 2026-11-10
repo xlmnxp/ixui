@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Tree } from "../components/tree";
-import { ChevronsDownUp, ChevronsUpDown, Monitor, Moon, Plus, Search, Sun } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Monitor, Moon, Plus, Search, Sun } from "lucide-react";
 import { ProjectDropdown } from "../components/project-dropdown";
 import { buildTree } from "./tree-model";
 import { useTreeData } from "./use-tree-data";
@@ -15,24 +15,8 @@ import { CreateInstanceWizard } from "../components/create-instance-wizard";
 import { InstanceContextMenu } from "./instance-context-menu";
 import type { Instance } from "../api/types";
 
-const COMPACT_THRESHOLD = 240;
-
 export function Sidebar() {
   const asideRef = useRef<HTMLElement>(null);
-  const [compact, setCompact] = useState(false);
-
-  // Respond to the sidebar's own width (not the window) for label collapsing.
-  useEffect(() => {
-    const el = asideRef.current;
-    if (!el) return;
-    const measure = () => setCompact(el.offsetWidth < COMPACT_THRESHOLD);
-    measure();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
   const location = useLocation();
   const navigate = useNavigate();
   const project = useStore(currentProjectStore);
@@ -48,6 +32,7 @@ export function Sidebar() {
     setWizardOpen(true);
   }, [createRequest]);
   const [treeEpoch, setTreeEpoch] = useState(0);
+  const [sectionOpen, setSectionOpen] = useState(true);
   // Subtrees start collapsed with only root nodes open; Expand all opens
   // everything, Collapse all closes everything including root nodes.
   const [treeExpanded, setTreeExpanded] = useState<boolean | "roots">("roots");
@@ -124,35 +109,56 @@ export function Sidebar() {
         </button>
       </div>
       <ProjectDropdown />
-      <div className="flex flex-nowrap items-center justify-end gap-1 overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* Explorer header: click the title to fold the whole section, like VS Code. */}
+      <div className="flex items-center gap-1 px-1.5 py-1">
+        <button
+          type="button"
+          data-testid="tree-section-toggle"
+          aria-expanded={sectionOpen}
+          aria-controls="tree-section"
+          title={sectionOpen ? "Collapse explorer" : "Expand explorer"}
+          onClick={() => setSectionOpen((open) => !open)}
+          className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
+        >
+          {sectionOpen ? <ChevronDown size={12} className="shrink-0" /> : <ChevronRight size={12} className="shrink-0" />}
+          <span className="truncate">Explorer</span>
+        </button>
         <button
           type="button"
           data-testid="tree-new-instance"
+          aria-label="New instance"
+          title="New instance"
           onClick={() => { setWizardTarget(undefined); setWizardOpen(true); }}
-          className="mr-auto flex shrink-0 items-center gap-1 whitespace-nowrap rounded border border-border bg-surface-600 px-1.5 py-0.5 text-[11px] text-text-primary hover:bg-surface-700"
+          className="shrink-0 rounded p-1 text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
         >
-          <Plus size={12} /> <span>New instance</span>
+          <Plus size={13} />
         </button>
         <button
           type="button"
           data-testid="tree-expand-all"
+          aria-label="Expand all"
+          title="Expand all"
           onClick={() => { setTreeExpanded(true); setTreeEpoch((e) => e + 1); }}
-          className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
+          className="shrink-0 rounded p-1 text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
         >
-          <ChevronsUpDown size={12} /> {!compact && <span>Expand all</span>}
+          <ChevronsUpDown size={13} />
         </button>
         <button
           type="button"
           data-testid="tree-collapse-all"
+          aria-label="Collapse all"
+          title="Collapse all"
           onClick={() => { setTreeExpanded(false); setTreeEpoch((e) => e + 1); }}
-          className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
+          className="shrink-0 rounded p-1 text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
         >
-          <ChevronsDownUp size={12} /> {!compact && <span>Collapse all</span>}
+          <ChevronsDownUp size={13} />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto py-2">
-        <Tree key={treeEpoch} nodes={nodes} selectedId={selectedId} onSelect={(id) => navigate(routeFor(id))} initialExpanded={treeExpanded} />
-      </div>
+      {sectionOpen && (
+        <div id="tree-section" className="min-h-0 flex-1 overflow-y-auto pb-2" data-testid="tree-section">
+          <Tree key={treeEpoch} nodes={nodes} selectedId={selectedId} onSelect={(id) => navigate(routeFor(id))} initialExpanded={treeExpanded} />
+        </div>
+      )}
       <div className="shrink-0 border-t border-border px-3 py-1 text-[10px] text-text-tertiary" data-testid="app-version" title={versionTitle()}>
         {versionLabel()}
       </div>
