@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Dialog } from "./dialog";
 import { ConfirmDialog } from "./confirm-dialog";
@@ -45,8 +45,9 @@ describe("ConfirmDialog", () => {
 });
 
 describe("Tooltip", () => {
-  it("renders tooltip role", () => {
+  it("renders tooltip role on hover", () => {
     render(<Tooltip label="help text"><button>?</button></Tooltip>);
+    fireEvent.mouseOver(screen.getByTestId("tooltip-trigger"));
     expect(screen.getByRole("tooltip")).toHaveTextContent("help text");
   });
 });

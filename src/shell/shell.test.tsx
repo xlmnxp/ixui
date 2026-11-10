@@ -116,13 +116,21 @@ describe("Shell", () => {
     // The bar uses its own themed band (raised in dark, darker in light).
     expect(toggle.parentElement?.className).toContain("bg-section");
     expect(toggle.parentElement?.className).not.toContain("bg-accent");
-    for (const label of ["New instance", "Collapse all", "Refresh"]) {
+    const user = userEvent.setup();
+    for (const [label, testId] of [
+      ["New instance", "tree-new-instance"],
+      ["Collapse all", "tree-collapse-all"],
+      ["Refresh", "tree-refresh"],
+    ] as const) {
+      await user.hover(screen.getByTestId(testId));
       const tooltip = screen.getByRole("tooltip", { name: label });
       expect(tooltip).toHaveTextContent(label);
-      // Drops below the bar and grows inwards, so the sidebar edge cannot clip it.
-      expect(tooltip.className).toContain("top-full");
-      expect(tooltip.className).toContain("right-0");
-      expect(tooltip.className).not.toContain("left-1/2");
+      // Portalled, centred on the trigger and dropped below it, so the pane's
+      // overflow can never clip the bubble.
+      expect(tooltip.className).toContain("fixed");
+      expect(tooltip.className).toContain("-translate-x-1/2");
+      expect(tooltip).toHaveAttribute("aria-hidden", "false");
+      await user.unhover(screen.getByTestId(testId));
     }
     // Expand-all was dropped in favour of refresh.
     expect(screen.queryByTestId("tree-expand-all")).not.toBeInTheDocument();

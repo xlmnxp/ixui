@@ -125,7 +125,7 @@ export function Sidebar() {
           {sectionOpen ? <ChevronDown size={12} className="shrink-0" /> : <ChevronRight size={12} className="shrink-0" />}
           <span className="truncate">Explorer</span>
         </button>
-        <Tooltip label="New instance" side="bottom" align="end">
+        <Tooltip label="New instance" side="bottom">
           <button
             type="button"
             data-testid="tree-new-instance"
@@ -136,7 +136,7 @@ export function Sidebar() {
             <Plus size={13} />
           </button>
         </Tooltip>
-        <Tooltip label="Collapse all" side="bottom" align="end">
+        <Tooltip label="Collapse all" side="bottom">
           <button
             type="button"
             data-testid="tree-collapse-all"
@@ -147,7 +147,7 @@ export function Sidebar() {
             <ChevronsDownUp size={13} />
           </button>
         </Tooltip>
-        <Tooltip label={refreshing ? "Refreshing…" : "Refresh"} side="bottom" align="end">
+        <Tooltip label={refreshing ? "Refreshing…" : "Refresh"} side="bottom">
           <button
             type="button"
             data-testid="tree-refresh"
