@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Tree } from "../components/tree";
-import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Monitor, Moon, Plus, Search, Sun } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronsDownUp, Monitor, Moon, Plus, RefreshCw, Search, Sun } from "lucide-react";
 import { ProjectDropdown } from "../components/project-dropdown";
 import { Tooltip } from "../components/tooltip";
 import { buildTree } from "./tree-model";
@@ -23,7 +23,7 @@ export function Sidebar() {
   const project = useStore(currentProjectStore);
   const uiTitle = useStore(uiTitleStore);
   const theme = useStore(themeStore);
-  const { members, instancesByMember, unassigned } = useTreeData();
+  const { members, instancesByMember, unassigned, reload } = useTreeData();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardTarget, setWizardTarget] = useState<string | undefined>(undefined);
   const createRequest = useStore(createInstanceRequestStore);
@@ -135,17 +135,6 @@ export function Sidebar() {
             <Plus size={13} />
           </button>
         </Tooltip>
-        <Tooltip label="Expand all">
-          <button
-            type="button"
-            data-testid="tree-expand-all"
-            aria-label="Expand all"
-            onClick={() => { setTreeExpanded(true); setTreeEpoch((e) => e + 1); }}
-            className="shrink-0 rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
-          >
-            <ChevronsUpDown size={13} />
-          </button>
-        </Tooltip>
         <Tooltip label="Collapse all">
           <button
             type="button"
@@ -155,6 +144,17 @@ export function Sidebar() {
             className="shrink-0 rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
           >
             <ChevronsDownUp size={13} />
+          </button>
+        </Tooltip>
+        <Tooltip label="Refresh">
+          <button
+            type="button"
+            data-testid="tree-refresh"
+            aria-label="Refresh"
+            onClick={() => { reload(); setTreeEpoch((e) => e + 1); }}
+            className="shrink-0 rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+          >
+            <RefreshCw size={13} />
           </button>
         </Tooltip>
       </div>

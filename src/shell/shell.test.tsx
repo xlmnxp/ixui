@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { Shell } from "./layout";
@@ -116,9 +116,30 @@ describe("Shell", () => {
     // The bar uses a raised dark surface, not the accent colour.
     expect(toggle.parentElement?.className).toContain("bg-surface-800");
     expect(toggle.parentElement?.className).not.toContain("bg-accent");
-    for (const label of ["New instance", "Expand all", "Collapse all"]) {
+    for (const label of ["New instance", "Collapse all", "Refresh"]) {
       expect(screen.getByRole("tooltip", { name: label })).toHaveTextContent(label);
     }
+    // Expand-all was dropped in favour of refresh.
+    expect(screen.queryByTestId("tree-expand-all")).not.toBeInTheDocument();
+  });
+
+  it("refreshes instances and members from the explorer bar", async () => {
+    const user = userEvent.setup();
+    const { clusterApi } = await import("../api");
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByTestId("sidebar");
+    await waitFor(() => expect(clusterApi.listMembers).toHaveBeenCalled());
+    const before = vi.mocked(clusterApi.listMembers).mock.calls.length;
+    await user.click(screen.getByTestId("tree-refresh"));
+    await waitFor(() => expect(vi.mocked(clusterApi.listMembers).mock.calls.length).toBeGreaterThan(before));
   });
 
   it("shows the configured UI title in the sidebar header", async () => {
