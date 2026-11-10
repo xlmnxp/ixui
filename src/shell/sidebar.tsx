@@ -34,6 +34,7 @@ export function Sidebar() {
   }, [createRequest]);
   const [treeEpoch, setTreeEpoch] = useState(0);
   const [sectionOpen, setSectionOpen] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   // Subtrees start collapsed with only root nodes open; Expand all opens
   // everything, Collapse all closes everything including root nodes.
   const [treeExpanded, setTreeExpanded] = useState<boolean | "roots">("roots");
@@ -146,15 +147,20 @@ export function Sidebar() {
             <ChevronsDownUp size={13} />
           </button>
         </Tooltip>
-        <Tooltip label="Refresh" side="bottom" align="end">
+        <Tooltip label={refreshing ? "Refreshing…" : "Refresh"} side="bottom" align="end">
           <button
             type="button"
             data-testid="tree-refresh"
             aria-label="Refresh"
-            onClick={() => { reload(); setTreeEpoch((e) => e + 1); }}
-            className="shrink-0 rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary"
+            aria-busy={refreshing}
+            disabled={refreshing}
+            onClick={() => {
+              setRefreshing(true);
+              void reload().finally(() => setRefreshing(false));
+            }}
+            className="shrink-0 rounded p-1 text-text-secondary hover:bg-surface-700 hover:text-text-primary disabled:opacity-60"
           >
-            <RefreshCw size={13} />
+            <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
           </button>
         </Tooltip>
       </div>

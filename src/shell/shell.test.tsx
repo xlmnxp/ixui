@@ -130,7 +130,7 @@ describe("Shell", () => {
 
   it("refreshes instances and members from the explorer bar", async () => {
     const user = userEvent.setup();
-    const { clusterApi } = await import("../api");
+    const { clusterApi, instancesApi } = await import("../api");
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
@@ -142,9 +142,16 @@ describe("Shell", () => {
     );
     await screen.findByTestId("sidebar");
     await waitFor(() => expect(clusterApi.listMembers).toHaveBeenCalled());
-    const before = vi.mocked(clusterApi.listMembers).mock.calls.length;
+    const membersBefore = vi.mocked(clusterApi.listMembers).mock.calls.length;
+    const instancesBefore = vi.mocked(instancesApi.list).mock.calls.length;
     await user.click(screen.getByTestId("tree-refresh"));
-    await waitFor(() => expect(vi.mocked(clusterApi.listMembers).mock.calls.length).toBeGreaterThan(before));
+    // Refresh re-fetches both the instance list and the cluster members.
+    await waitFor(() =>
+      expect(vi.mocked(instancesApi.list).mock.calls.length).toBeGreaterThan(instancesBefore)
+    );
+    await waitFor(() =>
+      expect(vi.mocked(clusterApi.listMembers).mock.calls.length).toBeGreaterThan(membersBefore)
+    );
   });
 
   it("shows the configured UI title in the sidebar header", async () => {
