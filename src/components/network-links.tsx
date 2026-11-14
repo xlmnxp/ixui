@@ -221,13 +221,18 @@ export function NetworkLinksPanel({ network, kind, showTabs = true }: NetworkLin
 
   return (
     <>
-      <div className="flex items-center justify-between gap-2" data-testid="network-links-panel">
+      <div className="flex items-center gap-2" data-testid="network-links-panel">
         {showTabs && <Tabs tabs={tabs} active={activeTab} onChange={(k) => setTab(k as Tab)} />}
-        {activeTab === "lbs" ? (
+        {/* Right-aligned like every other table toolbar; with tabs hidden it would
+            otherwise sit alone on the left because of justify-between. */}
+        <div className="ml-auto flex items-center gap-2">
           <Button size="sm" data-testid="lb-open" onClick={openLb}><Plus size={14} /> Add load balancer</Button>
-        ) : (
-          <Button size="sm" data-testid="peer-open" onClick={() => setPeerOpen(true)}><Plus size={14} /> Add peer</Button>
-        )}
+          {isOvn && showTabs && (
+            <Button size="sm" variant="secondary" data-testid="peer-open" onClick={() => setPeerOpen(true)}>
+              <Plus size={14} /> Add peer
+            </Button>
+          )}
+        </div>
       </div>
       {loading ? (
         <Loading dataTestId="network-links-loading" label="Loading…" />
