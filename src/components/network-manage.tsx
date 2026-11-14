@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Network as NetworkIcon, Plus, Save, Trash2 } from "lucide-react";
+import { Network as NetworkIcon, Plus, Save, Trash2 } from "lucide-react";
 import { infraApi, networkExtrasApi } from "../api";
 import type { Network } from "../api/types";
 import type { Forward, Lease } from "../api/network-extras";
@@ -95,17 +95,6 @@ export function NetworkManageWindow({ network, onClose, onChanged }: NetworkMana
       toast("danger", err instanceof Error ? err.message : "Save failed");
     } finally {
       setSaving(false);
-    }
-  };
-
-  const setState = async (action: "up" | "down") => {
-    if (!network) return;
-    try {
-      await infraApi.setNetworkState(network.name, action);
-      toast("success", `Network ${network.name} ${action === "up" ? "started" : "stopped"}`);
-      onChanged();
-    } catch (err) {
-      toast("danger", err instanceof Error ? err.message : "Action failed");
     }
   };
 
@@ -227,18 +216,6 @@ export function NetworkManageWindow({ network, onClose, onChanged }: NetworkMana
                       <dd className="font-mono text-text-primary" data-testid="network-prefix-ipv6">{ipv6 ?? "—"}</dd>
                     </div>
                   </dl>
-
-                  {managed && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-text-secondary">State</span>
-                      <Button size="sm" variant="secondary" data-testid="network-manage-up" onClick={() => void setState("up")}>
-                        <ArrowUp size={14} /> Start
-                      </Button>
-                      <Button size="sm" variant="secondary" data-testid="network-manage-down" onClick={() => void setState("down")}>
-                        <ArrowDown size={14} /> Stop
-                      </Button>
-                    </div>
-                  )}
 
                   <Input
                     label="Description"

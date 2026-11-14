@@ -23,7 +23,6 @@ vi.mock("../api", () => ({
     getNetwork: vi.fn(async (name: string) => NETWORKS.find((n) => n.name === name) ?? NETWORKS[0]),
     updateNetworkConfig: vi.fn().mockResolvedValue(null),
     deleteNetwork: vi.fn().mockResolvedValue(undefined),
-    setNetworkState: vi.fn().mockResolvedValue(null),
   },
   networkExtrasApi: {
     listLeases: vi.fn(async () => [
@@ -50,19 +49,6 @@ describe("NetworksPage", () => {
     expect(screen.getByText("10.20.0.1/24")).toBeInTheDocument();
     // A network without an address renders a dash, never "undefined".
     expect(screen.queryByText("undefined")).not.toBeInTheDocument();
-  });
-
-  it("starts and stops the network from the manage window", async () => {
-    const user = userEvent.setup();
-    const { infraApi } = await import("../api");
-    render(<NetworksPage />);
-    await screen.findByText("br0");
-    await user.click(screen.getByTestId("network-manage-br0"));
-    expect(await screen.findByTestId("network-manage")).toBeInTheDocument();
-    await user.click(screen.getByTestId("network-manage-up"));
-    await waitFor(() => expect(infraApi.setNetworkState).toHaveBeenCalledWith("br0", "up"));
-    await user.click(screen.getByTestId("network-manage-down"));
-    await waitFor(() => expect(infraApi.setNetworkState).toHaveBeenCalledWith("br0", "down"));
   });
 
   it("creates a bridge network", async () => {

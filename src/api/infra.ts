@@ -74,10 +74,6 @@ export class InfraApi {
     return this.client.delete(`/networks/${name}${projectQuery()}`);
   }
 
-  setNetworkState(name: string, action: "up" | "down"): Promise<OpResponse> {
-    return this.client.put(`/networks/${name}/state${projectQuery()}`, { action });
-  }
-
   listPools(): Promise<StoragePool[]> {
     return this.client.list<StoragePool>("/storage-pools", projectListParam());
   }
