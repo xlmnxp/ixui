@@ -1,5 +1,19 @@
 # Changelog
 
+## 26.11.4 (2026-11-14)
+
+### Features
+
+- **kv:** bool rows show a switch in display mode; spacing under network tabs (3dc7e90)
+- **networks:** complete security.acls from the project ACL list (6359a8c)
+- **networks:** prefixes and one manage window with settings, leases, forwards and LBs; window icons (36e453e)
+- **instances:** containers open a shell by default; probe bash then sh (9b58785)
+
+### Bug fixes
+
+- **networks:** one tab bar for the manage window; no nested link tabs (5138538)
+- **networks:** drop the unsupported up/down state control (d3a98ff)
+
 ## 26.11.3 (2026-11-10)
 
 ### Features
