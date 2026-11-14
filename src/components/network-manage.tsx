@@ -16,7 +16,7 @@ import { NetworkLinksPanel } from "./network-links";
 import { toast } from "./toast";
 import { Window } from "./window";
 
-type Tab = "settings" | "leases" | "forwards" | "links";
+type Tab = "settings" | "leases" | "forwards" | "lbs" | "peers";
 
 /** Address the daemon has configured for a family, or undefined when disabled. */
 function prefix(network: Network, family: "ipv4" | "ipv6"): string | undefined {
@@ -186,7 +186,8 @@ export function NetworkManageWindow({ network, onClose, onChanged }: NetworkMana
               { key: "settings", label: "Settings" },
               { key: "leases", label: "Leases" },
               { key: "forwards", label: "Forwards" },
-              { key: "links", label: network.type === "ovn" ? "LBs & peers" : "Load balancers" },
+              { key: "lbs", label: "Load balancers" },
+              ...(network.type === "ovn" ? [{ key: "peers", label: "Peers" }] : []),
             ]}
             active={tab}
             onChange={(key) => setTab(key as Tab)}
@@ -242,9 +243,9 @@ export function NetworkManageWindow({ network, onClose, onChanged }: NetworkMana
                 </div>
               )}
 
-              {tab === "links" && (
+              {(tab === "lbs" || tab === "peers") && (
                 <div data-testid="network-links">
-                  <NetworkLinksPanel network={network} />
+                  <NetworkLinksPanel network={network} kind={tab} showTabs={false} />
                 </div>
               )}
 

@@ -70,8 +70,15 @@ export interface NetworkLinksDialogProps {
   onClose: () => void;
 }
 
-export function NetworkLinksPanel({ network }: { network: Network }) {
-  const [tab, setTab] = useState<Tab>("lbs");
+export interface NetworkLinksPanelProps {
+  network: Network;
+  /** Fix the panel to one kind and hide its own tab bar (the host provides tabs). */
+  kind?: Tab;
+  showTabs?: boolean;
+}
+
+export function NetworkLinksPanel({ network, kind, showTabs = true }: NetworkLinksPanelProps) {
+  const [tab, setTab] = useState<Tab>(kind ?? "lbs");
   const [lbs, setLbs] = useState<LoadBalancer[]>([]);
   const [peers, setPeers] = useState<NetworkPeer[]>([]);
   const [loading, setLoading] = useState(false);
@@ -210,12 +217,13 @@ export function NetworkLinksPanel({ network }: { network: Network }) {
   ];
 
   const tabs = [{ key: "lbs", label: "Load balancers" }, ...(isOvn ? [{ key: "peers", label: "Peers" }] : [])];
+  const activeTab: Tab = kind ?? tab;
 
   return (
     <>
       <div className="flex items-center justify-between gap-2" data-testid="network-links-panel">
-        <Tabs tabs={tabs} active={tab} onChange={(k) => setTab(k as Tab)} />
-        {tab === "lbs" ? (
+        {showTabs && <Tabs tabs={tabs} active={activeTab} onChange={(k) => setTab(k as Tab)} />}
+        {activeTab === "lbs" ? (
           <Button size="sm" data-testid="lb-open" onClick={openLb}><Plus size={14} /> Add load balancer</Button>
         ) : (
           <Button size="sm" data-testid="peer-open" onClick={() => setPeerOpen(true)}><Plus size={14} /> Add peer</Button>
@@ -223,7 +231,7 @@ export function NetworkLinksPanel({ network }: { network: Network }) {
       </div>
       {loading ? (
         <Loading dataTestId="network-links-loading" label="Loading…" />
-      ) : tab === "lbs" ? (
+      ) : activeTab === "lbs" ? (
         <Table columns={lbColumns} rows={lbs} rowKey={(l) => l.listen_address} dataTestId="lb-table" emptyMessage="No load balancers" />
       ) : (
         <Table columns={peerColumns} rows={peers} rowKey={(p) => p.name} dataTestId="peer-table" emptyMessage="No peers" />

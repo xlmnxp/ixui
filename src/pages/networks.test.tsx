@@ -118,18 +118,22 @@ describe("NetworksPage", () => {
     expect(networkExtrasApi.listLeases).toHaveBeenCalledWith("br0");
   });
 
-  it("opens load balancers inside the manage window", async () => {
+  it("opens load balancers and peers as their own window tabs", async () => {
     const user = userEvent.setup();
     const { networkExtrasApi } = await import("../api");
     render(<NetworksPage />);
     await screen.findByText("lan0");
     await user.click(screen.getByTestId("network-manage-lan0"));
-    await user.click(await screen.findByTestId("tab-links"));
+
+    await user.click(await screen.findByTestId("tab-lbs"));
     expect(await screen.findByTestId("network-links")).toBeInTheDocument();
-    expect(screen.getByTestId("network-links-panel")).toBeInTheDocument();
     expect(networkExtrasApi.listLoadBalancers).toHaveBeenCalledWith("lan0");
-    // Peers only exist on OVN networks.
-    expect(screen.getByText("Peers")).toBeInTheDocument();
+    // The panel does not draw a second tab bar inside the window.
+    expect(screen.queryByTestId("network-links-panel")?.querySelectorAll('[role="tab"]').length ?? 0).toBe(0);
+
+    // OVN networks get a dedicated Peers tab from the window itself.
+    await user.click(screen.getByTestId("tab-peers"));
+    expect(networkExtrasApi.listPeers).toHaveBeenCalledWith("lan0");
   });
 
   it("creates and deletes a forward from the Forwards tab", async () => {
