@@ -89,13 +89,15 @@ describe("KeyValueEditor", () => {
     expect(screen.queryByTestId("kv-value-edit-")).not.toBeInTheDocument();
   });
 
-  it("renders bool values as badges in display mode", async () => {
+  it("renders bool values as a disabled switch in display mode", async () => {
     render(<KeyValueEditor values={{ "boot.autostart": "true" }} onChange={() => {}} />);
     const cell = await screen.findByTestId("kv-value-boot.autostart");
-    const badge = cell.querySelector('[data-testid="badge"]');
-    expect(badge).toBeInTheDocument();
-    expect(badge).toHaveTextContent("true");
-    expect(badge?.className).toContain("green");
+    const toggle = cell.querySelector('[data-testid="kv-bool-boot.autostart"]');
+    expect(toggle).toBeInTheDocument();
+    expect(toggle).toHaveAttribute("role", "switch");
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    // Read-only until the row is edited.
+    expect(toggle).toBeDisabled();
   });
 
   it("opens the suggestion dropdown upward when there is no room below", async () => {

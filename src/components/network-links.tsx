@@ -221,7 +221,7 @@ export function NetworkLinksPanel({ network, kind, showTabs = true }: NetworkLin
 
   return (
     <>
-      <div className="flex items-center gap-2" data-testid="network-links-panel">
+      <div className="flex items-center gap-2 pb-2" data-testid="network-links-panel">
         {showTabs && <Tabs tabs={tabs} active={activeTab} onChange={(k) => setTab(k as Tab)} />}
         {/* Right-aligned like every other table toolbar; with tabs hidden it would
             otherwise sit alone on the left because of justify-between. */}

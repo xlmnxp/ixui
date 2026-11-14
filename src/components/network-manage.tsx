@@ -205,7 +205,7 @@ export function NetworkManageWindow({ network, onClose, onChanged }: NetworkMana
           {loading ? (
             <Loading dataTestId="network-manage-loading" label="Loading network…" />
           ) : (
-            <div className="pt-3">
+            <div className="pt-3 pb-4">
               {tab === "settings" && (
                 <div className="space-y-3" data-testid="network-settings">
                   <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">

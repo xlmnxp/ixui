@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
-import { Badge } from "./badge";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
 import { Switch } from "./switch";
@@ -442,7 +441,16 @@ export function KeyValueEditor({
   const renderDisplayValue = (key: string, value: string) => {
     const type = metadataTypes[key];
     if (type === "bool") {
-      return <Badge tone={value === "true" ? "success" : "neutral"}>{value}</Badge>;
+      // Same control as in edit mode, just inert: toggling requires editing.
+      return (
+        <Switch
+          checked={value === "true"}
+          onChange={() => {}}
+          disabled
+          label={`${key}: ${value}`}
+          dataTestId={`kv-bool-${key}`}
+        />
+      );
     }
     if (type === "integer") return <span className="font-mono text-xs">{value}</span>;
     return value;
@@ -456,7 +464,7 @@ export function KeyValueEditor({
           <Switch
             checked={draftValue === "true"}
             onChange={(checked) => setDraftValue(checked ? "true" : "false")}
-            label={draftValue === "true" ? "true" : "false"}
+            label={draftKey || "value"}
             dataTestId="kv-bool-switch"
           />
         </div>
