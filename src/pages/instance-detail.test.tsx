@@ -174,7 +174,7 @@ describe("InstanceDetailPage", () => {
     vi.unstubAllGlobals();
   });
 
-  it("opens the terminal popup", async () => {
+  it("opens the shell by default for containers, console from the menu", async () => {
     const user = userEvent.setup();
     const openSpy = vi.fn();
     const restore = () => vi.unstubAllGlobals();
@@ -187,12 +187,37 @@ describe("InstanceDetailPage", () => {
       </MemoryRouter>
     );
     await screen.findByText("web1");
+    // Containers open a shell, not the VGA console.
+    expect(screen.getByTestId("detail-terminal-primary")).toHaveTextContent("Terminal");
+    await user.click(screen.getByTestId("detail-terminal-primary"));
+    expect(openSpy).toHaveBeenCalledWith("/ui/terminal/web1?project=default", expect.stringMatching(/^terminal-web1-/), "width=1000,height=640");
+    await user.click(screen.getByTestId("detail-terminal-menu"));
+    await user.click(screen.getByText("Console (VGA)"));
+    expect(openSpy).toHaveBeenCalledWith("/ui/terminal/web1?project=default&mode=vga", "console-web1", "width=1000,height=640");
+    restore();
+  });
+
+  it("opens the console by default for virtual machines", async () => {
+    const user = userEvent.setup();
+    const { instancesApi } = await import("../api");
+    vi.mocked(instancesApi.get).mockResolvedValueOnce({ ...instance(), type: "virtual-machine" });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("png", { status: 200, headers: { "Content-Type": "image/png" } })));
+    URL.createObjectURL = vi.fn().mockReturnValue("blob:vm");
+    URL.revokeObjectURL = vi.fn();
+    const openSpy = vi.fn();
+    vi.stubGlobal("open", openSpy);
+    render(
+      <MemoryRouter initialEntries={["/instances/web1"]}>
+        <Routes>
+          <Route path="/instances/:name/:tab?" element={<InstanceDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await screen.findByTestId("detail-screenshot");
+    expect(screen.getByTestId("detail-terminal-primary")).toHaveTextContent("Console");
     await user.click(screen.getByTestId("detail-terminal-primary"));
     expect(openSpy).toHaveBeenCalledWith("/ui/terminal/web1?project=default&mode=vga", "console-web1", "width=1000,height=640");
-    await user.click(screen.getByTestId("detail-terminal-menu"));
-    await user.click(screen.getByText("Terminal (shell)"));
-    expect(openSpy).toHaveBeenCalledWith("/ui/terminal/web1?project=default", expect.stringMatching(/^terminal-web1-/), "width=1000,height=640");
-    restore();
+    vi.unstubAllGlobals();
   });
 
   it("opens the more menu from the header", async () => {

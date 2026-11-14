@@ -17,6 +17,7 @@ const terminalState = vi.hoisted(() => ({
 const apiMocks = vi.hoisted(() => ({
   exec: vi.fn(),
   console: vi.fn(),
+  wait: vi.fn(),
 }));
 
 vi.mock("xterm", () => ({
@@ -66,6 +67,7 @@ vi.mock("../api", () => ({
     exec: apiMocks.exec,
     console: apiMocks.console,
   },
+  operationsApi: { wait: apiMocks.wait },
 }));
 
 class FakeWebSocket {
@@ -104,6 +106,9 @@ function consoleResponse() {
   };
 }
 
+/** The exec calls that open an interactive session (the probe is not one). */
+const interactiveExec = () => apiMocks.exec.mock.calls.filter(([, , interactive]) => interactive === true);
+
 describe("InstanceTerminal", () => {
   beforeEach(() => {
     window.history.replaceState({}, "", "/ui/terminal/web1");
@@ -113,6 +118,9 @@ describe("InstanceTerminal", () => {
     terminalState.disposes = 0;
     apiMocks.exec.mockReset();
     apiMocks.console.mockReset();
+    apiMocks.wait.mockReset();
+    // Probe says bash exists.
+    apiMocks.wait.mockResolvedValue({ status: "Success", status_code: 200, metadata: { return: 0 } });
     apiMocks.exec.mockResolvedValue(execResponse());
     apiMocks.console.mockResolvedValue(consoleResponse());
     toastStore.setState([]);
@@ -125,8 +133,10 @@ describe("InstanceTerminal", () => {
   it("auto-connects a shell with bash by default and wires binary io", async () => {
     render(<InstanceTerminal instanceName="web1" />);
     await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
-    expect(apiMocks.exec).toHaveBeenCalledTimes(1);
-    expect(apiMocks.exec).toHaveBeenCalledWith("web1", ["/bin/bash"], true);
+    // One probe, then one interactive shell.
+    expect(apiMocks.exec).toHaveBeenCalledTimes(2);
+    expect(apiMocks.exec).toHaveBeenNthCalledWith(1, "web1", ["/bin/sh", "-c", "command -v bash"], false, undefined, { waitForWebsocket: false });
+    expect(apiMocks.exec).toHaveBeenNthCalledWith(2, "web1", ["/bin/bash"], true, undefined);
     const data = FakeWebSocket.instances[0]!;
     expect(data.url).toContain("/1.0/operations/op1/websocket?secret=secret0");
     expect(data.binaryType).toBe("arraybuffer");
@@ -162,15 +172,23 @@ describe("InstanceTerminal", () => {
     expect(firstTerminal.dispose).toHaveBeenCalled();
   });
 
-  it("falls back to sh when bash fails", async () => {
-    apiMocks.exec
-      .mockRejectedValueOnce(new Error("no bash"))
-      .mockResolvedValueOnce(execResponse());
+  it("uses sh when the instance has no bash", async () => {
+    // command -v bash exits 127 when bash is missing.
+    apiMocks.wait.mockResolvedValue({ status: "Failure", status_code: 400, metadata: { return: 127 } });
     render(<InstanceTerminal instanceName="web1" />);
     await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
-    expect(apiMocks.exec).toHaveBeenCalledTimes(2);
-    expect(apiMocks.exec).toHaveBeenNthCalledWith(1, "web1", ["/bin/bash"], true);
-    expect(apiMocks.exec).toHaveBeenNthCalledWith(2, "web1", ["/bin/sh"], true);
+    expect(interactiveExec()).toHaveLength(1);
+    expect(apiMocks.exec).toHaveBeenNthCalledWith(2, "web1", ["/bin/sh"], true, undefined);
+  });
+
+  it("retries with sh when bash was probed but exec rejects it", async () => {
+    apiMocks.exec
+      .mockResolvedValueOnce(execResponse()) // probe succeeds
+      .mockRejectedValueOnce(new Error("no bash")) // interactive bash refused
+      .mockResolvedValueOnce(execResponse()); // interactive sh works
+    render(<InstanceTerminal instanceName="web1" />);
+    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(2));
+    expect(apiMocks.exec).toHaveBeenNthCalledWith(3, "web1", ["/bin/sh"], true, undefined);
   });
 
   it("shows the error placeholder when the websocket closes before connecting", async () => {
@@ -227,15 +245,18 @@ describe("InstanceTerminal", () => {
   });
 
   it("shows the shell error placeholder with a danger toast when both shells fail", async () => {
-    apiMocks.exec.mockRejectedValue(new Error("boom"));
+    // Probe succeeds; every interactive shell attempt fails.
+    apiMocks.exec.mockImplementation(async (_name, _command, interactive: boolean) =>
+      interactive ? Promise.reject(new Error("boom")) : execResponse()
+    );
     render(<InstanceTerminal instanceName="web1" />);
     expect(await screen.findByTestId("term-error")).toBeInTheDocument();
     expect(screen.getByText("Shell unavailable")).toBeInTheDocument();
     expect(screen.getByText(/instance is running/)).toBeInTheDocument();
     expect(screen.getByTestId("term-retry")).toBeInTheDocument();
     expect(screen.getByTestId("term-switch")).toHaveTextContent("Switch to Console");
-    // Both shell candidates were attempted.
-    expect(apiMocks.exec).toHaveBeenCalledTimes(2);
+    // Probe, bash attempt, then the sh retry.
+    expect(apiMocks.exec).toHaveBeenCalledTimes(3);
     const toasts = toastStore.getState();
     expect(toasts.some((t) => t.tone === "danger" && t.message === "boom")).toBe(true);
   });
@@ -257,7 +278,7 @@ describe("InstanceTerminal", () => {
     expect(await screen.findByText("Console unavailable")).toBeInTheDocument();
     expect(screen.getByTestId("term-switch")).toHaveTextContent("Switch to Shell");
     await user.click(screen.getByTestId("term-switch"));
-    expect(apiMocks.exec).toHaveBeenCalledWith("web1", ["/bin/bash"], true);
+    await waitFor(() => expect(interactiveExec().at(-1)?.[1]).toEqual(["/bin/bash"]));
   });
 
   it("flushes the latest window-resize over the control socket on open", async () => {

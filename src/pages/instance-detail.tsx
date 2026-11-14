@@ -288,14 +288,21 @@ export function InstanceDetailPage() {
             : []),
           <SplitButton
             key="console"
-            label="Console"
-            icon={<Monitor size={14} />}
+            label={instance.type === "virtual-machine" ? "Console" : "Terminal"}
+            icon={instance.type === "virtual-machine" ? <Monitor size={14} /> : <SquareTerminal size={14} />}
             dataTestId="detail-terminal"
-            onPrimary={() => openConsole("vga")}
-            options={[
-              { label: "Console (VGA)", icon: <Monitor size={14} />, onSelect: () => openConsole("vga") },
-              { label: "Terminal (shell)", icon: <SquareTerminal size={14} />, onSelect: () => openConsole("exec") },
-            ]}
+            onPrimary={() => openConsole(instance.type === "virtual-machine" ? "vga" : "exec")}
+            options={
+              instance.type === "virtual-machine"
+                ? [
+                    { label: "Console (VGA)", icon: <Monitor size={14} />, onSelect: () => openConsole("vga") },
+                    { label: "Terminal (shell)", icon: <SquareTerminal size={14} />, onSelect: () => openConsole("exec") },
+                  ]
+                : [
+                    { label: "Terminal (shell)", icon: <SquareTerminal size={14} />, onSelect: () => openConsole("exec") },
+                    { label: "Console (VGA)", icon: <Monitor size={14} />, onSelect: () => openConsole("vga") },
+                  ]
+            }
           />,
         ]}
       />

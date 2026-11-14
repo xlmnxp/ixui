@@ -6,7 +6,7 @@ import "@fontsource/ubuntu-mono/400.css";
 import "@fontsource/ubuntu-mono/700.css";
 import { Monitor, RotateCw, SquareTerminal } from "lucide-react";
 import { SpiceMainConn } from "../../lib/spice/src/main.js";
-import { instancesApi } from "../api";
+import { instancesApi, operationsApi } from "../api";
 import { registerInstanceProject } from "../api/client";
 import { createSubprotocolShim } from "../lib/ws-shim";
 import type { AsyncResponse } from "../api/types";
@@ -31,14 +31,40 @@ function toWsUrl(path: string): string {
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
-/** Shells to try for the exec console, in order: bash first, then sh. */
-const SHELL_CANDIDATES: string[][] = [["/bin/bash"], ["/bin/sh"]];
+/**
+ * Preferred shell for this instance, decided by asking the instance itself.
+ *
+ * The daemon accepts any exec command asynchronously — a missing binary only
+ * fails after the websocket connects — so "try bash, catch, try sh" cannot work.
+ * Instead run a one-shot `command -v bash` probe and read its exit code.
+ */
+async function resolveShell(instanceName: string, project?: string): Promise<string[]> {
+  try {
+    const probe = await instancesApi.exec(
+      instanceName,
+      ["/bin/sh", "-c", "command -v bash"],
+      false,
+      project,
+      { waitForWebsocket: false }
+    );
+    const opId = probe?.operation?.split("/").pop();
+    if (opId) {
+      const op = await operationsApi.wait(opId, { intervalMs: 250, timeoutMs: 5_000 });
+      const exitCode = (op.metadata as { return?: number } | undefined)?.return;
+      return exitCode === 0 ? ["/bin/bash"] : ["/bin/sh"];
+    }
+  } catch {
+    // Probe failed (instance stopped, no permissions); default to sh.
+  }
+  return ["/bin/sh"];
+}
 
 /** Fallback for sockets that hang instead of closing. */
 const CONNECT_TIMEOUT_MS = 10_000;
 
 interface SessionProps {
   instanceName: string;
+  project?: string;
   kind: "exec" | "console";
   active: boolean;
   tabId: string;
@@ -47,7 +73,7 @@ interface SessionProps {
   onTitle?: (title: string) => void;
 }
 
-function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProcess, onTitle }: SessionProps) {
+function TerminalSession({ instanceName, project, kind, active, tabId, onSwitch, onProcess, onTitle }: SessionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");
   const termRef = useRef<Terminal | null>(null);
@@ -142,17 +168,18 @@ function TerminalSession({ instanceName, kind, active, tabId, onSwitch, onProces
     try {
       const result = await (nextKind === "exec"
         ? (async () => {
-            let lastError: unknown = null;
-            for (const command of SHELL_CANDIDATES) {
-              try {
-                const result = await instancesApi.exec(instanceName, command, true);
-                onProcess?.(command[0] ?? "shell");
-                return result;
-              } catch (err) {
-                lastError = err;
-              }
+            const preferred = await resolveShell(instanceName, project);
+            try {
+              const result = await instancesApi.exec(instanceName, preferred, true, project);
+              onProcess?.(preferred[0] ?? "shell");
+              return result;
+            } catch (err) {
+              // The probe said bash exists but exec refused it now; use sh.
+              if (preferred[0] === "/bin/sh") throw err;
+              const result = await instancesApi.exec(instanceName, ["/bin/sh"], true, project);
+              onProcess?.("/bin/sh");
+              return result;
             }
-            throw lastError ?? new Error("Exec failed");
           })()
         : instancesApi.console(instanceName, 80, 24));
       if (session !== sessionRef.current) return;
@@ -471,6 +498,7 @@ export function InstanceTerminal({ instanceName }: InstanceTerminalProps) {
           <TerminalSession
             key={tab.id}
             instanceName={instanceName}
+            project={project}
             kind={tab.kind}
             active={tab.id === activeId}
             tabId={tab.id}

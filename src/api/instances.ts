@@ -99,12 +99,25 @@ export class InstancesApi {
     return this.client.get<InstanceStateInfo>(`/instances/${name}/state${projectQueryFor(name, project)}`);
   }
 
-  exec(name: string, command: string[], interactive: boolean, project?: string): Promise<AsyncResponse | null> {
+  /**
+   * Run a command in an instance.
+   *
+   * Interactive sessions must wait for the websocket; one-shot probes pass
+   * `waitForWebsocket: false` so the daemon runs them immediately and reports
+   * the exit code in the operation metadata.
+   */
+  exec(
+    name: string,
+    command: string[],
+    interactive: boolean,
+    project?: string,
+    options: { waitForWebsocket?: boolean } = {}
+  ): Promise<AsyncResponse | null> {
     return this.client.post(`/instances/${name}/exec${projectQueryFor(name, project)}`, {
       command,
       interactive,
       environment: { TERM: "xterm" },
-      "wait-for-websocket": true,
+      "wait-for-websocket": options.waitForWebsocket ?? true,
     });
   }
 
