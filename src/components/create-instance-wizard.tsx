@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Box, Monitor, Plus } from "lucide-react";
 import { ReviewList, StepDialog } from "./step-dialog";
+import { CreateInstanceIcon } from "./create-instance-icon";
 import type { Step } from "./step-dialog";
 import { Input } from "./input";
 import { SegmentedControl } from "./segmented-control";
@@ -259,6 +260,7 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
       dirty={dirty}
       discardMessage="The instance has not been created yet. Discard these settings?"
       windowMode
+      windowIcon={<CreateInstanceIcon size={15} />}
       windowWidth={1120}
       windowBodyHeight="min(700px, calc(100vh - 190px))"
       submitLabel="Create"

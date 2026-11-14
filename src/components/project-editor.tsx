@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Folder, Plus } from "lucide-react";
 import { infraApi } from "../api";
 import type { Project } from "../api/types";
 import { ReviewList, StepDialog } from "./step-dialog";
@@ -353,6 +353,7 @@ export function ProjectEditor({ project, usage = {}, state, onClose, onSaved }: 
       steps={steps}
       busy={busy}
       windowMode
+      windowIcon={<Folder size={15} />}
       windowWidth={960}
       windowBodyHeight="min(680px, calc(100vh - 190px))"
       freeNavigation={!creating}

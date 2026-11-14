@@ -70,7 +70,7 @@ export interface NetworkLinksDialogProps {
   onClose: () => void;
 }
 
-export function NetworkLinksDialog({ network, onClose }: NetworkLinksDialogProps) {
+export function NetworkLinksPanel({ network }: { network: Network }) {
   const [tab, setTab] = useState<Tab>("lbs");
   const [lbs, setLbs] = useState<LoadBalancer[]>([]);
   const [peers, setPeers] = useState<NetworkPeer[]>([]);
@@ -213,31 +213,21 @@ export function NetworkLinksDialog({ network, onClose }: NetworkLinksDialogProps
 
   return (
     <>
-      <Dialog
-        open={network !== null}
-        onClose={onClose}
-        wide
-        title={`Load balancers & peers for ${name}`}
-        footer={
-          <>
-            <Button variant="secondary" onClick={onClose}><X size={14} /> Close</Button>
-            {tab === "lbs" ? (
-              <Button data-testid="lb-open" onClick={openLb}><Plus size={14} /> Add load balancer</Button>
-            ) : (
-              <Button data-testid="peer-open" onClick={() => setPeerOpen(true)}><Plus size={14} /> Add peer</Button>
-            )}
-          </>
-        }
-      >
+      <div className="flex items-center justify-between gap-2" data-testid="network-links-panel">
         <Tabs tabs={tabs} active={tab} onChange={(k) => setTab(k as Tab)} />
-        {loading ? (
-          <Loading dataTestId="network-links-loading" label="Loading…" />
-        ) : tab === "lbs" ? (
-          <Table columns={lbColumns} rows={lbs} rowKey={(l) => l.listen_address} dataTestId="lb-table" emptyMessage="No load balancers" />
+        {tab === "lbs" ? (
+          <Button size="sm" data-testid="lb-open" onClick={openLb}><Plus size={14} /> Add load balancer</Button>
         ) : (
-          <Table columns={peerColumns} rows={peers} rowKey={(p) => p.name} dataTestId="peer-table" emptyMessage="No peers" />
+          <Button size="sm" data-testid="peer-open" onClick={() => setPeerOpen(true)}><Plus size={14} /> Add peer</Button>
         )}
-      </Dialog>
+      </div>
+      {loading ? (
+        <Loading dataTestId="network-links-loading" label="Loading…" />
+      ) : tab === "lbs" ? (
+        <Table columns={lbColumns} rows={lbs} rowKey={(l) => l.listen_address} dataTestId="lb-table" emptyMessage="No load balancers" />
+      ) : (
+        <Table columns={peerColumns} rows={peers} rowKey={(p) => p.name} dataTestId="peer-table" emptyMessage="No peers" />
+      )}
 
       <Dialog
         open={lbOpen}
@@ -260,10 +250,10 @@ export function NetworkLinksDialog({ network, onClose }: NetworkLinksDialogProps
                 <Input aria-label={`Backend ${i + 1} name`} placeholder="name" data-testid={`lb-backend-name-${i}`} value={b.name} onChange={(e) => setBackends((r) => r.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
                 <Input aria-label={`Backend ${i + 1} address`} placeholder="target address" data-testid={`lb-backend-address-${i}`} value={b.address} onChange={(e) => setBackends((r) => r.map((x, j) => (j === i ? { ...x, address: e.target.value } : x)))} />
                 <Input aria-label={`Backend ${i + 1} port`} placeholder="port" value={b.port} onChange={(e) => setBackends((r) => r.map((x, j) => (j === i ? { ...x, port: e.target.value } : x)))} />
-                <Button size="sm" variant="ghost" aria-label={`Remove backend ${i + 1}`} onClick={() => setBackends((r) => r.filter((_, j) => j !== i))}><X size={14} /></Button>
+                <Button size="sm" variant="ghost" aria-label={`Remove backend ${i + 1}`} onClick={() => setBackends((r) => r.filter((_, j) => j !== i))}><Trash2 size={13} /></Button>
               </div>
             ))}
-            <Button size="sm" variant="ghost" onClick={() => setBackends((r) => [...r, { name: "", address: "", port: "" }])}><Plus size={14} /> Add backend</Button>
+            <Button size="sm" variant="ghost" onClick={() => setBackends((r) => [...r, { name: "", address: "", port: "" }])} data-testid="lb-backend-add"><Plus size={13} /> Backend</Button>
           </div>
           <div>
             <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">Ports</h3>
@@ -275,10 +265,10 @@ export function NetworkLinksDialog({ network, onClose }: NetworkLinksDialogProps
                 </Select>
                 <Input aria-label={`Port ${i + 1} listen port`} placeholder="listen port(s)" data-testid={`lb-port-listen-${i}`} value={p.listenPort} onChange={(e) => setPorts((r) => r.map((x, j) => (j === i ? { ...x, listenPort: e.target.value } : x)))} />
                 <Input aria-label={`Port ${i + 1} target backends`} placeholder="backends (comma separated)" data-testid={`lb-port-backends-${i}`} value={p.backends} onChange={(e) => setPorts((r) => r.map((x, j) => (j === i ? { ...x, backends: e.target.value } : x)))} />
-                <Button size="sm" variant="ghost" aria-label={`Remove port ${i + 1}`} onClick={() => setPorts((r) => r.filter((_, j) => j !== i))}><X size={14} /></Button>
+                <Button size="sm" variant="ghost" aria-label={`Remove port ${i + 1}`} onClick={() => setPorts((r) => r.filter((_, j) => j !== i))}><Trash2 size={13} /></Button>
               </div>
             ))}
-            <Button size="sm" variant="ghost" onClick={() => setPorts((r) => [...r, { protocol: "tcp", listenPort: "", backends: "" }])}><Plus size={14} /> Add port</Button>
+            <Button size="sm" variant="ghost" onClick={() => setPorts((r) => [...r, { protocol: "tcp", listenPort: "", backends: "" }])} data-testid="lb-port-add"><Plus size={13} /> Port</Button>
           </div>
         </div>
       </Dialog>
@@ -298,12 +288,29 @@ export function NetworkLinksDialog({ network, onClose }: NetworkLinksDialogProps
           <Input label="Peer name" name="peer-name" placeholder="peer-1" data-testid="peer-name" value={peerName} onChange={(e) => setPeerName(e.target.value)} />
           <Input label="Target project" name="peer-project" placeholder="default" data-testid="peer-project" value={peerProject} onChange={(e) => setPeerProject(e.target.value)} />
           <Input label="Target network" name="peer-network" placeholder="br0" data-testid="peer-network" value={peerNetwork} onChange={(e) => setPeerNetwork(e.target.value)} />
-          <p className="text-xs text-text-tertiary">A peering only becomes active once the same peering is created from the target network back to this one.</p>
+          <p className="text-xs text-text-tertiary">A peering only becomes active once the same peering is created from the other side.</p>
         </div>
       </Dialog>
 
-      <ConfirmDialog open={lbDelete !== null} title="Delete load balancer" body={`Delete load balancer ${lbDelete?.listen_address}?`} confirmLabel="Delete" tone="danger" onConfirm={removeLb} onCancel={() => setLbDelete(null)} />
-      <ConfirmDialog open={peerDelete !== null} title="Delete peer" body={`Delete peer ${peerDelete?.name}?`} confirmLabel="Delete" tone="danger" onConfirm={removePeer} onCancel={() => setPeerDelete(null)} />
+      <ConfirmDialog open={lbDelete !== null} title="Delete load balancer" body={`Delete load balancer ${lbDelete?.listen_address ?? ""}?`} confirmLabel="Delete" tone="danger" onConfirm={() => void removeLb()} onCancel={() => setLbDelete(null)} />
+      <ConfirmDialog open={peerDelete !== null} title="Delete peer" body={`Delete peer ${peerDelete?.name ?? ""}?`} confirmLabel="Delete" tone="danger" onConfirm={() => void removePeer()} onCancel={() => setPeerDelete(null)} />
     </>
+  );
+}
+
+/** The dialog form of the panel, kept for callers that open it directly. */
+export function NetworkLinksDialog({ network, onClose }: NetworkLinksDialogProps) {
+  return (
+    <Dialog
+      open={network !== null}
+      onClose={onClose}
+      wide
+      title={`Load balancers & peers for ${network?.name ?? ""}`}
+      footer={
+        <Button variant="secondary" onClick={onClose}><X size={14} /> Close</Button>
+      }
+    >
+      {network && <NetworkLinksPanel network={network} />}
+    </Dialog>
   );
 }

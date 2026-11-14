@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowLeftRight, ArrowUp, Laptop, Pencil, Plus, Share2, Trash2, X } from "lucide-react";
-import { infraApi, networkExtrasApi } from "../api";
+import { Network as NetworkIcon, Plus, Settings2, Trash2 } from "lucide-react";
+import { infraApi } from "../api";
 import type { Network } from "../api/types";
-import type { Forward, Lease } from "../api/network-extras";
-import { NetworkLinksDialog } from "../components/network-links";
+import { NetworkManageWindow } from "../components/network-manage";
 import { Table } from "../components/table";
 import type { Column } from "../components/table";
 import { Button } from "../components/button";
-import { Dialog } from "../components/dialog";
 import { ReviewList, StepDialog } from "../components/step-dialog";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { Input } from "../components/input";
@@ -19,35 +17,34 @@ import { PageBar } from "../components/page-bar";
 import type { BarState } from "../components/page-bar";
 import { toast } from "../components/toast";
 
+/** Configured address for a family, or undefined when the network has none. */
+function prefixOf(network: Network, family: "ipv4" | "ipv6"): string | undefined {
+  const value = network.config?.[`${family}.address`];
+  if (!value || value === "none" || value === "auto") return undefined;
+  return value;
+}
+
 export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | null) => void } = {}) {
   const [networks, setNetworks] = useState<Network[]>([]);
+  const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
-  const [editing, setEditing] = useState<Network | null>(null);
+  const [managing, setManaging] = useState<Network | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Network | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [deleteManyOpen, setDeleteManyOpen] = useState(false);
+  const [deletingMany, setDeletingMany] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState("bridge");
   const [description, setDescription] = useState("");
   const [config, setConfig] = useState<Record<string, string>>({});
-  const [configLoading, setConfigLoading] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
-  const [deleteManyOpen, setDeleteManyOpen] = useState(false);
-  const [deletingMany, setDeletingMany] = useState(false);
-  const [leasesNetwork, setLeasesNetwork] = useState<Network | null>(null);
-  const [leases, setLeases] = useState<Lease[]>([]);
-  const [leasesBusy, setLeasesBusy] = useState(false);
-  const [linksNetwork, setLinksNetwork] = useState<Network | null>(null);
-  const [forwardsNetwork, setForwardsNetwork] = useState<Network | null>(null);
-  const [forwards, setForwards] = useState<Forward[]>([]);
-  const [forwardOpen, setForwardOpen] = useState(false);
-  const [forwardAddress, setForwardAddress] = useState("");
-  const [forwardDescription, setForwardDescription] = useState("");
-  const [forwardDeleteTarget, setForwardDeleteTarget] = useState<Forward | null>(null);
-  const [forwardBusy, setForwardBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(() => {
-    void infraApi.listNetworks().then(setNetworks).catch(() => {}).finally(() => setLoading(false));
+    void infraApi
+      .listNetworks()
+      .then(setNetworks)
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(refresh, [refresh]);
@@ -66,42 +63,9 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
       await infraApi.createNetwork({ name: name.trim(), type, description: description.trim(), config });
       toast("success", `Network ${name.trim()} created`);
       setCreateOpen(false);
-      setName("");
-      setDescription("");
-      setConfig({});
       refresh();
     } catch (err) {
       toast("danger", err instanceof Error ? err.message : "Create failed");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const openEdit = async (network: Network) => {
-    setEditing(network);
-    setDescription(network.description);
-    setConfig({});
-    setConfigLoading(true);
-    try {
-      const n = await infraApi.getNetwork(network.name);
-      setConfig(n.config ?? {});
-    } catch (err) {
-      toast("danger", err instanceof Error ? err.message : "Load failed");
-    } finally {
-      setConfigLoading(false);
-    }
-  };
-
-  const save = async () => {
-    if (!editing) return;
-    setBusy(true);
-    try {
-      await infraApi.updateNetworkConfig(editing.name, { description, config });
-      toast("success", `Network ${editing.name} saved`);
-      setEditing(null);
-      refresh();
-    } catch (err) {
-      toast("danger", err instanceof Error ? err.message : "Save failed");
     } finally {
       setBusy(false);
     }
@@ -122,7 +86,7 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
   const removeMany = async () => {
     setDeletingMany(true);
     try {
-      await Promise.all(selectedKeys.map((name) => infraApi.deleteNetwork(name)));
+      await Promise.all(selectedKeys.map((key) => infraApi.deleteNetwork(key)));
       toast("success", `Deleted ${selectedKeys.length} network(s)`);
       setSelectedKeys([]);
       setDeleteManyOpen(false);
@@ -133,119 +97,54 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
     }
   };
 
-  const setNetworkUpDown = async (network: Network, action: "up" | "down") => {
-    try {
-      await infraApi.setNetworkState(network.name, action);
-      toast("success", `Network ${network.name} ${action === "up" ? "started" : "stopped"}`);
-      refresh();
-    } catch (err) {
-      toast("danger", err instanceof Error ? err.message : "Action failed");
-    }
-  };
-
-  const openLeases = async (network: Network) => {
-    setLeasesNetwork(network);
-    setLeases([]);
-    setLeasesBusy(true);
-    try {
-      setLeases(await networkExtrasApi.listLeases(network.name));
-    } catch (err) {
-      toast("danger", err instanceof Error ? err.message : "Load failed");
-    } finally {
-      setLeasesBusy(false);
-    }
-  };
-
-  const openForwards = async (network: Network) => {
-    setForwardsNetwork(network);
-    setForwards([]);
-    try {
-      setForwards(await networkExtrasApi.listForwards(network.name));
-    } catch (err) {
-      toast("danger", err instanceof Error ? err.message : "Load failed");
-    }
-  };
-
-  const addForward = async () => {
-    if (!forwardsNetwork) return;
-    setForwardBusy(true);
-    try {
-      await networkExtrasApi.createForward(forwardsNetwork.name, { listen_address: forwardAddress.trim(), description: forwardDescription.trim() });
-      toast("success", `Forward ${forwardAddress} created`);
-      setForwardOpen(false);
-      setForwardAddress("");
-      setForwardDescription("");
-      setForwards(await networkExtrasApi.listForwards(forwardsNetwork.name));
-    } catch (err) {
-      toast("danger", err instanceof Error ? err.message : "Create failed");
-    } finally {
-      setForwardBusy(false);
-    }
-  };
-
-  const removeForward = async () => {
-    if (!forwardsNetwork || !forwardDeleteTarget) return;
-    try {
-      await networkExtrasApi.deleteForward(forwardsNetwork.name, forwardDeleteTarget.listen_address);
-      toast("success", `Forward ${forwardDeleteTarget.listen_address} deleted`);
-      setForwardDeleteTarget(null);
-      setForwards(await networkExtrasApi.listForwards(forwardsNetwork.name));
-    } catch (err) {
-      toast("danger", err instanceof Error ? err.message : "Delete failed");
-    }
-  };
-
   const columns: Column<Network>[] = [
     { key: "name", header: "Name", sortValue: (n) => n.name, render: (n) => <span className="font-medium">{n.name}</span> },
-    { key: "type", header: "Type", render: (n) => n.type },
+    { key: "type", header: "Type", sortValue: (n) => n.type, render: (n) => n.type },
+    {
+      key: "ipv4",
+      header: "IPv4 prefix",
+      render: (n) => {
+        const value = prefixOf(n, "ipv4");
+        return value ? <span className="font-mono text-xs">{value}</span> : <span className="text-text-tertiary">—</span>;
+      },
+    },
+    {
+      key: "ipv6",
+      header: "IPv6 prefix",
+      render: (n) => {
+        const value = prefixOf(n, "ipv6");
+        return value ? <span className="font-mono text-xs">{value}</span> : <span className="text-text-tertiary">—</span>;
+      },
+    },
     { key: "managed", header: "Managed", render: (n) => (n.managed ? "Yes" : "No") },
     { key: "used", header: "Used by", render: (n) => n.used_by.length },
-    { key: "status", header: "Status", render: (n) => n.status },
     {
-      key: "actions", header: "", align: "right",
+      key: "actions",
+      header: "",
+      align: "right",
       render: (n) => (
         <div className="flex justify-end gap-1">
-          {n.managed && (
-            <>
-              <Button size="sm" variant="ghost" data-testid={`network-up-${n.name}`} onClick={() => void setNetworkUpDown(n, "up")}><ArrowUp size={14} /> Up</Button>
-              <Button size="sm" variant="ghost" data-testid={`network-down-${n.name}`} onClick={() => void setNetworkUpDown(n, "down")}><ArrowDown size={14} /> Down</Button>
-              <Button size="sm" variant="ghost" data-testid={`network-leases-${n.name}`} onClick={() => openLeases(n)}><Laptop size={14} /> Leases</Button>
-              <Button size="sm" variant="ghost" data-testid={`network-forwards-${n.name}`} onClick={() => openForwards(n)}><ArrowLeftRight size={14} /> Forwards</Button>
-              <Button size="sm" variant="ghost" data-testid={`network-links-${n.name}`} onClick={() => setLinksNetwork(n)}><Share2 size={14} /> LBs{n.type === "ovn" ? " & peers" : ""}</Button>
-            </>
-          )}
-          <Button size="sm" variant="ghost" data-testid={`network-edit-${n.name}`} onClick={() => openEdit(n)}><Pencil size={14} /> Edit</Button>
-          <Button size="sm" variant="ghost" data-testid={`network-delete-${n.name}`} onClick={() => setDeleteTarget(n)}><Trash2 size={14} /> Delete</Button>
+          <Button size="sm" variant="ghost" data-testid={`network-manage-${n.name}`} onClick={() => setManaging(n)}>
+            <Settings2 size={14} /> Manage
+          </Button>
+          <Button size="sm" variant="ghost" data-testid={`network-delete-${n.name}`} onClick={() => setDeleteTarget(n)}>
+            <Trash2 size={14} /> Delete
+          </Button>
         </div>
-      ),
-    },
-  ];
-
-  const leaseColumns: Column<Lease>[] = [
-    { key: "address", header: "Address", render: (l) => <span className="font-mono">{l.address}</span> },
-    { key: "hostname", header: "Hostname", render: (l) => l.hostname || "—" },
-    { key: "hwaddr", header: "MAC", render: (l) => <span className="font-mono">{l.hwaddr}</span> },
-    { key: "type", header: "Type", render: (l) => l.type },
-    { key: "expires", header: "Expires", render: (l) => l.expires_at },
-  ];
-
-  const forwardColumns: Column<Forward>[] = [
-    { key: "listen_address", header: "Listen address", render: (f) => <span className="font-mono">{f.listen_address}</span> },
-    { key: "description", header: "Description", render: (f) => f.description || "—" },
-    {
-      key: "actions", header: "", align: "right",
-      render: (f) => (
-        <Button size="sm" variant="ghost" data-testid={`network-forward-delete-${f.listen_address}`} onClick={() => setForwardDeleteTarget(f)}><Trash2 size={14} /> Delete</Button>
       ),
     },
   ];
 
   const barActions = useMemo(
     () => [
-      <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}><Trash2 size={14} /> Delete</Button>,
-      <Button key="create" size="sm" data-testid="network-create-open" onClick={openCreate}><Plus size={14} /> Create network</Button>,
+      <Button key="delete" size="sm" variant="danger" data-testid="action-delete" disabled={selectedKeys.length === 0} onClick={() => setDeleteManyOpen(true)}>
+        <Trash2 size={14} /> Delete
+      </Button>,
+      <Button key="create" size="sm" data-testid="network-create-open" onClick={openCreate}>
+        <Plus size={14} /> Create network
+      </Button>,
     ],
-    [selectedKeys, setDeleteManyOpen, openCreate]
+    [selectedKeys, openCreate]
   );
 
   useEffect(() => {
@@ -260,9 +159,16 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
       {loading ? (
         <Loading dataTestId="networks-loading" label="Loading networks…" />
       ) : networks.length === 0 ? (
-        <EmptyState title="No networks" />
+        <EmptyState title="No networks" description="Create a bridge or OVN network to connect instances." />
       ) : (
-        <Table persistKey="networks" columns={columns} rows={networks} rowKey={(n) => n.name} selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys} />
+        <Table
+          persistKey="networks"
+          columns={columns}
+          rows={networks}
+          rowKey={(n) => n.name}
+          selectedKeys={selectedKeys}
+          onSelectionChange={setSelectedKeys}
+        />
       )}
 
       <StepDialog
@@ -272,7 +178,9 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
         submitLabel="Create"
         submitIcon={<Plus size={14} />}
         busy={busy}
-        wide
+        windowMode
+        windowIcon={<NetworkIcon size={15} />}
+        windowWidth={900}
         onSubmit={create}
         steps={[
           {
@@ -321,89 +229,12 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
         ]}
       />
 
-      <StepDialog
-        open={editing !== null}
-        onClose={() => setEditing(null)}
-        title={`Edit network ${editing?.name ?? ""}`}
-        submitLabel="Save"
-        busy={busy}
-        wide
-        freeNavigation
-        onSubmit={save}
-        steps={[
-          {
-            key: "basics",
-            title: "Basics",
-            content: (
-              <div className="space-y-3">
-                <Input label="Name" name="network-edit-name" value={editing?.name ?? ""} disabled />
-                <Input label="Type" name="network-edit-type" value={editing?.type ?? ""} disabled />
-                <Input label="Description" name="network-edit-desc" placeholder="Optional" data-testid="network-edit-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
-              </div>
-            ),
-          },
-          {
-            key: "config",
-            title: "Configuration",
-            content: configLoading ? (
-              <Loading dataTestId="network-config-loading" label="Loading config…" />
-            ) : (
-              <KeyValueEditor values={config} onChange={setConfig} dataTestId="network-config-editor" stickyHeader />
-            ),
-          },
-          {
-            key: "review",
-            title: "Review",
-            content: (
-              <ReviewList
-                rows={[
-                  { label: "Network", value: editing?.name ?? "—" },
-                  { label: "Description", value: description || "—" },
-                  { label: "Config keys", value: Object.keys(config).length === 0 ? "None" : Object.entries(config).map(([k, v]) => `${k}=${v}`).join(", ") },
-                ]}
-              />
-            ),
-          },
-        ]}
-      />
-
-      <Dialog open={leasesNetwork !== null} onClose={() => setLeasesNetwork(null)} title={`Leases for ${leasesNetwork?.name ?? ""}`} footer={
-        <Button variant="secondary" onClick={() => setLeasesNetwork(null)}><X size={14} /> Close</Button>
-      }>
-        {leasesBusy ? (
-          <Loading dataTestId="network-leases-loading" label="Loading leases…" />
-        ) : (
-          <Table columns={leaseColumns} rows={leases} rowKey={(l) => l.address} dataTestId="network-leases-table" emptyMessage="No leases" />
-        )}
-      </Dialog>
-
-      <Dialog open={forwardsNetwork !== null} onClose={() => setForwardsNetwork(null)} title={`Forwards for ${forwardsNetwork?.name ?? ""}`} footer={
-        <>
-          <Button variant="secondary" onClick={() => setForwardsNetwork(null)}><X size={14} /> Close</Button>
-          <Button data-testid="network-forward-open" onClick={() => setForwardOpen(true)}><Plus size={14} /> Add forward</Button>
-        </>
-      }>
-        <Table columns={forwardColumns} rows={forwards} rowKey={(f) => f.listen_address} dataTestId="network-forwards-table" emptyMessage="No forwards" />
-      </Dialog>
-
-      <Dialog open={forwardOpen} onClose={() => setForwardOpen(false)} title={`Add forward to ${forwardsNetwork?.name ?? ""}`} footer={
-        <>
-          <Button variant="secondary" onClick={() => setForwardOpen(false)}><X size={14} /> Cancel</Button>
-          <Button onClick={addForward} loading={forwardBusy} data-testid="network-forward-create-submit"><Plus size={14} /> Create</Button>
-        </>
-      }>
-        <div className="space-y-3">
-          <Input label="Listen address" name="forward-address" placeholder="10.0.0.1:8080" data-testid="forward-address" value={forwardAddress} onChange={(e) => setForwardAddress(e.target.value)} />
-          <Input label="Description" name="forward-description" placeholder="Optional" data-testid="forward-description" value={forwardDescription} onChange={(e) => setForwardDescription(e.target.value)} />
-        </div>
-      </Dialog>
-
-      <NetworkLinksDialog network={linksNetwork} onClose={() => setLinksNetwork(null)} />
+      <NetworkManageWindow network={managing} onClose={() => setManaging(null)} onChanged={refresh} />
 
       <ConfirmDialog
         open={deleteTarget !== null}
         title="Delete network"
-        body={`Delete network ${deleteTarget?.name}?`}
+        body={`Delete network ${deleteTarget?.name ?? ""}?`}
         confirmLabel="Delete"
         tone="danger"
         onConfirm={remove}
@@ -418,15 +249,6 @@ export function NetworksPage({ registerBar }: { registerBar?: (bar: BarState | n
         loading={deletingMany}
         onConfirm={removeMany}
         onCancel={() => setDeleteManyOpen(false)}
-      />
-      <ConfirmDialog
-        open={forwardDeleteTarget !== null}
-        title="Delete forward"
-        body={`Delete forward ${forwardDeleteTarget?.listen_address}?`}
-        confirmLabel="Delete"
-        tone="danger"
-        onConfirm={removeForward}
-        onCancel={() => setForwardDeleteTarget(null)}
       />
     </div>
   );

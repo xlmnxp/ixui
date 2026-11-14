@@ -17,6 +17,8 @@ export interface WindowProps {
   width?: number;
   /** Body max height: px number or any CSS length (default 420). */
   bodyMaxHeight?: number | string;
+  /** Icon shown before the title, to identify the window at a glance. */
+  icon?: ReactNode;
   /** Unsaved edits: backdrop, Escape and the close button ask before discarding. */
   dirty?: boolean;
   /** Copy for the confirmation prompt. */
@@ -41,6 +43,7 @@ export function Window({
   footer,
   width = 640,
   bodyMaxHeight = 420,
+  icon,
   dirty = false,
   discardMessage = "You have unsaved changes. Discard them?",
   renderFooter,
@@ -110,9 +113,12 @@ export function Window({
           }}
           className="flex cursor-move items-center justify-between border-b border-border bg-surface-700 px-4 py-2.5 select-none"
         >
-          <div>
-            <h2 className="text-sm font-semibold text-text-primary">{title}</h2>
-            {subtitle && <p className="text-xs text-text-secondary">{subtitle}</p>}
+          <div className="flex items-center gap-2">
+            {icon && <span className="shrink-0 text-text-secondary" data-testid="window-icon">{icon}</span>}
+            <div>
+              <h2 className="text-sm font-semibold text-text-primary">{title}</h2>
+              {subtitle && <p className="text-xs text-text-secondary">{subtitle}</p>}
+            </div>
           </div>
           <button data-testid="window-close" onClick={guard.requestClose} aria-label="Close" className="text-text-tertiary hover:text-text-primary">
             <X size={16} />

@@ -454,6 +454,7 @@ export function AclsPage() {
         onClose={() => setEditing(null)}
         title={`ACL ${editing?.name ?? ""}`}
         subtitle={`${draftIngress.length} ingress rules · ${draftEgress.length} egress rules`}
+        icon={<ShieldAlert size={15} />}
         width={1100}
         bodyMaxHeight={560}
         footer={

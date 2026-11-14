@@ -38,6 +38,8 @@ export interface StepDialogProps {
   windowWidth?: number;
   /** Window body height (px or any CSS length) when windowMode is set (default 620). */
   windowBodyHeight?: number | string;
+  /** Icon shown in the window title bar. */
+  windowIcon?: ReactNode;
   /** Edit flows let people jump straight to any step; create flows must go in order. */
   freeNavigation?: boolean;
 }
@@ -59,6 +61,7 @@ export function StepDialog({
   subtitle,
   windowWidth = 1120,
   windowBodyHeight = 620,
+  windowIcon,
   freeNavigation = false,
 }: StepDialogProps) {
   const [index, setIndex] = useState(0);
@@ -158,6 +161,7 @@ export function StepDialog({
         subtitle={subtitle}
         width={windowWidth}
         bodyMaxHeight={windowBodyHeight}
+        icon={windowIcon}
         dirty={dirty}
         discardMessage={discardMessage}
         renderFooter={footerFor}

@@ -39,6 +39,22 @@ describe("Window", () => {
     expect(screen.getByText("body").parentElement?.style.maxHeight).toBe("420px");
   });
 
+  it("shows an identifying icon in the title bar", () => {
+    render(
+      <Window open onClose={() => {}} title="Volume data" icon={<span data-testid="my-icon" />}>
+        <p>body</p>
+      </Window>
+    );
+    const icon = screen.getByTestId("window-icon");
+    expect(icon).toBeInTheDocument();
+    expect(icon).toContainElement(screen.getByTestId("my-icon"));
+  });
+
+  it("omits the icon slot when none is given", () => {
+    render(<Window open onClose={() => {}} title="Plain"><p>body</p></Window>);
+    expect(screen.queryByTestId("window-icon")).not.toBeInTheDocument();
+  });
+
   it("closes on backdrop click", () => {
     const onClose = vi.fn();
     render(<Window open onClose={onClose} title="T">x</Window>);

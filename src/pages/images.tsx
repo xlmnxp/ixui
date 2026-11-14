@@ -166,6 +166,7 @@ export function ImagesPage({ registerBar }: { registerBar?: (bar: BarState | nul
         onClose={() => setAliasesOpen(false)}
         title="Image aliases"
         subtitle="Aliases map friendly names to image fingerprints."
+        icon={<List size={15} />}
         width={900}
         bodyMaxHeight={520}
         footer={

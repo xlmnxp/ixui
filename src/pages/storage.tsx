@@ -589,6 +589,7 @@ export function StoragePage({ registerBar }: { registerBar?: (bar: BarState | nu
         open={volumesWindowPool !== null}
         onClose={() => setVolumesWindowPool(null)}
         title={`Volumes in ${volumesWindowPool ?? ""}`}
+        icon={<HardDrive size={15} />}
         width={1000}
         bodyMaxHeight={560}
         footer={
