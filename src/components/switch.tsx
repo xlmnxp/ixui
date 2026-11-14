@@ -1,19 +1,22 @@
 export interface SwitchProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
+  /** Visible label text next to the switch. */
   label?: string;
+  /** Accessible name when no visible label should be shown. */
+  ariaLabel?: string;
   disabled?: boolean;
   dataTestId?: string;
 }
 
-export function Switch({ checked, onChange, label, disabled, dataTestId = "switch" }: SwitchProps) {
+export function Switch({ checked, onChange, label, ariaLabel, disabled, dataTestId = "switch" }: SwitchProps) {
   return (
     <label className={`inline-flex items-center gap-2 ${disabled ? "opacity-50" : ""}`}>
       <button
         type="button"
         role="switch"
         aria-checked={checked}
-        aria-label={label}
+        aria-label={ariaLabel ?? label}
         disabled={disabled}
         onClick={() => onChange(!checked)}
         data-testid={dataTestId}

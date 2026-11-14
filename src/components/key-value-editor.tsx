@@ -447,7 +447,7 @@ export function KeyValueEditor({
           checked={value === "true"}
           onChange={() => {}}
           disabled
-          label={`${key}: ${value}`}
+          ariaLabel={`${key}: ${value}`}
           dataTestId={`kv-bool-${key}`}
         />
       );
@@ -464,7 +464,7 @@ export function KeyValueEditor({
           <Switch
             checked={draftValue === "true"}
             onChange={(checked) => setDraftValue(checked ? "true" : "false")}
-            label={draftKey || "value"}
+            ariaLabel={draftKey || "value"}
             dataTestId="kv-bool-switch"
           />
         </div>

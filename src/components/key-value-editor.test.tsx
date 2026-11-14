@@ -76,6 +76,15 @@ describe("KeyValueEditor", () => {
     expect(screen.getByTestId("kv-key-edit-")).toHaveValue("boot.autostart");
   });
 
+  it("shows only the switch for a bool value while editing, no text label", async () => {
+    const user = userEvent.setup();
+    render(<KeyValueEditor values={{ "boot.autostart": "true" }} onChange={() => {}} />);
+    await user.dblClick(await screen.findByTestId("kv-value-boot.autostart"));
+    const toggle = await screen.findByTestId("kv-bool-switch");
+    expect(toggle.parentElement?.textContent?.trim()).toBe("");
+    expect(toggle).toHaveAttribute("aria-label", "boot.autostart");
+  });
+
   it("presets true and renders a switch for bool keys", async () => {
     const user = userEvent.setup();
     render(<KeyValueEditor values={{}} onChange={() => {}} />);
@@ -98,6 +107,8 @@ describe("KeyValueEditor", () => {
     expect(toggle).toHaveAttribute("aria-checked", "true");
     // Read-only until the row is edited.
     expect(toggle).toBeDisabled();
+    // The switch is the only thing in the cell: no "true"/false label beside it.
+    expect(toggle?.parentElement?.textContent?.trim()).toBe("");
   });
 
   it("opens the suggestion dropdown upward when there is no room below", async () => {
