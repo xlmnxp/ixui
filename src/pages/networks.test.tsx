@@ -33,6 +33,7 @@ vi.mock("../api", () => ({
     deleteForward: vi.fn().mockResolvedValue(undefined),
     listLoadBalancers: vi.fn(async () => []),
     listPeers: vi.fn(async () => []),
+    listAcls: vi.fn(async () => [{ name: "web-acl", description: "", config: {}, egress: [], ingress: [] }]),
   },
   serverApi: {
     metadata: vi.fn().mockResolvedValue({

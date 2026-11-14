@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, Pencil, Trash2, X } from "lucide-react";
-import { infraApi, instancesApi } from "../../api";
+import { infraApi, instancesApi, networkExtrasApi } from "../../api";
 import type { Instance } from "../../api/types";
 import { KeyValueEditor } from "../../components/key-value-editor";
 import { Loading } from "../../components/loading";
@@ -54,7 +54,11 @@ export function DevicesTab({ instanceName, project, registerActions }: DevicesTa
     let cancelled = false;
     void (async () => {
       try {
-        const [pools, networks] = await Promise.all([infraApi.listPools(), infraApi.listNetworks()]);
+        const [pools, networks, acls] = await Promise.all([
+          infraApi.listPools(),
+          infraApi.listNetworks(),
+          networkExtrasApi.listAcls().catch(() => []),
+        ]);
         if (cancelled) return;
         const poolNames = pools.map((p) => p.name);
         const networkNames = networks.map((n) => n.name);
@@ -63,6 +67,8 @@ export function DevicesTab({ instanceName, project, registerActions }: DevicesTa
           source: poolNames,
           network: networkNames,
           parent: networkNames,
+          // security.acls is a comma-separated list of ACL names.
+          acls: acls.map((a) => a.name),
         });
       } catch {
         // Suggestions are a convenience; ignore failures (e.g. restricted perms).

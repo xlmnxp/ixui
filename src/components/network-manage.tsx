@@ -46,6 +46,8 @@ export function NetworkManageWindow({ network, onClose, onChanged }: NetworkMana
   const [forwardDesc, setForwardDesc] = useState("");
   const [forwardBusy, setForwardBusy] = useState(false);
   const [forwardDelete, setForwardDelete] = useState<Forward | null>(null);
+  /** ACL names, so security.acls values can be completed. */
+  const [aclOptions, setAclOptions] = useState<Record<string, string[]>>({});
 
   const name = network?.name ?? "";
   const managed = network?.managed ?? false;
@@ -80,6 +82,13 @@ export function NetworkManageWindow({ network, onClose, onChanged }: NetworkMana
     setForwardDesc("");
     void load();
   }, [network, load]);
+
+  useEffect(() => {
+    void networkExtrasApi
+      .listAcls()
+      .then((acls) => setAclOptions({ acls: acls.map((a) => a.name) }))
+      .catch(() => {});
+  }, []);
 
   const dirty = JSON.stringify([description, config]) !== initial;
 
@@ -228,7 +237,13 @@ export function NetworkManageWindow({ network, onClose, onChanged }: NetworkMana
 
                   <div>
                     <p className="mb-1 text-xs font-medium text-text-secondary">Configuration</p>
-                    <KeyValueEditor values={config} onChange={setConfig} dataTestId="network-manage-config" stickyHeader />
+                    <KeyValueEditor
+                      values={config}
+                      onChange={setConfig}
+                      dataTestId="network-manage-config"
+                      valueOptions={aclOptions}
+                      stickyHeader
+                    />
                   </div>
                 </div>
               )}

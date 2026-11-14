@@ -354,6 +354,27 @@ describe("KeyValueEditor", () => {
     expect(await screen.findByTestId("kv-value-suggest-br0")).toBeInTheDocument();
   });
 
+  it("completes comma-separated lists like security.acls", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <KeyValueEditor
+        values={{ "security.acls": "web-acl" }}
+        onChange={onChange}
+        valueOptions={{ acls: ["web-acl", "db-acl", "ops-acl"] }}
+      />
+    );
+    await user.dblClick(screen.getByTestId("kv-value-security.acls"));
+    const input = screen.getByTestId("kv-value-edit-security.acls");
+    // The value already present is not offered again.
+    expect(screen.queryByTestId("kv-value-suggest-web-acl")).not.toBeInTheDocument();
+    expect(screen.getByTestId("kv-value-suggest-db-acl")).toBeInTheDocument();
+
+    await user.type(input, ", db");
+    await user.click(screen.getByTestId("kv-value-suggest-db-acl"));
+    expect(input).toHaveValue("web-acl, db-acl");
+  });
+
   it("uses valueOptions supplied by the page", async () => {
     const user = userEvent.setup();
     render(

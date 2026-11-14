@@ -133,8 +133,8 @@ export function KeyValueEditor({
    * Value completions for the row being edited, derived from the key's type,
    * the values already used by sibling keys, and any options the page supplied.
    */
-  const { valueSuggestions, hasKnownValueOptions } = useMemo(() => {
-    const empty = { valueSuggestions: [] as string[], hasKnownValueOptions: false };
+  const { valueSuggestions, valuePrefix, hasKnownValueOptions } = useMemo(() => {
+    const empty = { valueSuggestions: [] as string[], valuePrefix: "", currentValue: "", hasKnownValueOptions: false };
     if (editing === null || editing === DESCRIPTION_ROW) return empty;
     const key = draftKey;
     if (!key) return empty;
@@ -159,17 +159,36 @@ export function KeyValueEditor({
       .map(([, value]) => value);
 
     const candidates = new Set<string>([...known, ...provided, ...fromSiblings]);
-    candidates.delete(draftValue);
     // Only narrow by what the user actually typed — the prefilled current value
     // would otherwise filter every candidate out.
-    const needle = valueTouched ? draftValue.trim().toLowerCase() : "";
-    const matches = [...candidates].filter((value) => !needle || value.toLowerCase().includes(needle));
+    const typed = valueTouched ? draftValue : "";
+    // Keys such as security.acls hold comma-separated lists: complete the item
+    // being typed and keep whatever came before it.
+    const comma = typed.lastIndexOf(",");
+    const listPrefix = comma === -1 ? "" : typed.slice(0, comma + 1);
+    const current = (comma === -1 ? typed : typed.slice(comma + 1)).trim();
+    // Never suggest anything already in the field (an item, or the whole value).
+    const already = new Set(
+      draftValue
+        .split(",")
+        .map((part) => part.trim().toLowerCase())
+        .filter(Boolean)
+    );
+    const needle = current.toLowerCase();
+    const matches = [...candidates]
+      .filter((value) => !already.has(value.toLowerCase()))
+      .filter((value) => !needle || value.toLowerCase().includes(needle));
     const sorted = matches.sort((a, b) => {
       const aPrefix = needle && a.toLowerCase().startsWith(needle) ? 0 : 1;
       const bPrefix = needle && b.toLowerCase().startsWith(needle) ? 0 : 1;
       return aPrefix - bPrefix || a.localeCompare(b);
     });
-    return { valueSuggestions: sorted.slice(0, 8), hasKnownValueOptions: known.length > 0 || provided.length > 0 };
+    return {
+      valueSuggestions: sorted.slice(0, 8),
+      valuePrefix: listPrefix,
+      currentValue: current,
+      hasKnownValueOptions: known.length > 0 || provided.length > 0,
+    };
   }, [
     editing,
     draftKey,
@@ -192,7 +211,8 @@ export function KeyValueEditor({
     (valueTouched || isValueCombobox || valueListOpen === true);
 
   const applyValueSuggestion = (rowKey: string, value: string) => {
-    setDraftValue(value);
+    // Keep the earlier items of a comma-separated list.
+    setDraftValue(valuePrefix ? `${valuePrefix} ${value}` : value);
     setValueTouched(true);
     setValueListOpen(false);
     setValueSuggestionIndex(-1);
