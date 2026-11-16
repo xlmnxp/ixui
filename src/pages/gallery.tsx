@@ -25,7 +25,6 @@ import { SplitPane } from "../components/split-pane";
 import { PageBar } from "../components/page-bar";
 import { KeyValueEditor } from "../components/key-value-editor";
 import { SegmentedControl } from "../components/segmented-control";
-import { CreateInstanceIcon } from "../components/create-instance-icon";
 import { Dropdown } from "../components/dropdown";
 import { ColorPicker } from "../components/color-picker";
 import { SplitButton } from "../components/split-button";
@@ -35,7 +34,10 @@ import { toast } from "../components/toast";
 import { Window } from "../components/window";
 import { VerticalTabs } from "../components/vertical-tabs";
 import { ProjectDropdown } from "../components/project-dropdown";
-import { InstanceIcon } from "../shell/instance-icon";
+import { InstanceIcon, InstanceStatusIcon } from "../shell/instance-icon";
+import { CollapseAllIcon } from "../components/collapse-all-icon";
+import { CopyButton } from "../components/copy-button";
+import { CreateInstanceIcon } from "../components/create-instance-icon";
 import { ExplorerNavbar } from "../components/explorer-nav";
 import { FileEntryIcon } from "../components/file-entry-icon";
 import { SnapshotSchedule } from "../components/snapshot-schedule";
@@ -324,6 +326,29 @@ export function Gallery() {
         <InstanceIcon status="Running" type="container" />
         <InstanceIcon status="Stopped" type="virtual-machine" />
         <InstanceIcon status="Error" type="container" />
+      </Section>
+
+      <Section title="Icons">
+        <span className="flex items-center gap-1.5"><CreateInstanceIcon size={15} /> Create instance</span>
+        <span className="flex items-center gap-1.5"><CollapseAllIcon size={15} /> Collapse all</span>
+        <span className="flex items-center gap-1.5"><InstanceStatusIcon status="Running" /> Running</span>
+        <span className="flex items-center gap-1.5"><InstanceStatusIcon status="Stopped" /> Stopped</span>
+        <span className="flex items-center gap-1.5"><InstanceStatusIcon status="Frozen" /> Frozen</span>
+        <span className="flex items-center gap-1.5"><InstanceStatusIcon status="Error" /> Error</span>
+      </Section>
+
+      <Section title="CopyButton">
+        <span className="flex items-center gap-2 text-sm">
+          10.0.0.5
+          <CopyButton value="10.0.0.5" label="IP address" dataTestId="gallery-copy-ip" />
+        </span>
+        <span className="flex items-center gap-2 text-sm">
+          a1b2c3d4e5f6
+          <CopyButton value="a1b2c3d4e5f60718" label="Fingerprint" dataTestId="gallery-copy-fingerprint" />
+        </span>
+        <p className="w-full text-[11px] text-text-tertiary">
+          Copies to the clipboard, flips to a tick for a moment, and confirms with a toast.
+        </p>
       </Section>
 
       <Section title="FileEntryIcon">

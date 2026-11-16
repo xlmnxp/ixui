@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { toast } from "./toast";
+import { Tooltip } from "./tooltip";
 
 export interface CopyButtonProps {
   value: string;
@@ -25,15 +26,16 @@ export function CopyButton({ value, label = "Value", dataTestId = "copy-button" 
   };
 
   return (
-    <button
-      type="button"
-      data-testid={dataTestId}
-      aria-label={`Copy ${label.toLowerCase()}`}
-      title={`Copy ${label.toLowerCase()}`}
-      onClick={() => void copy()}
-      className="rounded p-0.5 text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
-    >
-      {copied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
-    </button>
+    <Tooltip label={copied ? "Copied" : `Copy ${label.toLowerCase()}`}>
+      <button
+        type="button"
+        data-testid={dataTestId}
+        aria-label={`Copy ${label.toLowerCase()}`}
+        onClick={() => void copy()}
+        className="rounded p-0.5 text-text-tertiary hover:bg-surface-700 hover:text-text-primary"
+      >
+        {copied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
+      </button>
+    </Tooltip>
   );
 }

@@ -21,6 +21,12 @@ describe("CopyButton", () => {
     );
   });
 
+  it("labels the button with a tooltip", async () => {
+    render(<CopyButton value="10.0.0.5" label="IP address" dataTestId="copy-ip" />);
+    fireEvent.mouseOver(screen.getByTestId("tooltip-trigger"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Copy ip address");
+  });
+
   it("reports a failure instead of throwing", async () => {
     writeText.mockRejectedValueOnce(new Error("denied"));
     render(<CopyButton value="10.0.0.5" label="IP address" dataTestId="copy-ip" />);
