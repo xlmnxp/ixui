@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { OverviewTab } from "./instance-overview";
 import type { Instance } from "../api/types";
 import { metricsStore } from "../state/metrics";
@@ -58,6 +58,31 @@ describe("OverviewTab chart loading", () => {
       expect(screen.getByTestId("chart-loading-" + id)).toBeInTheDocument();
     }
     expect(screen.getAllByText("Collecting…").length).toBe(5);
+  });
+
+  it("stops pulsing and shows a dash when a series never arrives", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      metricsStore.setState({});
+      render(<OverviewTab instance={instance("container")} />);
+      expect(screen.getByTestId("chart-loading-cpu")).toBeInTheDocument();
+      // Network counters and disk usage may never be reported by an instance.
+      await act(async () => {
+        vi.advanceTimersByTime(16_000);
+      });
+      expect(screen.queryByTestId("chart-loading-cpu")).not.toBeInTheDocument();
+      expect(screen.getByTestId("chart-unavailable-net-rx")).toHaveTextContent("—");
+      expect(screen.getByTestId("chart-unavailable-disk")).toHaveTextContent("—");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("shows dashes immediately for a stopped instance", () => {
+    metricsStore.setState({});
+    render(<OverviewTab instance={{ ...instance("container"), status: "Stopped" }} />);
+    expect(screen.queryByText("Collecting…")).not.toBeInTheDocument();
+    expect(screen.getByTestId("chart-unavailable-cpu")).toBeInTheDocument();
   });
 
   it("replaces the placeholders once samples arrive", async () => {

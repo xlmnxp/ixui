@@ -45,15 +45,34 @@ export function OverviewTab({ instance }: OverviewTabProps) {
     void load();
   }, [instance.location]);
 
+  // Stop pulsing once sampling has had a chance to produce something.
+  const [graceOver, setGraceOver] = useState(false);
+  useEffect(() => {
+    setGraceOver(false);
+    const timer = window.setTimeout(() => setGraceOver(true), 15_000);
+    return () => window.clearTimeout(timer);
+  }, [instance.name, instance.project, instance.status]);
+  const metricsSettled = graceOver || instance.status !== "Running";
+
   const ips = instanceIps(state);
 
-  /** Placeholder shown until the first metrics sample arrives. */
-  const chartPending = (id: string, width = 160) => (
-    <span className="flex items-center gap-2" data-testid={`chart-loading-${id}`}>
-      <span className="h-7 animate-pulse rounded bg-surface-600/70" style={{ width }} />
-      <span className="text-xs text-text-tertiary">Collecting…</span>
-    </span>
-  );
+  /**
+   * Chart rows render immediately. Until the first sample they pulse; once the
+   * grace period lapses (or the instance is stopped) a series that never arrived
+   * shows a dash instead of pretending to load — network counters and disk usage
+   * are simply absent on some instances, and they would pulse forever.
+   */
+  const chartPending = (id: string, width = 160) =>
+    metricsSettled ? (
+      <span className="text-xs text-text-tertiary" data-testid={`chart-unavailable-${id}`}>
+        —
+      </span>
+    ) : (
+      <span className="flex items-center gap-2" data-testid={`chart-loading-${id}`}>
+        <span className="h-7 animate-pulse rounded bg-surface-600/70" style={{ width }} />
+        <span className="text-xs text-text-tertiary">Collecting…</span>
+      </span>
+    );
 
   const rows = [
     { key: "Status", value: <Badge tone={instanceStatusTone(instance.status)}><span className="inline-flex items-center gap-1"><InstanceStatusIcon status={instance.status} />{instance.status}</span></Badge> },
