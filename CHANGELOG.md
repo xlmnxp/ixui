@@ -1,5 +1,12 @@
 # Changelog
 
+## 26.11.5-alpha.1 (2026-11-16)
+
+### Features
+
+- **gallery:** copy button tooltip, icons and copy demos (1afe965)
+- alpha release channel in the app and pipeline; copy buttons for overview IPs (6af487f)
+
 ## 26.11.4 (2026-11-14)
 
 ### Features
