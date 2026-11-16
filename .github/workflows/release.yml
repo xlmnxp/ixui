@@ -1,10 +1,10 @@
 name: Release
 
-# Version numbers are year-month based: YY.M.N (e.g. 26.10.0, then 26.10.1; the
-# counter restarts each month). Every push to a release branch is analysed with
-# scripts/release.mjs. Conventional commits of type feat, fix or perf (or any
-# breaking change) trigger a release; docs/chore/test/etc. don't.
-# main publishes stable releases; other listed branches publish -beta.N pre-releases.
+# Version numbers are year-month based: YY.M.N-alpha (e.g. 26.11.4-alpha, then
+# 26.11.5-alpha; the counter restarts each month). Every push to a release branch
+# is analysed with scripts/release.mjs. Conventional commits of type feat, fix or
+# perf (or any breaking change) trigger a release; docs/chore/test/etc. don't.
+# Every release is published as a GitHub pre-release: there is no stable channel yet.
 on:
   push:
     branches: [main, feat/ixui-ui]

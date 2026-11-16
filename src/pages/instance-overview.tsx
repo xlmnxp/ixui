@@ -47,6 +47,14 @@ export function OverviewTab({ instance }: OverviewTabProps) {
 
   const ips = instanceIps(state);
 
+  /** Placeholder shown until the first metrics sample arrives. */
+  const chartPending = (id: string, width = 160) => (
+    <span className="flex items-center gap-2" data-testid={`chart-loading-${id}`}>
+      <span className="h-7 animate-pulse rounded bg-surface-600/70" style={{ width }} />
+      <span className="text-xs text-text-tertiary">Collecting…</span>
+    </span>
+  );
+
   const rows = [
     { key: "Status", value: <Badge tone={instanceStatusTone(instance.status)}><span className="inline-flex items-center gap-1"><InstanceStatusIcon status={instance.status} />{instance.status}</span></Badge> },
     { key: "Type", value: instance.type === "container" ? "Container" : "Virtual machine" },
@@ -67,18 +75,19 @@ export function OverviewTab({ instance }: OverviewTabProps) {
       : [{ key: "IP addresses", value: "—" }]),
     { key: "Memory limit", value: instance.config["limits.memory"] ?? "—" },
     { key: "CPU limit", value: instance.config["limits.cpu"] ?? "—" },
-    ...(live && live.cpu.length > 0
-      ? [{
-          id: "cpu-usage",
-          key: "CPU usage",
-          value: (
-            <span className="flex items-center gap-2">
-              <Sparkline points={live.cpu.map((p) => p.value)} />
-              <span className="text-xs text-text-secondary">{live.cpu[live.cpu.length - 1]!.value.toFixed(1)}%</span>
-            </span>
-          ),
-        }]
-      : []),
+    {
+      id: "cpu-usage",
+      key: "CPU usage",
+      value:
+        live && live.cpu.length > 0 ? (
+          <span className="flex items-center gap-2">
+            <Sparkline points={live.cpu.map((p) => p.value)} />
+            <span className="text-xs text-text-secondary">{live.cpu[live.cpu.length - 1]!.value.toFixed(1)}%</span>
+          </span>
+        ) : (
+          chartPending("cpu")
+        ),
+    },
     ...(live && live.memory.length > 0
       ? [{
           id: "memory-usage",

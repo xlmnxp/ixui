@@ -28,41 +28,34 @@ describe("parseCommit / isReleasable", () => {
 });
 
 describe("nextVersion", () => {
+  const alpha = (v) => v + "-alpha";
+
   it("starts a month at .0 and counts releases within it", () => {
-    expect(nextVersion({ tags: ["v0.1.0"], now: oct })).toBe("26.10.0");
-    expect(nextVersion({ tags: ["v0.1.0", "v26.10.0"], now: oct })).toBe("26.10.1");
-    expect(nextVersion({ tags: ["v26.10.0", "v26.10.1", "v26.10.2"], now: oct })).toBe("26.10.3");
+    expect(nextVersion({ tags: ["v0.1.0"], now: oct })).toBe(alpha("26.10.0"));
+    expect(nextVersion({ tags: ["v26.10.0-alpha", "v26.10.1-alpha"], now: oct })).toBe(alpha("26.10.2"));
+    expect(nextVersion({ tags: ["v26.10.0-alpha", "v26.10.1-alpha", "v26.10.2-alpha"], now: oct })).toBe(alpha("26.10.3"));
+  });
+
+  it("keeps counting across older tag shapes so a base is never reused", () => {
+    expect(nextVersion({ tags: ["v26.11.4", "v26.11.5-alpha.1"], now: nov })).toBe(alpha("26.11.6"));
+    expect(nextVersion({ tags: ["v26.10.3-beta.2"], now: oct })).toBe(alpha("26.10.4"));
   });
 
   it("ignores the old 0.x baseline tag and four-digit lookalikes", () => {
-    expect(nextVersion({ tags: ["v0.1.0", "v2026.10.9"], now: oct })).toBe("26.10.0");
+    expect(nextVersion({ tags: ["v0.1.0", "v2026.10.9"], now: oct })).toBe(alpha("26.10.0"));
   });
 
   it("resets the counter in a new month and year", () => {
-    expect(nextVersion({ tags: ["v26.10.4"], now: nov })).toBe("26.11.0");
-    expect(nextVersion({ tags: ["v26.11.2"], now: new Date(Date.UTC(2027, 0, 5)) })).toBe("27.1.0");
+    expect(nextVersion({ tags: ["v26.10.4-alpha"], now: nov })).toBe(alpha("26.11.0"));
+    expect(nextVersion({ tags: ["v26.11.2-alpha"], now: new Date(Date.UTC(2027, 0, 5)) })).toBe(alpha("27.1.0"));
   });
 
   it("uses a two-digit year and does not zero-pad the month (semver forbids leading zeros)", () => {
-    expect(nextVersion({ tags: [], now: new Date(Date.UTC(2026, 8, 1)) })).toBe("26.9.0");
+    expect(nextVersion({ tags: [], now: new Date(Date.UTC(2026, 8, 1)) })).toBe(alpha("26.9.0"));
   });
 
   it("does not mistake 26.1.x for 26.10.x or 26.11.x", () => {
-    expect(nextVersion({ tags: ["v26.1.5", "v26.11.5"], now: oct })).toBe("26.10.0");
-  });
-
-  it("appends -alpha.1 on the alpha channel and counts previous alpha tags", () => {
-    expect(nextVersion({ tags: ["v26.11.2"], now: nov, alpha: true })).toBe("26.11.3-alpha.1");
-    // Alpha releases must advance the month counter, so the base keeps moving.
-    expect(nextVersion({ tags: ["v26.11.2", "v26.11.3-alpha.1"], now: nov, alpha: true })).toBe("26.11.4-alpha.1");
-    expect(
-      nextVersion({ tags: ["v26.11.3-alpha.1", "v26.11.4-alpha.1", "v26.10.0"], now: nov, alpha: true })
-    ).toBe("26.11.5-alpha.1");
-  });
-
-  it("numbers pre-releases against the next stable version", () => {
-    expect(nextVersion({ tags: ["v26.10.0"], now: oct, prerelease: true })).toBe("26.10.1-beta.1");
-    expect(nextVersion({ tags: ["v26.10.0", "v26.10.1-beta.1", "v26.10.1-beta.2"], now: oct, prerelease: true })).toBe("26.10.1-beta.3");
+    expect(nextVersion({ tags: ["v26.1.5-alpha", "v26.11.5-alpha"], now: oct })).toBe(alpha("26.10.0"));
   });
 });
 

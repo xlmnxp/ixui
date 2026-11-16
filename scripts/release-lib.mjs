@@ -1,8 +1,9 @@
 // Pure helpers for the release script; kept free of I/O so they can be unit tested.
 
-const STABLE_TAG = /^v(\d{2})\.(\d{1,2})\.(\d+)$/;
-const BETA_TAG = /^v(\d{2}\.\d{1,2}\.\d+)-beta\.(\d+)$/;
-const ALPHA_TAG = /^v(\d{2}\.\d{1,2}\.(\d+))-alpha\.(\d+)$/;
+// Every release is an alpha: vYY.M.N-alpha. The counter N still increments per
+// release within the month, and historical -alpha.K / -beta.K tags still count so
+// a base version is never reused.
+const RELEASED_TAG = /^v(\d{2})\.(\d{1,2})\.(\d+)(?:-(?:alpha|beta)(?:\.\d+)?)?$/;
 const HEADER = /^(\w+)(?:\(([^)]*)\))?(!)?: (.+)$/;
 
 export const SECTIONS = [
@@ -34,37 +35,22 @@ export function isReleasable(commit) {
 }
 
 /**
- * Year-month version: YY.M.N (two-digit year) where N counts releases within the month (from 0),
- * e.g. 26.10.0 then 26.10.1. Nothing is zero padded because semver forbids leading zeros.
- * Pre-releases append -beta.N to the version the next stable release would have.
+ * Year-month version: YY.M.N-alpha (two-digit year), where N counts releases
+ * within the month (26.11.4-alpha, then 26.11.5-alpha). There is no stable
+ * channel, so the suffix is always present. Nothing is zero padded, because
+ * semver forbids leading zeros.
  */
-export function nextVersion({ tags, now, prerelease = false, alpha = false }) {
+export function nextVersion({ tags, now }) {
   const year = now.getUTCFullYear() % 100;
   const month = now.getUTCMonth() + 1;
   let maxPatch = -1;
   for (const tag of tags) {
-    const stable = STABLE_TAG.exec(tag);
-    if (stable && Number(stable[1]) === year && Number(stable[2]) === month) {
-      maxPatch = Math.max(maxPatch, Number(stable[3]));
-    }
-    // Alpha tags count towards the same month counter, otherwise every alpha
-    // release would reuse the same base version.
-    const alphaTag = ALPHA_TAG.exec(tag);
-    if (alphaTag) {
-      const [tagYear, tagMonth] = alphaTag[1].split(".").map(Number);
-      if (tagYear === year && tagMonth === month) maxPatch = Math.max(maxPatch, Number(alphaTag[2]));
+    const m = RELEASED_TAG.exec(tag);
+    if (m && Number(m[1]) === year && Number(m[2]) === month) {
+      maxPatch = Math.max(maxPatch, Number(m[3]));
     }
   }
-  const base = `${year}.${month}.${maxPatch + 1}`;
-  // The project is pre-alpha: stable-branch releases carry an -alpha.N suffix.
-  if (alpha) return `${base}-alpha.1`;
-  if (!prerelease) return base;
-  let maxBeta = 0;
-  for (const tag of tags) {
-    const m = BETA_TAG.exec(tag);
-    if (m && m[1] === base) maxBeta = Math.max(maxBeta, Number(m[2]));
-  }
-  return `${base}-beta.${maxBeta + 1}`;
+  return `${year}.${month}.${maxPatch + 1}-alpha`;
 }
 
 export function renderNotes(version, date, commits) {

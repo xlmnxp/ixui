@@ -17,11 +17,7 @@ const run = (cmd, args, opts = {}) => (execFileSync(cmd, args, { encoding: "utf8
 const git = (...args) => run("git", args);
 
 const branch = process.env.GITHUB_REF_NAME || git("rev-parse", "--abbrev-ref", "HEAD");
-// Beta branches publish -beta.N; main publishes -alpha.N because the project is
-// still pre-alpha. Set RELEASE_CHANNEL=stable to publish plain versions.
-const stableChannel = process.env.RELEASE_CHANNEL === "stable";
-const prerelease = branch !== "main";
-const alpha = !prerelease && !stableChannel;
+// Every release is an alpha: there is no stable channel.
 
 let lastTag = "";
 try {
@@ -50,12 +46,11 @@ if (releasable.length === 0) {
 }
 
 const now = new Date();
-const version = nextVersion({ tags: git("tag", "--list", "v*").split("\n").filter(Boolean), now, prerelease, alpha });
+const version = nextVersion({ tags: git("tag", "--list", "v*").split("\n").filter(Boolean), now });
 const tag = `v${version}`;
 const notes = renderNotes(version, now, releasable);
 
-const isPrerelease = version.includes("-");
-console.log(`\nNext version: ${version}${isPrerelease ? " (pre-release)" : ""}\n\n${notes}`);
+console.log(`\nNext version: ${version} (pre-release)\n\n${notes}`);
 if (dryRun) {
   console.log("Dry run: nothing was changed or published.");
   process.exit(0);
@@ -80,7 +75,6 @@ git("push", "origin", tag);
 
 run("gh", [
   "release", "create", tag, asset, `${asset}.sha256`,
-  "--title", tag, "--notes-file", "release-notes.md", "--verify-tag",
-  ...(isPrerelease ? ["--prerelease"] : []),
+  "--title", tag, "--notes-file", "release-notes.md", "--verify-tag", "--prerelease",
 ], { stdio: "inherit" });
 console.log(`Released ${tag}`);
