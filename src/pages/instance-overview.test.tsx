@@ -68,7 +68,7 @@ describe("OverviewTab chart loading", () => {
       expect(screen.getByTestId("chart-loading-cpu")).toBeInTheDocument();
       // Network counters and disk usage may never be reported by an instance.
       await act(async () => {
-        vi.advanceTimersByTime(16_000);
+        vi.advanceTimersByTime(6_000);
       });
       expect(screen.queryByTestId("chart-loading-cpu")).not.toBeInTheDocument();
       expect(screen.getByTestId("chart-unavailable-net-rx")).toHaveTextContent("—");

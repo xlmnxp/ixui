@@ -32,7 +32,7 @@ export const metricsStore = createStore<Record<string, InstanceMetrics>>({});
 const MAX_POINTS = 120;
 const POLL_MS = 5000;
 
-const pollers = new Map<string, number>();
+const pollers = new Map<string, { interval: number; warm: number | null }>();
 
 const keyFor = (name: string, project?: string) => `${project ?? "default"}/${name}`;
 
@@ -107,15 +107,19 @@ export function startMetricsPolling(name: string, project?: string): void {
   };
 
   void tick();
-  const id = window.setInterval(() => void tick(), POLL_MS);
-  pollers.set(key, id);
+  // CPU percent needs two samples; take the second one quickly so the first
+  // chart appears almost immediately instead of after a full poll interval.
+  const warm = window.setTimeout(() => void tick(), 800);
+  const interval = window.setInterval(() => void tick(), POLL_MS);
+  pollers.set(key, { interval, warm });
 }
 
 export function stopMetricsPolling(name: string, project?: string): void {
   const key = keyFor(name, project);
-  const id = pollers.get(key);
-  if (id !== undefined) {
-    window.clearInterval(id);
+  const timers = pollers.get(key);
+  if (timers) {
+    window.clearInterval(timers.interval);
+    if (timers.warm !== null) window.clearTimeout(timers.warm);
     pollers.delete(key);
   }
 }

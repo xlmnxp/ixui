@@ -49,7 +49,7 @@ export function OverviewTab({ instance }: OverviewTabProps) {
   const [graceOver, setGraceOver] = useState(false);
   useEffect(() => {
     setGraceOver(false);
-    const timer = window.setTimeout(() => setGraceOver(true), 15_000);
+    const timer = window.setTimeout(() => setGraceOver(true), 5_000);
     return () => window.clearTimeout(timer);
   }, [instance.name, instance.project, instance.status]);
   const metricsSettled = graceOver || instance.status !== "Running";
