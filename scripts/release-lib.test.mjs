@@ -51,6 +51,15 @@ describe("nextVersion", () => {
     expect(nextVersion({ tags: ["v26.1.5", "v26.11.5"], now: oct })).toBe("26.10.0");
   });
 
+  it("appends -alpha.1 on the alpha channel and counts previous alpha tags", () => {
+    expect(nextVersion({ tags: ["v26.11.2"], now: nov, alpha: true })).toBe("26.11.3-alpha.1");
+    // Alpha releases must advance the month counter, so the base keeps moving.
+    expect(nextVersion({ tags: ["v26.11.2", "v26.11.3-alpha.1"], now: nov, alpha: true })).toBe("26.11.4-alpha.1");
+    expect(
+      nextVersion({ tags: ["v26.11.3-alpha.1", "v26.11.4-alpha.1", "v26.10.0"], now: nov, alpha: true })
+    ).toBe("26.11.5-alpha.1");
+  });
+
   it("numbers pre-releases against the next stable version", () => {
     expect(nextVersion({ tags: ["v26.10.0"], now: oct, prerelease: true })).toBe("26.10.1-beta.1");
     expect(nextVersion({ tags: ["v26.10.0", "v26.10.1-beta.1", "v26.10.1-beta.2"], now: oct, prerelease: true })).toBe("26.10.1-beta.3");

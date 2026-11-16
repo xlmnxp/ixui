@@ -298,6 +298,8 @@ describe("Shell", () => {
       </MemoryRouter>
     );
     expect(screen.getByTestId("app-version")).toHaveTextContent(/^v\d+\.\d+\.\d+/);
+    // The footer also flags the release channel.
+    expect(screen.getByTestId("version-channel")).toHaveTextContent("alpha");
     await act(async () => {});
   });
 

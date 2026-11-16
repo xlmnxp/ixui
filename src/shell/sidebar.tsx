@@ -177,6 +177,12 @@ export function Sidebar() {
       )}
       <div className="shrink-0 border-t border-border px-3 py-1 text-[10px] text-text-tertiary" data-testid="app-version" title={versionTitle()}>
         {versionLabel()}
+        <span
+          className="ml-1 rounded bg-accent-600/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-accent-300"
+          data-testid="version-channel"
+        >
+          alpha
+        </span>
       </div>
       <CreateInstanceWizard open={wizardOpen} onClose={() => setWizardOpen(false)} targetMember={wizardTarget} />
       {ctxMenu && (

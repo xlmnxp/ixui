@@ -2,6 +2,7 @@
 
 const STABLE_TAG = /^v(\d{2})\.(\d{1,2})\.(\d+)$/;
 const BETA_TAG = /^v(\d{2}\.\d{1,2}\.\d+)-beta\.(\d+)$/;
+const ALPHA_TAG = /^v(\d{2}\.\d{1,2}\.(\d+))-alpha\.(\d+)$/;
 const HEADER = /^(\w+)(?:\(([^)]*)\))?(!)?: (.+)$/;
 
 export const SECTIONS = [
@@ -37,15 +38,26 @@ export function isReleasable(commit) {
  * e.g. 26.10.0 then 26.10.1. Nothing is zero padded because semver forbids leading zeros.
  * Pre-releases append -beta.N to the version the next stable release would have.
  */
-export function nextVersion({ tags, now, prerelease = false }) {
+export function nextVersion({ tags, now, prerelease = false, alpha = false }) {
   const year = now.getUTCFullYear() % 100;
   const month = now.getUTCMonth() + 1;
   let maxPatch = -1;
   for (const tag of tags) {
-    const m = STABLE_TAG.exec(tag);
-    if (m && Number(m[1]) === year && Number(m[2]) === month) maxPatch = Math.max(maxPatch, Number(m[3]));
+    const stable = STABLE_TAG.exec(tag);
+    if (stable && Number(stable[1]) === year && Number(stable[2]) === month) {
+      maxPatch = Math.max(maxPatch, Number(stable[3]));
+    }
+    // Alpha tags count towards the same month counter, otherwise every alpha
+    // release would reuse the same base version.
+    const alphaTag = ALPHA_TAG.exec(tag);
+    if (alphaTag) {
+      const [tagYear, tagMonth] = alphaTag[1].split(".").map(Number);
+      if (tagYear === year && tagMonth === month) maxPatch = Math.max(maxPatch, Number(alphaTag[2]));
+    }
   }
   const base = `${year}.${month}.${maxPatch + 1}`;
+  // The project is pre-alpha: stable-branch releases carry an -alpha.N suffix.
+  if (alpha) return `${base}-alpha.1`;
   if (!prerelease) return base;
   let maxBeta = 0;
   for (const tag of tags) {

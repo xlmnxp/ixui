@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { instancesApi, resourcesApi } from "../api";
 import type { Instance, InstanceStateInfo } from "../api/types";
 import { Badge } from "../components/badge";
+import { CopyButton } from "../components/copy-button";
 import { KeyValueTable } from "../components/key-value-table";
 import { Sparkline } from "../components/sparkline";
 import { instanceStatusTone, instanceIps } from "../lib/instance-status";
@@ -53,7 +54,16 @@ export function OverviewTab({ instance }: OverviewTabProps) {
     { key: "Last used", value: instance.last_used_at ? new Date(instance.last_used_at).toLocaleString() : "Never" },
     { key: "Profiles", value: instance.profiles.join(", ") || "—" },
     ...(ips.length > 0
-      ? ips.map((ip) => ({ id: `ip-${ip}`, key: "IP address", value: ip }))
+      ? ips.map((ip) => ({
+          id: `ip-${ip}`,
+          key: "IP address",
+          value: (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="font-mono text-xs">{ip}</span>
+              <CopyButton value={ip} label="IP address" dataTestId={`copy-ip-${ip}`} />
+            </span>
+          ),
+        }))
       : [{ key: "IP addresses", value: "—" }]),
     { key: "Memory limit", value: instance.config["limits.memory"] ?? "—" },
     { key: "CPU limit", value: instance.config["limits.cpu"] ?? "—" },

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { OverviewTab } from "./instance-overview";
 import type { Instance } from "../api/types";
 import { metricsStore } from "../state/metrics";
@@ -23,6 +23,13 @@ vi.mock("../api", () => ({
       status: "Running",
       cpu: { usage: 1_000_000_000 },
       memory: { usage: 536870912 },
+      network: {
+        eth0: {
+          addresses: [
+            { family: "inet", address: "10.0.0.5", netmask: "24", scope: "global" },
+          ],
+        },
+      },
     }),
   },
   resourcesApi: {
@@ -30,6 +37,17 @@ vi.mock("../api", () => ({
     getMemberResources: vi.fn().mockResolvedValue({ cpu: { total: 8 }, memory: { total: 17179869184, used: 0 } }),
   },
 }));
+
+describe("OverviewTab IP addresses", () => {
+  it("offers a copy button for each address", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    render(<OverviewTab instance={instance("container")} />);
+    const copy = await screen.findByTestId("copy-ip-10.0.0.5");
+    fireEvent.click(copy);
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("10.0.0.5"));
+  });
+});
 
 describe("OverviewTab", () => {
   beforeEach(() => metricsStore.setState({}));
