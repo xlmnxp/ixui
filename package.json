@@ -1,7 +1,7 @@
 {
   "name": "ixui",
   "private": true,
-  "version": "26.11.5-alpha.1",
+  "version": "26.11.6-alpha",
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {

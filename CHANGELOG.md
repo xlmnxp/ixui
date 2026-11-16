@@ -1,5 +1,19 @@
 # Changelog
 
+## 26.11.6-alpha (2026-11-16)
+
+### Features
+
+- **overview:** loading placeholders for all chart rows (484ff12)
+
+### Bug fixes
+
+- **overview:** charts that never report data stop pulsing and show a dash (033116b)
+
+### Performance
+
+- **overview:** 5s chart grace with a warm metrics sample (6514168)
+
 ## 26.11.5-alpha.1 (2026-11-16)
 
 ### Features
