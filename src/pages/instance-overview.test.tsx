@@ -49,6 +49,34 @@ describe("OverviewTab IP addresses", () => {
   });
 });
 
+describe("OverviewTab chart loading", () => {
+  it("renders a placeholder for every chart row before the first sample", () => {
+    metricsStore.setState({});
+    render(<OverviewTab instance={instance("container")} />);
+    // Rows exist immediately instead of popping in later.
+    for (const id of ["cpu", "memory", "net-rx", "net-tx", "disk"]) {
+      expect(screen.getByTestId("chart-loading-" + id)).toBeInTheDocument();
+    }
+    expect(screen.getAllByText("Collecting…").length).toBe(5);
+  });
+
+  it("replaces the placeholders once samples arrive", async () => {
+    metricsStore.setState({
+      "default/web1": {
+        cpu: [{ at: 1, value: 12.5 }],
+        memory: [{ at: 1, value: 1024 }],
+        netRx: [{ at: 1, value: 10 }],
+        netTx: [{ at: 1, value: 20 }],
+        disk: { usage: 1024, total: 4096 },
+      },
+    } as unknown as Parameters<typeof metricsStore.setState>[0]);
+    render(<OverviewTab instance={instance("container")} />);
+    await waitFor(() => expect(screen.queryByTestId("chart-loading-cpu")).not.toBeInTheDocument());
+    expect(screen.getByTestId("overview-tab")).toHaveTextContent("12.5%");
+    metricsStore.setState({});
+  });
+});
+
 describe("OverviewTab", () => {
   beforeEach(() => metricsStore.setState({}));
 

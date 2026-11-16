@@ -88,62 +88,67 @@ export function OverviewTab({ instance }: OverviewTabProps) {
           chartPending("cpu")
         ),
     },
-    ...(live && live.memory.length > 0
-      ? [{
-          id: "memory-usage",
-          key: "Memory usage",
-          value: (
+    {
+      id: "memory-usage",
+      key: "Memory usage",
+      value:
+        live && live.memory.length > 0 ? (
+          <span className="flex items-center gap-2">
+            <Sparkline points={live.memory.map((p) => p.value)} color="#58a6ff" />
+            <span className="text-xs text-text-secondary">
+              {formatBytes(live.memory[live.memory.length - 1]!.value)}
+              {instance.config["limits.memory"]
+                ? ` / ${instance.config["limits.memory"]}`
+                : hostMemoryTotal !== null
+                  ? ` / ${formatBytes(hostMemoryTotal)}`
+                  : ""}
+            </span>
+          </span>
+        ) : (
+          chartPending("memory")
+        ),
+    },
+    {
+      id: "network-usage",
+      key: "Network",
+      value:
+        live && live.netRx.length > 0 ? (
+          <span className="flex flex-wrap items-center gap-3">
             <span className="flex items-center gap-2">
-              <Sparkline points={live.memory.map((p) => p.value)} color="#58a6ff" />
-              <span className="text-xs text-text-secondary">
-                {formatBytes(live.memory[live.memory.length - 1]!.value)}
-                {instance.config["limits.memory"]
-                  ? ` / ${instance.config["limits.memory"]}`
-                  : hostMemoryTotal !== null
-                    ? ` / ${formatBytes(hostMemoryTotal)}`
-                    : ""}
-              </span>
+              <Sparkline points={live.netRx.map((p) => p.value)} color="#d29922" width={100} />
+              <span className="text-xs text-text-secondary">↓ {formatBytes(live.netRx[live.netRx.length - 1]!.value)}/s</span>
             </span>
-          ),
-        }]
-      : []),
-    ...(live && live.netRx.length > 0
-      ? [{
-          id: "network-usage",
-          key: "Network",
-          value: (
-            <span className="flex flex-wrap items-center gap-3">
-              <span className="flex items-center gap-2">
-                <Sparkline points={live.netRx.map((p) => p.value)} color="#d29922" width={100} />
-                <span className="text-xs text-text-secondary">↓ {formatBytes(live.netRx[live.netRx.length - 1]!.value)}/s</span>
-              </span>
-              <span className="flex items-center gap-2">
-                <Sparkline points={live.netTx.map((p) => p.value)} color="#bc8cff" width={100} />
-                <span className="text-xs text-text-secondary">↑ {formatBytes(live.netTx[live.netTx.length - 1]!.value)}/s</span>
-              </span>
-            </span>
-          ),
-        }]
-      : []),
-    ...(live?.disk
-      ? [{
-          id: "disk-usage",
-          key: "Disk usage",
-          value: (
             <span className="flex items-center gap-2">
-              {live.disk.total !== undefined && (
-                <span className="h-1.5 w-32 overflow-hidden rounded bg-surface-600">
-                  <span className="block h-full bg-accent-500" style={{ width: `${Math.min(100, (live.disk.usage / live.disk.total) * 100)}%` }} />
-                </span>
-              )}
-              <span className="text-xs text-text-secondary">
-                {formatBytes(live.disk.usage)}
-                {live.disk.total !== undefined ? ` / ${formatBytes(live.disk.total)}` : " used"}
-              </span>
+              <Sparkline points={live.netTx.map((p) => p.value)} color="#bc8cff" width={100} />
+              <span className="text-xs text-text-secondary">↑ {formatBytes(live.netTx[live.netTx.length - 1]!.value)}/s</span>
             </span>
-          ),
-        }]
-      : []),
+          </span>
+        ) : (
+          <span className="flex flex-wrap items-center gap-3">
+            {chartPending("net-rx", 100)}
+            {chartPending("net-tx", 100)}
+          </span>
+        ),
+    },
+    {
+      id: "disk-usage",
+      key: "Disk usage",
+      value: live?.disk ? (
+        <span className="flex items-center gap-2">
+          {live.disk.total !== undefined && (
+            <span className="h-1.5 w-32 overflow-hidden rounded bg-surface-600">
+              <span className="block h-full bg-accent-500" style={{ width: `${Math.min(100, (live.disk.usage / live.disk.total) * 100)}%` }} />
+            </span>
+          )}
+          <span className="text-xs text-text-secondary">
+            {formatBytes(live.disk.usage)}
+            {live.disk.total !== undefined ? ` / ${formatBytes(live.disk.total)}` : " used"}
+          </span>
+        </span>
+      ) : (
+        chartPending("disk", 128)
+      ),
+    },
   ];
 
   return (
