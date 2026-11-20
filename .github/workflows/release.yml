@@ -4,7 +4,7 @@ name: Release
 # 26.11.5-alpha; the counter restarts each month). Every push to a release branch
 # is analysed with scripts/release.mjs. Conventional commits of type feat, fix or
 # perf (or any breaking change) trigger a release; docs/chore/test/etc. don't.
-# Every release is published as a GitHub pre-release: there is no stable channel yet.
+# Alpha versions are published as normal GitHub releases, not as pre-releases.
 on:
   push:
     branches: [main, feat/ixui-ui]

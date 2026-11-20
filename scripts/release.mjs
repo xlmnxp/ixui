@@ -50,7 +50,7 @@ const version = nextVersion({ tags: git("tag", "--list", "v*").split("\n").filte
 const tag = `v${version}`;
 const notes = renderNotes(version, now, releasable);
 
-console.log(`\nNext version: ${version} (pre-release)\n\n${notes}`);
+console.log(`\nNext version: ${version} (alpha)\n\n${notes}`);
 if (dryRun) {
   console.log("Dry run: nothing was changed or published.");
   process.exit(0);
@@ -75,6 +75,6 @@ git("push", "origin", tag);
 
 run("gh", [
   "release", "create", tag, asset, `${asset}.sha256`,
-  "--title", tag, "--notes-file", "release-notes.md", "--verify-tag", "--prerelease",
+  "--title", tag, "--notes-file", "release-notes.md", "--verify-tag",
 ], { stdio: "inherit" });
 console.log(`Released ${tag}`);

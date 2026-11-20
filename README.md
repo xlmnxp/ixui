@@ -171,14 +171,14 @@ with its variants and states.
 Releases are automatic. Commit messages follow
 [Conventional Commits](https://www.conventionalcommits.org/); `feat`, `fix`,
 `perf` and breaking changes trigger a release with a tag, an updated
-`CHANGELOG.md`, and a GitHub pre-release carrying `ixui-<version>.zip` (the
+`CHANGELOG.md`, and a GitHub release carrying `ixui-<version>.zip` (the
 built `dist/`) plus its checksum.
 
 Versions are year-month based with an alpha suffix — `YY.M.N-alpha`, where `N`
-counts releases within the month (`26.11.4-alpha`, then `26.11.5-alpha`). There is
-no stable channel while the project is pre-alpha, so every release is marked
-*Pre-release* on GitHub. The running app shows its version, with an `ALPHA`
-badge, at the bottom of the sidebar.
+counts releases within the month (`26.11.4-alpha`, then `26.11.5-alpha`). Alpha is
+the release channel, so releases are published as normal GitHub releases rather
+than being marked *Pre-release*. The running app shows its version, with an
+`ALPHA` badge, at the bottom of the sidebar.
 
 ## AI-assisted development
 

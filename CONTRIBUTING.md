@@ -42,8 +42,11 @@ because that message is what the release job reads.
 
 | Branch | Releases |
 | --- | --- |
-| `main` | Stable versions, e.g. `26.10.0` |
-| `feat/ixui-ui` | Pre-releases, e.g. `26.10.1-beta.1` (marked as pre-release on GitHub) |
+| `main` | Alpha versions, e.g. `26.11.5-alpha` |
+| `feat/ixui-ui` | Alpha versions, e.g. `26.11.5-alpha` |
+
+Every release is published as a normal GitHub release; alpha versions are not
+marked as pre-releases.
 
 The release job commits `chore(release): x.y.z [skip ci]` back to the branch, so
 the branch must allow pushes from GitHub Actions (or bypass for the bot).
