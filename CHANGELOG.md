@@ -1,5 +1,11 @@
 # Changelog
 
+## 26.11.8-alpha (2026-11-20)
+
+### Bug fixes
+
+- **release:** publish alpha releases without the pre-release flag (10d3ce2)
+
 ## 26.11.7-alpha (2026-11-20)
 
 ### Bug fixes
