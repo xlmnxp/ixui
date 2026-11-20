@@ -1,5 +1,11 @@
 # Changelog
 
+## 26.11.7-alpha (2026-11-20)
+
+### Bug fixes
+
+- **wizard:** include NIC device type when creating an instance (ec1346c)
+
 ## 26.11.6-alpha (2026-11-16)
 
 ### Features
