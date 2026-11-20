@@ -96,7 +96,7 @@ export function CreateInstanceWizard({ open, onClose, targetMember }: CreateInst
       if (memory.trim()) config[LIMIT_KEYS.memory] = memory.trim();
       if (cpu.trim()) config[LIMIT_KEYS.cpu] = cpu.trim();
       const devices: Record<string, Record<string, string>> | undefined = network
-        ? { eth0: { nictype: "bridged", parent: network } }
+        ? { eth0: { type: "nic", nictype: "bridged", parent: network } }
         : undefined;
       const source = picked.fingerprint
         ? { type: "image" as const, fingerprint: picked.fingerprint }
